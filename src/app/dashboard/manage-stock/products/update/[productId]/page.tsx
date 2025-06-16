@@ -1,4 +1,6 @@
+// ───────────────────────────────────────────────────────────────
 // src/app/dashboard/manage-stock/products/update/[productId]/page.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, {
@@ -26,20 +28,16 @@ import StepAttributesDetails, {
 } from "@/components/addproductsteps/StepAttributesDetails";
 import StepReview from "@/components/addproductsteps/StepReview";
 
-/* ───────── enums & types ───────── */
-export const STOCK_OPTIONS = ["in stock", "out of stock"] as const;
-export const PAGE_OPTIONS = [
-  "none",
-  "New-Products",
-  "promotion",
-  "best-collection",
-] as const;
-export const ADMIN_OPTIONS = ["not-approve", "approve"] as const;
+import {
+  STOCK_OPTIONS,
+  PAGE_OPTIONS,
+  ADMIN_OPTIONS,
+  StockStatus,
+  StatusPage,
+  Vadmin,
+} from "@/constants/product-options";
 
-export type StockStatus = (typeof STOCK_OPTIONS)[number];
-export type StatusPage = (typeof PAGE_OPTIONS)[number];
-export type Vadmin = (typeof ADMIN_OPTIONS)[number];
-
+/* ───────── local types ───────── */
 interface ProductForm {
   name: string;
   info: string;
@@ -128,21 +126,21 @@ export default function UpdateProductPage() {
   const [attrPayload, setAttrPayload] = useState<AttributePayload[]>([]);
   const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
 
-  // Fetch attribute definitions
+  /* ───────── fetch attribute definitions ───────── */
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
-      "/dashboardadmin/stock/productattribute"
+      "/dashboardadmin/stock/productattribute",
     )
       .then(({ productAttributes }) => setDefs(productAttributes))
       .catch((err) => console.error("Failed to load attribute defs:", err));
   }, []);
 
-  // Fetch product on mount
+  /* ───────── fetch product data on mount ───────── */
   useEffect(() => {
     (async () => {
       try {
         const data = await fetchFromAPI<FetchedProduct>(
-          `/dashboardadmin/stock/products/${productId}`
+          `/dashboardadmin/stock/products/${productId}`,
         );
 
         // populate form
@@ -172,7 +170,7 @@ export default function UpdateProductPage() {
         setExistingExtraImagesUrls(data.extraImagesUrl ?? []);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to load product."
+          err instanceof Error ? err.message : "Failed to load product.",
         );
       } finally {
         setLoading(false);
@@ -180,24 +178,24 @@ export default function UpdateProductPage() {
     })();
   }, [productId]);
 
-  // generic form handler
+  /* ───────── generic form handler ───────── */
   const onFixed = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
-  // sync attrs & details
+  /* ───────── sync attrs & details ───────── */
   const handleAttrsAndDetails = useCallback(
     (attrs: AttributePayload[], details: ProductDetailPair[]) => {
       setAttrPayload(attrs);
       setDetailsPayload(details);
     },
-    []
+    [],
   );
 
-  // main image select / clear
+  /* ───────── image handlers ───────── */
   const handleMainChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setMainImage(file);
@@ -209,7 +207,6 @@ export default function UpdateProductPage() {
     if (mainRef.current) mainRef.current.value = "";
   };
 
-  // extra images select / remove
   const handleExtraChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     setExtraImages((prev) => [...prev, ...files]);
@@ -223,7 +220,7 @@ export default function UpdateProductPage() {
     }
   };
 
-  // navigation
+  /* ───────── navigation ───────── */
   const next = () => {
     setError(null);
     if (step === 3) {
@@ -248,7 +245,7 @@ export default function UpdateProductPage() {
   };
   const back = () => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
 
-  // submit
+  /* ───────── submit ───────── */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -283,7 +280,7 @@ export default function UpdateProductPage() {
       setTimeout(() => router.push("/dashboard/manage-stock/products"), 2000);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to update product."
+        err instanceof Error ? err.message : "Failed to update product.",
       );
       setSaving(false);
     }
@@ -339,7 +336,7 @@ export default function UpdateProductPage() {
             defs={defs}
             initialAttrs={attrPayload}
             initialDetails={detailsPayload}
-            ready={!loading} // ← only initialize once loading is done
+            ready={!loading}
             onChange={handleAttrsAndDetails}
           />
         )}
@@ -356,15 +353,15 @@ export default function UpdateProductPage() {
           />
         )}
 
-       <WizardNav
-        step={step}
-        saving={saving}
-        onBack={back}
-        onNext={next}
-        onCancel={() => router.push("/dashboard/manage-stock/products")}
-        submitLabel="Update Product"
-        submittingLabel="Updating..."
-      />
+        <WizardNav
+          step={step}
+          saving={saving}
+          onBack={back}
+          onNext={next}
+          onCancel={() => router.push("/dashboard/manage-stock/products")}
+          submitLabel="Update Product"
+          submittingLabel="Updating..."
+        />
 
         {/* hidden file inputs */}
         <input

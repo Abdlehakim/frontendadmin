@@ -1,4 +1,6 @@
-// src/app/manage-stock/products/page.tsx
+// ───────────────────────────────────────────────────────────────
+// src/app/dashboard/manage-stock/products/page.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, {
@@ -14,6 +16,16 @@ import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
+import {
+  STOCK_OPTIONS,
+  PAGE_OPTIONS,
+  ADMIN_OPTIONS,
+  StockStatus,
+  StatusPage,
+  Vadmin,
+} from "@/constants/product-options";
+
+/* ───────── types ───────── */
 interface Product {
   _id: string;
   reference: string;
@@ -23,19 +35,10 @@ interface Product {
   createdAt: string;
   updatedAt: string;
 
-  vadmin: "approve" | "not-approve";
-  stockStatus: "in stock" | "out of stock";
-  statuspage: "none" | "New-Products" | "promotion" | "best-collection";
+  vadmin: Vadmin;
+  stockStatus: StockStatus;
+  statuspage: StatusPage;
 }
-
-const VADMIN_OPTIONS: Product["vadmin"][] = ["approve", "not-approve"];
-const STOCK_OPTIONS: Product["stockStatus"][] = ["in stock", "out of stock"];
-const PAGE_OPTIONS: Product["statuspage"][] = [
-  "none",
-  "New-Products",
-  "promotion",
-  "best-collection",
-];
 
 const PAGE_SIZE = 12;
 
@@ -48,14 +51,15 @@ export default function ProductsClientPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
   const [deleteName, setDeleteName] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Fetch products on mount
+  /* ───────── fetch products ───────── */
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
         const { products } = await fetchFromAPI<{ products: Product[] }>(
-          "/dashboardadmin/stock/products"
+          "/dashboardadmin/stock/products",
         );
         setProducts(products);
       } catch (err) {
@@ -66,29 +70,29 @@ export default function ProductsClientPage() {
     })();
   }, []);
 
-  // Client-side search + pagination
+  /* ───────── search + pagination ───────── */
   const filtered = useMemo(
     () =>
       products.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()),
       ),
-    [products, searchTerm]
+    [products, searchTerm],
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const displayed = useMemo(
     () =>
       filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filtered, currentPage]
+    [filtered, currentPage],
   );
 
-  // Generic field update
+  /* ───────── single-field update ───────── */
   async function updateField<K extends keyof Product>(
     id: string,
     key: K,
-    value: Product[K]
+    value: Product[K],
   ) {
     setProducts((prev) =>
-      prev.map((p) => (p._id === id ? { ...p, [key]: value } : p))
+      prev.map((p) => (p._id === id ? { ...p, [key]: value } : p)),
     );
     try {
       await fetchFromAPI(`/dashboardadmin/stock/products/update/${id}`, {
@@ -97,12 +101,12 @@ export default function ProductsClientPage() {
         body: JSON.stringify({ [key]: value }),
       });
     } catch {
-      setProducts((prev) => [...prev]);
+      setProducts((prev) => [...prev]); // revert
       alert(`Failed to update ${key}`);
     }
   }
 
-  // Delete product
+  /* ───────── delete helpers ───────── */
   async function deleteProduct(id: string) {
     await fetchFromAPI(`/dashboardadmin/stock/products/delete/${id}`, {
       method: "DELETE",
@@ -110,18 +114,21 @@ export default function ProductsClientPage() {
     setProducts((prev) => prev.filter((p) => p._id !== id));
   }
 
-  // Delete popup handlers
   const openDelete = (id: string, name: string) => {
     setDeleteId(id);
     setDeleteName(name);
     setIsDeleteOpen(true);
   };
   const closeDelete = () => setIsDeleteOpen(false);
-  const confirmDelete = () => {
-    deleteProduct(deleteId);
+
+  const confirmDelete = async (id: string) => {
+    setDeleteLoading(true);
+    await deleteProduct(id);
+    setDeleteLoading(false);
     closeDelete();
   };
 
+  /* ───────── render ───────── */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       {/* Header */}
@@ -150,7 +157,7 @@ export default function ProductsClientPage() {
         </div>
       </div>
 
-      {/* Table + spinner overlay */}
+      {/* Table wrapper */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white">
@@ -197,7 +204,9 @@ export default function ProductsClientPage() {
                       {p.updatedBy?.username || p.createdBy?.username || "—"}
                     </td>
                     <td className="py-2 text-center">
-                      {new Date(p.updatedAt || p.createdAt).toLocaleDateString()}
+                      {new Date(
+                        p.updatedAt || p.createdAt,
+                      ).toLocaleDateString()}
                     </td>
                     <td className="py-2 w-5/9">
                       <div className="flex justify-center items-center gap-2">
@@ -208,12 +217,12 @@ export default function ProductsClientPage() {
                             updateField(
                               p._id,
                               "vadmin",
-                              e.target.value as Product["vadmin"]
+                              e.target.value as Product["vadmin"],
                             )
                           }
                           className="ButtonRectangle"
                         >
-                          {VADMIN_OPTIONS.map((opt) => (
+                          {ADMIN_OPTIONS.map((opt) => (
                             <option key={opt} value={opt}>
                               {opt}
                             </option>
@@ -227,7 +236,7 @@ export default function ProductsClientPage() {
                             updateField(
                               p._id,
                               "stockStatus",
-                              e.target.value as Product["stockStatus"]
+                              e.target.value as Product["stockStatus"],
                             )
                           }
                           className="ButtonRectangle truncate"
@@ -246,7 +255,7 @@ export default function ProductsClientPage() {
                             updateField(
                               p._id,
                               "statuspage",
-                              e.target.value as Product["statuspage"]
+                              e.target.value as Product["statuspage"],
                             )
                           }
                           className="ButtonRectangle truncate"
@@ -286,6 +295,7 @@ export default function ProductsClientPage() {
             )}
           </table>
 
+          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -308,6 +318,7 @@ export default function ProductsClientPage() {
         <Popup
           id={deleteId}
           name={deleteName}
+          isLoading={deleteLoading}
           handleClosePopup={closeDelete}
           Delete={confirmDelete}
         />

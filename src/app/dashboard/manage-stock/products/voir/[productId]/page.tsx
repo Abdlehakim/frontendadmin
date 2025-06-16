@@ -1,4 +1,6 @@
+// ───────────────────────────────────────────────────────────────
 // src/app/dashboard/manage-stock/products/voir/[productId]/page.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -7,19 +9,15 @@ import Image from "next/image";
 import { FaSpinner } from "react-icons/fa6";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
-export const STOCK_OPTIONS = ["in stock", "out of stock"] as const;
-export const PAGE_OPTIONS = [
-  "none",
-  "New-Products",
-  "promotion",
-  "best-collection",
-] as const;
-export const ADMIN_OPTIONS = ["not-approve", "approve"] as const;
+// ⬇️ Only import what you need
+import {
+  ADMIN_OPTIONS,                 // runtime value
+  type StockStatus,               // compile-time types
+  type StatusPage,
+  type Vadmin,
+} from "@/constants/product-options";
 
-export type StockStatus = (typeof STOCK_OPTIONS)[number];
-export type StatusPage = (typeof PAGE_OPTIONS)[number];
-export type Vadmin = (typeof ADMIN_OPTIONS)[number];
-
+/* ───────── attribute/value helpers ───────── */
 type AttrValueItem =
   | { name: string; value: string }
   | { name: string; hex: string };
@@ -30,6 +28,7 @@ interface FetchedAttribute {
   value: string | AttrValueItem[];
 }
 
+/* ───────── product type ───────── */
 interface FetchedProduct {
   _id: string;
   name: string;
@@ -61,23 +60,31 @@ export default function ProductViewPage() {
   const router = useRouter();
 
   const [product, setProduct] = useState<FetchedProduct | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /* ───────── fetch product ───────── */
   useEffect(() => {
     if (!productId) return;
     setLoading(true);
+
     fetchFromAPI<FetchedProduct>(`/dashboardadmin/stock/products/${productId}`)
       .then((data) => {
         setProduct(data);
         setError(null);
       })
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Failed to load product")
+        setError(err instanceof Error ? err.message : "Failed to load product"),
       )
       .finally(() => setLoading(false));
   }, [productId]);
 
+  /* ───────── UI helpers ───────── */
+  const isAttrArray = (
+    val: string | AttrValueItem[],
+  ): val is AttrValueItem[] => Array.isArray(val);
+
+  /* ───────── render states ───────── */
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -100,17 +107,11 @@ export default function ProductViewPage() {
     );
   }
 
-  if (!product) {
-    return <p className="p-4">Product not found.</p>;
-  }
+  if (!product) return <p className="p-4">Product not found.</p>;
 
-  // Safely coalesce to an array
   const extraUrls = product.extraImagesUrl ?? [];
 
-  const isAttrArray = (
-    val: string | AttrValueItem[]
-  ): val is AttrValueItem[] => Array.isArray(val);
-
+  /* ───────── main render ───────── */
   return (
     <div className="p-6 w-[80%] mx-auto flex flex-col gap-6">
       {/* Header */}
@@ -181,7 +182,9 @@ export default function ProductViewPage() {
           <strong>Admin Status:</strong>{" "}
           <span
             className={
-              product.vadmin === "approve" ? "text-green-600" : "text-red-600"
+              product.vadmin === ADMIN_OPTIONS[1]
+                ? "text-green-600"
+                : "text-red-600"
             }
           >
             {product.vadmin}
@@ -203,7 +206,7 @@ export default function ProductViewPage() {
         </div>
       </div>
 
- {/* Main Image */}
+      {/* Main Image */}
       {product.mainImageUrl && (
         <div className="bg-white shadow rounded p-6">
           <strong>Main Image</strong>
@@ -251,7 +254,7 @@ export default function ProductViewPage() {
                       .map((item) =>
                         "hex" in item
                           ? `${item.name} (${item.hex})`
-                          : `${item.name}: ${item.value}`
+                          : `${item.name}: ${item.value}`,
                       )
                       .join(", ")
                   : a.value}
