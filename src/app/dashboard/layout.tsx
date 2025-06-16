@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import Sidebar from "@/components/sidebar/Sidebar";
+import Sidebar from "@/components/sidebar/SidebarClient";
 import { getDashboardUser } from "@/lib/getDashboardUser";
 
 export const metadata: Metadata = {
