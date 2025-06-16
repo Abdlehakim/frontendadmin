@@ -1,3 +1,6 @@
+// ───────────────────────────────────────────────────────────────
+// dashboard/manage-client/orders/page.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -8,6 +11,7 @@ import { FaSpinner } from "react-icons/fa6";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 
+/* ───────── types ───────── */
 interface Order {
   _id: string;
   ref: string;
@@ -17,53 +21,53 @@ interface Order {
   orderStatus: string;
 }
 
+const pageSize = 10;
+const statusOptions = [
+  "Processing",
+  "Shipped",
+  "Cancelled",
+  "Refunded",
+  "Delivered",
+];
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [filterStatus, setFilterStatus] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  // delete popup state
-  const [isDeleteOpen, setIsDeleteOpen] = useState<boolean>(false);
-  const [deleteOrderId, setDeleteOrderId] = useState<string>("");
-  const [deleteOrderRef, setDeleteOrderRef] = useState<string>("");
+  /* delete-popup state */
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteOrderId, setDeleteOrderId] = useState("");
+  const [deleteOrderRef, setDeleteOrderRef] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false); // NEW
 
-  const pageSize = 10;
-
-  const statusOptions = [
-    "Processing",
-    "Shipped",
-    "Cancelled",
-    "Refunded",
-    "Delivered",
-  ];
-
+  /* ───────── derived lists ───────── */
   const filteredOrders = useMemo(
     () =>
       orders
         .filter((o) => !filterStatus || o.orderStatus === filterStatus)
-        .filter((o) => !searchTerm || o.ref.toLowerCase().includes(searchTerm.toLowerCase())),
-    [orders, filterStatus, searchTerm]
+        .filter((o) =>
+          o.ref.toLowerCase().includes(searchTerm.toLowerCase()),
+        ),
+    [orders, filterStatus, searchTerm],
   );
 
-  const totalPages = useMemo(
-    () => Math.ceil(filteredOrders.length / pageSize),
-    [filteredOrders.length]
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
 
   const displayedOrders = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredOrders.slice(start, start + pageSize);
   }, [filteredOrders, currentPage]);
 
+  /* ───────── fetch orders ───────── */
   useEffect(() => {
     async function fetchData() {
       try {
         const { orders } = await fetchFromAPI<{ orders: Order[] }>(
-          "/dashboardadmin/orders"
+          "/dashboardadmin/orders",
         );
-        console.log("Fetched orders:", orders);
         setOrders(orders);
       } catch (err) {
         console.error(err);
@@ -74,56 +78,59 @@ export default function OrdersPage() {
     fetchData();
   }, []);
 
+  /* ───────── server actions ───────── */
   const deleteOrder = async (id: string) => {
-    try {
-      await fetchFromAPI(`/dashboardadmin/orders/${id}`, {
-        method: "DELETE",
-      });
-      setOrders((prev) => prev.filter((o) => o._id !== id));
-    } catch {
-      alert("Deletion failed.");
-    }
+    await fetchFromAPI(`/dashboardadmin/orders/${id}`, {
+      method: "DELETE",
+    });
+    setOrders((prev) => prev.filter((o) => o._id !== id));
   };
 
+  const updateStatus = async (id: string, status: string) => {
+    await fetchFromAPI(`/dashboardadmin/orders/${id}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderStatus: status }),
+    });
+    setOrders((prev) =>
+      prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o)),
+    );
+  };
+
+  /* ───────── popup helpers ───────── */
   const openDelete = (id: string, ref: string) => {
     setDeleteOrderId(id);
     setDeleteOrderRef(ref);
     setIsDeleteOpen(true);
   };
   const closeDelete = () => setIsDeleteOpen(false);
-  const confirmDelete = () => {
-    deleteOrder(deleteOrderId);
+
+  // NOW returns Promise<void>
+  const confirmDelete = async (id: string) => {
+    setDeleteLoading(true);
+    try {
+      await deleteOrder(id);
+    } catch {
+      alert("Deletion failed.");
+    }
+    setDeleteLoading(false);
     closeDelete();
   };
 
-  const updateStatus = async (id: string, status: string) => {
-    try {
-      await fetchFromAPI(`/dashboardadmin/orders/${id}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderStatus: status }),
-      });
-      setOrders((prev) =>
-        prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o))
-      );
-    } catch {
-      alert("Status update failed.");
-    }
-  };
-
+  /* ───────── render ───────── */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* header & create */}
+      {/* Header */}
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Commandes</h1>
         <Link href="/dashboard/manage-client/orders/create">
-          <button className="w-[200px] h-[40px] bg-tertiary rounded text-white hover:opacity-90">
+          <button className="w-[200px] h-[40px] bg-tertiary text-white rounded hover:opacity-90">
             Create Commande
           </button>
         </Link>
       </div>
 
-      {/* filters */}
+      {/* Filters */}
       <div className="flex justify-between items-end gap-6 h-[70px]">
         <div className="flex items-center gap-2">
           <label htmlFor="searchOrder" className="font-medium">
@@ -131,9 +138,8 @@ export default function OrdersPage() {
           </label>
           <input
             id="searchOrder"
-            type="text"
-            placeholder="Enter ref"
             className="border border-gray-300 rounded px-2 py-1"
+            placeholder="Enter ref"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -164,6 +170,7 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {/* Table */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
@@ -235,6 +242,7 @@ export default function OrdersPage() {
             )}
           </table>
 
+          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -243,6 +251,7 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {/* Pagination */}
       <div className="flex justify-center mt-4">
         <PaginationAdmin
           currentPage={currentPage}
@@ -251,12 +260,14 @@ export default function OrdersPage() {
         />
       </div>
 
+      {/* Delete Popup */}
       {isDeleteOpen && (
         <Popup
           id={deleteOrderId}
           name={deleteOrderRef}
+          isLoading={deleteLoading}   
           handleClosePopup={closeDelete}
-          Delete={confirmDelete}
+          Delete={confirmDelete}    
         />
       )}
     </div>

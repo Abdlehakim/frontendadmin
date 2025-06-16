@@ -11,6 +11,7 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 
+/* ───────── types ───────── */
 interface Boutique {
   _id: string;
   reference: string;
@@ -33,40 +34,41 @@ export default function BoutiquesClientPage() {
   const [boutiques, setBoutiques] = useState<Boutique[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* UI state */
+  /* UI */
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  /* delete popup */
+  /* delete-popup */
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
   const [deleteName, setDeleteName] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false); // NEW
 
   /* fetch once */
   useEffect(() => {
     (async () => {
       setLoading(true);
       const { boutiques } = await fetchFromAPI<{ boutiques: Boutique[] }>(
-        "/dashboardadmin/stock/boutiques"
+        "/dashboardadmin/stock/boutiques",
       );
       setBoutiques(boutiques);
       setLoading(false);
     })();
   }, []);
 
-  /* filtering + paging */
+  /* filter + paging */
   const filtered = useMemo(
     () =>
       boutiques.filter((b) =>
-        b.name.toLowerCase().includes(searchTerm.toLowerCase())
+        b.name.toLowerCase().includes(searchTerm.toLowerCase()),
       ),
-    [boutiques, searchTerm]
+    [boutiques, searchTerm],
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const displayed = useMemo(
     () =>
       filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filtered, currentPage]
+    [filtered, currentPage],
   );
 
   /* API actions */
@@ -79,10 +81,10 @@ export default function BoutiquesClientPage() {
 
   const updateStatus = async (
     id: string,
-    newStatus: (typeof statusOptions)[number]
+    newStatus: (typeof statusOptions)[number],
   ) => {
     setBoutiques((prev) =>
-      prev.map((b) => (b._id === id ? { ...b, vadmin: newStatus } : b))
+      prev.map((b) => (b._id === id ? { ...b, vadmin: newStatus } : b)),
     );
     try {
       await fetchFromAPI(`/dashboardadmin/stock/boutiques/update/${id}`, {
@@ -91,26 +93,35 @@ export default function BoutiquesClientPage() {
         body: JSON.stringify({ vadmin: newStatus }),
       });
     } catch {
-      setBoutiques((prev) => [...prev]);
+      setBoutiques((prev) => [...prev]); // revert
       alert("Failed to update status");
     }
   };
 
-  /* delete popup handlers */
+  /* delete-popup helpers */
   const openDelete = (id: string, name: string) => {
     setDeleteId(id);
     setDeleteName(name);
     setIsDeleteOpen(true);
   };
   const closeDelete = () => setIsDeleteOpen(false);
-  const confirmDelete = () => {
-    deleteBoutique(deleteId);
+
+  // NOW matches `(id) => Promise<void>`
+  const confirmDelete = async (id: string) => {
+    setDeleteLoading(true);
+    try {
+      await deleteBoutique(id);
+    } catch {
+      alert("Deletion failed.");
+    }
+    setDeleteLoading(false);
     closeDelete();
   };
 
+  /* ───────── render ───────── */
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4  h-full">
-      {/* header & create */}
+    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+      {/* Header */}
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Boutiques</h1>
         <Link href="/dashboard/manage-stock/boutiques/create">
@@ -120,25 +131,24 @@ export default function BoutiquesClientPage() {
         </Link>
       </div>
 
-      {/* search */}
+      {/* Search */}
       <div className="flex justify-between items-end gap-6 h-[70px]">
         <div className="flex items-center gap-2">
           <label className="font-medium">Search:</label>
           <input
+            className="border border-gray-300 rounded px-2 py-1"
+            placeholder="Name"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="border border-gray-300 rounded px-2 py-1"
-            placeholder="Name"
           />
         </div>
       </div>
 
-      {/* table + spinner overlay */}
+      {/* Table */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* header always visible */}
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr>
@@ -172,32 +182,28 @@ export default function BoutiquesClientPage() {
             <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
               {displayed.map((b, i) => (
                 <tr key={b._id} className={i % 2 ? "bg-gray-100" : "bg-white"}>
-                  <td className="py-2 w-1/9 text-center">
-                    {b.reference || "—"}
-                  </td>
-                  <td className="py-2 w-1/9 text-center font-semibold">
-                    {b.name}
-                  </td>
-                  <td className="py-2 w-1/9 text-center">
+                  <td className="py-2 text-center">{b.reference || "—"}</td>
+                  <td className="py-2 text-center font-semibold">{b.name}</td>
+                  <td className="py-2 text-center">
                     {b.createdBy?.username || "—"}
                   </td>
-                  <td className="py-2 w-1/9 text-center">
+                  <td className="py-2 text-center">
                     {new Date(b.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="py-2 w-1/9 text-center">
+                  <td className="py-2 text-center">
                     {b.updatedBy?.username || "—"}
                   </td>
-                  <td className="py-2 w-1/9 text-center">
-                    {new Date(b.createdAt).toLocaleDateString() || "—"}
+                  <td className="py-2 text-center">
+                    {new Date(b.updatedAt).toLocaleDateString()}
                   </td>
-                  <td className="py-2 w-2/9">
+                  <td className="py-2">
                     <div className="flex justify-center items-center gap-2">
                       <select
                         value={b.vadmin}
                         onChange={(e) =>
                           updateStatus(
                             b._id,
-                            e.target.value as (typeof statusOptions)[number]
+                            e.target.value as (typeof statusOptions)[number],
                           )
                         }
                         className="ButtonRectangle"
@@ -207,7 +213,7 @@ export default function BoutiquesClientPage() {
                             {s}
                           </option>
                         ))}
-                      </select>                  
+                      </select>
                       <Link
                         href={`/dashboard/manage-stock/boutiques/update/${b._id}`}
                       >
@@ -235,7 +241,7 @@ export default function BoutiquesClientPage() {
             </tbody>
           </table>
 
-          {/* overlay covers only the body region */}
+          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -244,7 +250,7 @@ export default function BoutiquesClientPage() {
         </div>
       </div>
 
-      {/* pagination at the very end */}
+      {/* Pagination */}
       <div className="flex justify-center mt-6">
         <PaginationAdmin
           currentPage={currentPage}
@@ -253,11 +259,12 @@ export default function BoutiquesClientPage() {
         />
       </div>
 
-      {/* delete popup */}
+      {/* Delete Popup */}
       {isDeleteOpen && (
         <Popup
           id={deleteId}
           name={deleteName}
+          isLoading={deleteLoading}
           handleClosePopup={closeDelete}
           Delete={confirmDelete}
         />

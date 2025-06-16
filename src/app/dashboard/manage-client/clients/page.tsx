@@ -1,3 +1,6 @@
+// ───────────────────────────────────────────────────────────────
+// dashboard/manage-access/clients/page.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -8,6 +11,7 @@ import { FaSpinner } from "react-icons/fa6";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 
+/* ───────── types ───────── */
 interface Client {
   _id: string;
   username?: string;
@@ -16,51 +20,53 @@ interface Client {
   isGoogleAccount?: boolean;
 }
 
+const pageSize = 12;
+
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
-  const [filterType, setFilterType] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [filterType, setFilterType] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  // delete popup state
-  const [isDeleteOpen, setIsDeleteOpen] = useState<boolean>(false);
-  const [deleteClientId, setDeleteClientId] = useState<string>("");
-  const [deleteClientName, setDeleteClientName] = useState<string>("");
+  /* delete-popup state */
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteClientId, setDeleteClientId] = useState("");
+  const [deleteClientName, setDeleteClientName] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false); // NEW
 
-  const pageSize = 12;
-
-  // filtered + paginated
-  const filteredClients = useMemo(() => {
-    return clients
-      .filter(c =>
-        !filterType ||
-        (filterType === "Google" ? c.isGoogleAccount : !c.isGoogleAccount)
-      )
-      .filter(c =>
-        !searchTerm ||
-        (c.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         (c.phone || "").includes(searchTerm))
-      );
-  }, [clients, filterType, searchTerm]);
-
-  const totalPages = useMemo(
-    () => Math.ceil(filteredClients.length / pageSize),
-    [filteredClients.length]
+  /* ───────── filters + paging ───────── */
+  const filteredClients = useMemo(
+    () =>
+      clients
+        .filter(
+          (c) =>
+            !filterType ||
+            (filterType === "Google" ? c.isGoogleAccount : !c.isGoogleAccount),
+        )
+        .filter(
+          (c) =>
+            !searchTerm ||
+            c.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (c.phone || "").includes(searchTerm),
+        ),
+    [clients, filterType, searchTerm],
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / pageSize));
 
   const displayedClients = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredClients.slice(start, start + pageSize);
   }, [filteredClients, currentPage]);
 
-  // fetch clients
+  /* ───────── fetch data ───────── */
   useEffect(() => {
     async function fetchData() {
       try {
         const { clients } = await fetchFromAPI<{ clients: Client[] }>(
-          "/dashboardadmin/client"
+          "/dashboardadmin/client",
         );
         setClients(clients);
       } catch (err) {
@@ -72,30 +78,38 @@ export default function ClientsPage() {
     fetchData();
   }, []);
 
+  /* ───────── server delete ───────── */
   const deleteClient = async (id: string) => {
-    try {
-      await fetchFromAPI(`/dashboardadmin/client/delete/${id}`, { method: "DELETE" });
-      setClients(prev => prev.filter(c => c._id !== id));
-    } catch {
-      alert("Deletion failed.");
-    }
+    await fetchFromAPI(`/dashboardadmin/client/delete/${id}`, {
+      method: "DELETE",
+    });
+    setClients((prev) => prev.filter((c) => c._id !== id));
   };
 
-  // popup handlers
+  /* ───────── popup helpers ───────── */
   const openDelete = (id: string, name: string) => {
     setDeleteClientId(id);
     setDeleteClientName(name);
     setIsDeleteOpen(true);
   };
   const closeDelete = () => setIsDeleteOpen(false);
-  const confirmDelete = () => {
-    deleteClient(deleteClientId);
+
+  // NOW returns Promise<void>
+  const confirmDelete = async (id: string) => {
+    setDeleteLoading(true);
+    try {
+      await deleteClient(id);
+    } catch {
+      alert("Deletion failed.");
+    }
+    setDeleteLoading(false);
     closeDelete();
   };
 
+  /* ───────── render ───────── */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* header & create */}
+      {/* Header */}
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">All Clients</h1>
         <Link href="/dashboard/manage-access/clients/create">
@@ -105,7 +119,7 @@ export default function ClientsPage() {
         </Link>
       </div>
 
-      {/* filters */}
+      {/* Filters */}
       <div className="flex justify-between items-end gap-6 h-[70px]">
         <div className="flex items-center gap-2">
           <label htmlFor="searchClient" className="font-medium">
@@ -113,11 +127,10 @@ export default function ClientsPage() {
           </label>
           <input
             id="searchClient"
-            type="text"
-            placeholder="Username, email or phone"
             className="border border-gray-300 rounded px-2 py-1"
+            placeholder="Username, email or phone"
             value={searchTerm}
-            onChange={e => {
+            onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
@@ -131,7 +144,7 @@ export default function ClientsPage() {
             id="typeFilter"
             className="border border-gray-300 rounded px-2 py-1"
             value={filterType}
-            onChange={e => {
+            onChange={(e) => {
               setFilterType(e.target.value);
               setCurrentPage(1);
             }}
@@ -143,6 +156,7 @@ export default function ClientsPage() {
         </div>
       </div>
 
+      {/* Table */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
@@ -155,6 +169,7 @@ export default function ClientsPage() {
             </tr>
           </thead>
         </table>
+
         <div className="relative flex-1 overflow-auto">
           <table className="table-fixed w-full">
             {displayedClients.length === 0 && !loading ? (
@@ -167,17 +182,21 @@ export default function ClientsPage() {
               </tbody>
             ) : (
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
-                {displayedClients.map(c => (
+                {displayedClients.map((c) => (
                   <tr key={c._id} className="even:bg-gray-100 odd:bg-white">
-                    <td className="px-4 text-center font-semibold text-gray-800">
+                    <td className="px-4 text-center font-semibold">
                       {c.username || "-"}
                     </td>
                     <td className="px-4 text-center">{c.email}</td>
                     <td className="px-4 text-center">{c.phone || "-"}</td>
-                    <td className="px-4 text-center">{c.isGoogleAccount ? "Google" : "Standard"}</td>
+                    <td className="px-4 text-center">
+                      {c.isGoogleAccount ? "Google" : "Standard"}
+                    </td>
                     <td className="px-4 text-center">
                       <button
-                        onClick={() => openDelete(c._id, c.username || c.email)}
+                        onClick={() =>
+                          openDelete(c._id, c.username || c.email)
+                        }
                         className="ButtonSquare"
                         aria-label="Delete client"
                       >
@@ -190,6 +209,7 @@ export default function ClientsPage() {
             )}
           </table>
 
+          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -198,6 +218,7 @@ export default function ClientsPage() {
         </div>
       </div>
 
+      {/* Pagination */}
       <div className="flex justify-center mt-4">
         <PaginationAdmin
           currentPage={currentPage}
@@ -206,12 +227,14 @@ export default function ClientsPage() {
         />
       </div>
 
+      {/* Delete Popup */}
       {isDeleteOpen && (
         <Popup
           id={deleteClientId}
           name={deleteClientName}
+          isLoading={deleteLoading}   
           handleClosePopup={closeDelete}
-          Delete={confirmDelete}
+          Delete={confirmDelete}         
         />
       )}
     </div>

@@ -1,4 +1,6 @@
+// ───────────────────────────────────────────────────────────────
 // src/app/manage-stock/product-attribute/page.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -9,6 +11,7 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 
+/* ───────── types ───────── */
 interface ProductAttribute {
   _id: string;
   name: string;
@@ -22,23 +25,28 @@ interface ProductAttribute {
 const PAGE_SIZE = 12;
 
 export default function ProductAttributesClientPage() {
+  /* data */
   const [productAttributes, setProductAttributes] = useState<ProductAttribute[]>([]);
   const [loading, setLoading] = useState(true);
+
+  /* ui */
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  /* delete-popup */
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
   const [deleteName, setDeleteName] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false); // NEW
 
-  // Fetch on mount
+  /* fetch once */
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
         const { productAttributes } =
           await fetchFromAPI<{ productAttributes: ProductAttribute[] }>(
-            "/dashboardadmin/stock/productattribute"
+            "/dashboardadmin/stock/productattribute",
           );
         setProductAttributes(productAttributes ?? []);
       } catch (err) {
@@ -50,42 +58,51 @@ export default function ProductAttributesClientPage() {
     })();
   }, []);
 
-  // Filter + paginate
+  /* filter + paging */
   const filtered = useMemo(
     () =>
       productAttributes.filter((pa) =>
-        pa.name.toLowerCase().includes(searchTerm.toLowerCase())
+        pa.name.toLowerCase().includes(searchTerm.toLowerCase()),
       ),
-    [productAttributes, searchTerm]
+    [productAttributes, searchTerm],
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const displayed = useMemo(
     () =>
       filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filtered, currentPage]
+    [filtered, currentPage],
   );
 
-  // Delete
+  /* server delete */
   const deleteAttribute = async (id: string) => {
     await fetchFromAPI(
       `/dashboardadmin/stock/productattribute/delete/${id}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
     setProductAttributes((prev) => prev.filter((pa) => pa._id !== id));
   };
 
-  // Popup handlers
+  /* popup helpers */
   const openDelete = (id: string, name: string) => {
     setDeleteId(id);
     setDeleteName(name);
     setIsDeleteOpen(true);
   };
   const closeDelete = () => setIsDeleteOpen(false);
-  const confirmDelete = () => {
-    deleteAttribute(deleteId);
+
+  // NOW returns Promise<void>
+  const confirmDelete = async (id: string) => {
+    setDeleteLoading(true);
+    try {
+      await deleteAttribute(id);
+    } catch {
+      alert("Deletion failed.");
+    }
+    setDeleteLoading(false);
     closeDelete();
   };
 
+  /* ───────── render ───────── */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       {/* Header */}
@@ -103,22 +120,21 @@ export default function ProductAttributesClientPage() {
         <div className="flex items-center gap-2">
           <label className="font-medium">Search:</label>
           <input
+            className="border border-gray-300 rounded px-2 py-1"
+            placeholder="Name"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="border border-gray-300 rounded px-2 py-1"
-            placeholder="Name"
           />
         </div>
       </div>
 
-      {/* Table + Spinner */}
+      {/* Table */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* header always visible */}
         <table className="table-fixed w-full">
-          <thead className="bg-primary text-white z-10">
+          <thead className="bg-primary text-white">
             <tr>
               <th className="py-2 text-center border-x-4">Name</th>
               <th className="py-2 text-center border-x-4">Type</th>
@@ -131,7 +147,6 @@ export default function ProductAttributesClientPage() {
           </thead>
         </table>
 
-        {/* scrollable body */}
         <div className="relative flex-1 overflow-auto">
           <table className="table-fixed w-full">
             {displayed.length === 0 && !loading ? (
@@ -145,16 +160,11 @@ export default function ProductAttributesClientPage() {
             ) : (
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
                 {displayed.map((pa, i) => (
-                  <tr
-                    key={pa._id}
-                    className={i % 2 ? "bg-gray-100" : "bg-white"}
-                  >
+                  <tr key={pa._id} className={i % 2 ? "bg-gray-100" : "bg-white"}>
                     <td className="py-2 text-center font-semibold">{pa.name}</td>
-                    <td className="py-2 text-center">{
-                      Array.isArray(pa.type)
-                        ? pa.type.join(", ")
-                        : pa.type
-                    }</td>
+                    <td className="py-2 text-center">
+                      {Array.isArray(pa.type) ? pa.type.join(", ") : pa.type}
+                    </td>
                     <td className="py-2 text-center">
                       {new Date(pa.createdAt).toLocaleDateString()}
                     </td>
@@ -169,12 +179,16 @@ export default function ProductAttributesClientPage() {
                     </td>
                     <td className="py-2">
                       <div className="flex justify-center items-center gap-2">
-                        <Link href={`/dashboard/manage-stock/product-attributes/voir/${pa._id}`}>
+                        <Link
+                          href={`/dashboard/manage-stock/product-attributes/voir/${pa._id}`}
+                        >
                           <button className="ButtonSquare">
                             <FaRegEye size={14} />
                           </button>
                         </Link>
-                        <Link href={`/dashboard/manage-stock/product-attributes/update/${pa._id}`}>
+                        <Link
+                          href={`/dashboard/manage-stock/product-attributes/update/${pa._id}`}
+                        >
                           <button className="ButtonSquare">
                             <FaRegEdit size={14} />
                           </button>
@@ -193,7 +207,7 @@ export default function ProductAttributesClientPage() {
             )}
           </table>
 
-          {/* loading spinner overlay */}
+          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -211,11 +225,12 @@ export default function ProductAttributesClientPage() {
         />
       </div>
 
-      {/* Delete confirmation popup */}
+      {/* Delete Popup */}
       {isDeleteOpen && (
         <Popup
           id={deleteId}
           name={deleteName}
+          isLoading={deleteLoading}
           handleClosePopup={closeDelete}
           Delete={confirmDelete}
         />

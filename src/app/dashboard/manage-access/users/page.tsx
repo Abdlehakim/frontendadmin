@@ -1,5 +1,6 @@
+// ───────────────────────────────────────────────────────────────
 // dashboard/manage-access/users/page.tsx
-
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -11,50 +12,60 @@ import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 import UpdatePopup from "@/components/Popup/UpdatePopup";
 
-interface Role { _id: string; name: string; }
-interface User { _id: string; username: string; email: string; role: Role; }
+/* ───────── types ───────── */
+interface Role {
+  _id: string;
+  name: string;
+}
+
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+  role: Role;
+}
+
+const pageSize = 12;
 
 export default function UsersClientPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [filterRole, setFilterRole] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [filterRole, setFilterRole] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // Delete popup
+  /* delete-popup state */
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deleteUserId, setDeleteUserId] = useState<string>("");
-  const [deleteUserName, setDeleteUserName] = useState<string>("");
+  const [deleteUserId, setDeleteUserId] = useState("");
+  const [deleteUserName, setDeleteUserName] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false); // NEW
 
-  // Update popup
+  /* update-popup state */
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
-  const [updateUserId, setUpdateUserId] = useState<string>("");
-  const [updateRoleId, setUpdateRoleId] = useState<string>("");
-  const [updateUserName, setUpdateUserName] = useState<string>("");
+  const [updateUserId, setUpdateUserId] = useState("");
+  const [updateRoleId, setUpdateRoleId] = useState("");
+  const [updateUserName, setUpdateUserName] = useState("");
 
-  const pageSize = 12;
-
-  // filters + pagination
-  const filteredUsers = useMemo(() => {
-    return users
-      .filter(u => !filterRole || u.role._id === filterRole)
-      .filter(u => !searchTerm ||
-        u.username.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-  }, [users, filterRole, searchTerm]);
-
-  const totalPages = useMemo(
-    () => Math.ceil(filteredUsers.length / pageSize),
-    [filteredUsers.length]
+  /* ───────── filters + paging ───────── */
+  const filteredUsers = useMemo(
+    () =>
+      users
+        .filter((u) => !filterRole || u.role._id === filterRole)
+        .filter((u) =>
+          u.username.toLowerCase().includes(searchTerm.toLowerCase()),
+        ),
+    [users, filterRole, searchTerm],
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
 
   const displayedUsers = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredUsers.slice(start, start + pageSize);
   }, [filteredUsers, currentPage]);
 
-  // fetch
+  /* ───────── fetch data ───────── */
   useEffect(() => {
     async function fetchData() {
       try {
@@ -73,42 +84,42 @@ export default function UsersClientPage() {
     fetchData();
   }, []);
 
+  /* ───────── server actions ───────── */
   const deleteUser = async (id: string) => {
-    try {
-      await fetchFromAPI(`/dashboardadmin/users/${id}`, { method: "DELETE" });
-      setUsers(prev => prev.filter(u => u._id !== id));
-    } catch {
-      alert("Deletion failed.");
-    }
-  };
-  const updateUserRole = async (userId: string, roleId: string) => {
-    try {
-      await fetchFromAPI(`/dashboardadmin/roles/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roleId }),
-      });
-      setUsers(prev =>
-        prev.map(u =>
-          u._id === userId
-            ? { ...u, role: roles.find(r => r._id === roleId)! }
-            : u
-        )
-      );
-    } catch {
-      alert("Role update failed.");
-    }
+    await fetchFromAPI(`/dashboardadmin/users/${id}`, { method: "DELETE" });
+    setUsers((prev) => prev.filter((u) => u._id !== id));
   };
 
-  // open/close helpers
+  const updateUserRole = async (userId: string, roleId: string) => {
+    await fetchFromAPI(`/dashboardadmin/roles/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roleId }),
+    });
+    setUsers((prev) =>
+      prev.map((u) =>
+        u._id === userId ? { ...u, role: roles.find((r) => r._id === roleId)! } : u,
+      ),
+    );
+  };
+
+  /* ───────── popup helpers ───────── */
   const openDelete = (id: string, name: string) => {
     setDeleteUserId(id);
     setDeleteUserName(name);
     setIsDeleteOpen(true);
   };
   const closeDelete = () => setIsDeleteOpen(false);
-  const confirmDelete = () => {
-    deleteUser(deleteUserId);
+
+  // NOW returns Promise<void> and toggles spinner
+  const confirmDelete = async (id: string) => {
+    setDeleteLoading(true);
+    try {
+      await deleteUser(id);
+    } catch {
+      alert("Deletion failed.");
+    }
+    setDeleteLoading(false);
     closeDelete();
   };
 
@@ -119,19 +130,25 @@ export default function UsersClientPage() {
     setIsUpdateOpen(true);
   };
   const closeUpdate = () => setIsUpdateOpen(false);
-  const confirmUpdate = () => {
-    updateUserRole(updateUserId, updateRoleId);
+
+  const confirmUpdate = async () => {
+    try {
+      await updateUserRole(updateUserId, updateRoleId);
+    } catch {
+      alert("Role update failed.");
+    }
     closeUpdate();
   };
 
+  /* values for UpdatePopup */
   const currentRoleName =
-    users.find(u => u._id === updateUserId)?.role.name || "";
-  const newRoleName =
-    roles.find(r => r._id === updateRoleId)?.name || "";
+    users.find((u) => u._id === updateUserId)?.role.name || "";
+  const newRoleName = roles.find((r) => r._id === updateRoleId)?.name || "";
 
+  /* ───────── render ───────── */
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4  h-full">
-      {/* header & create */}
+    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+      {/* Header */}
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">All Users</h1>
         <Link href="/dashboard/manage-access/users/create">
@@ -141,7 +158,7 @@ export default function UsersClientPage() {
         </Link>
       </div>
 
-      {/* filters */}
+      {/* Filters */}
       <div className="flex justify-between items-end gap-6 h-[70px]">
         <div className="flex items-center gap-2">
           <label htmlFor="searchUser" className="font-medium">
@@ -150,13 +167,12 @@ export default function UsersClientPage() {
           <input
             id="searchUser"
             className="border border-gray-300 rounded px-2 py-1"
-            type="text"
-            placeholder="Enter username"
             value={searchTerm}
-            onChange={e => {
+            onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
+            placeholder="Enter username"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -167,13 +183,13 @@ export default function UsersClientPage() {
             id="roleFilter"
             className="border border-gray-300 rounded px-2 py-1"
             value={filterRole}
-            onChange={e => {
+            onChange={(e) => {
               setFilterRole(e.target.value);
               setCurrentPage(1);
             }}
           >
             <option value="">All Roles</option>
-            {roles.map(r => (
+            {roles.map((r) => (
               <option key={r._id} value={r._id}>
                 {r.name}
               </option>
@@ -182,8 +198,8 @@ export default function UsersClientPage() {
         </div>
       </div>
 
+      {/* Table header */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* header always visible */}
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr className="text-sm">
@@ -194,20 +210,20 @@ export default function UsersClientPage() {
           </thead>
         </table>
 
-        {/* scrollable body */}
+        {/* Table body */}
         <div className="relative flex-1 overflow-auto">
           <table className="table-fixed w-full">
             {displayedUsers.length === 0 && !loading ? (
               <tbody>
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-gray-600">
+                  <td colSpan={3} className="py-6 text-center text-gray-600">
                     No users found.
                   </td>
                 </tr>
               </tbody>
             ) : (
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
-                {displayedUsers.map(u => (
+                {displayedUsers.map((u) => (
                   <tr key={u._id} className="even:bg-gray-100 odd:bg-white">
                     <td className="px-4 text-center font-semibold text-gray-800">
                       {u.username}
@@ -215,13 +231,13 @@ export default function UsersClientPage() {
                     <td className="px-4 text-center">
                       <select
                         value={u.role._id}
-                        onChange={e =>
+                        onChange={(e) =>
                           openUpdate(u._id, e.target.value, u.username)
                         }
                         className="border border-gray-300 rounded px-2 py-1 text-sm"
                       >
                         <option value="">No Role</option>
-                        {roles.map(r => (
+                        {roles.map((r) => (
                           <option key={r._id} value={r._id}>
                             {r.name}
                           </option>
@@ -229,9 +245,10 @@ export default function UsersClientPage() {
                       </select>
                     </td>
                     <td className="px-4 text-center">
-
                       <div className="flex justify-center items-center gap-2">
-                        <Link href={`/dashboard/manage-access/users/update/${u._id}`}>
+                        <Link
+                          href={`/dashboard/manage-access/users/update/${u._id}`}
+                        >
                           <button className="ButtonSquare">
                             <FaRegEdit size={14} />
                           </button>
@@ -251,7 +268,7 @@ export default function UsersClientPage() {
             )}
           </table>
 
-          {/* overlay covers only the body region */}
+          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -260,7 +277,7 @@ export default function UsersClientPage() {
         </div>
       </div>
 
-      {/* pagination */}
+      {/* Pagination */}
       <div className="flex justify-center mt-4">
         <PaginationAdmin
           currentPage={currentPage}
@@ -269,15 +286,18 @@ export default function UsersClientPage() {
         />
       </div>
 
-      {/* popups */}
+      {/* Delete Popup */}
       {isDeleteOpen && (
         <Popup
           id={deleteUserId}
           name={deleteUserName}
+          isLoading={deleteLoading}      
           handleClosePopup={closeDelete}
-          Delete={confirmDelete}
+          Delete={confirmDelete}             
         />
       )}
+
+      {/* Role-update Popup */}
       {isUpdateOpen && (
         <UpdatePopup
           id={updateUserId}
