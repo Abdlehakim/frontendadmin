@@ -1,4 +1,6 @@
+// ───────────────────────────────────────────────────────────────
 // src/app/dashboard/manage-stock/products/create/page.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, {
@@ -28,19 +30,14 @@ import StepAttributesDetails, {
 } from "@/components/addproductsteps/StepAttributesDetails";
 import StepReview from "@/components/addproductsteps/StepReview";
 
-/* ───────── enums ───────── */
-export const STOCK_OPTIONS = ["in stock", "out of stock"] as const;
-export const PAGE_OPTIONS = [
-  "none",
-  "New-Products",
-  "promotion",
-  "best-collection",
-] as const;
-export const ADMIN_OPTIONS = ["not-approve", "approve"] as const;
-
-export type StockStatus = (typeof STOCK_OPTIONS)[number];
-export type StatusPage = (typeof PAGE_OPTIONS)[number];
-export type Vadmin = (typeof ADMIN_OPTIONS)[number];
+import {
+  STOCK_OPTIONS,
+  PAGE_OPTIONS,
+  ADMIN_OPTIONS,
+  StockStatus,
+  StatusPage,
+  Vadmin,
+} from "@/constants/product-options";
 
 /* ───────── product form ───────── */
 export interface ProductForm {
@@ -93,12 +90,13 @@ export default function CreateProductPage() {
 
   const [defs, setDefs] = useState<AttributeDef[]>([]);
   const [attrPayload, setAttrPayload] = useState<AttributePayload[]>([]);
-  const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
+  const [detailsPayload, setDetailsPayload] =
+    useState<ProductDetailPair[]>([]);
 
-  // Fetch attribute definitions once on mount
+  /* ───────── fetch attribute definitions once ───────── */
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
-      "/dashboardadmin/stock/productattribute"
+      "/dashboardadmin/stock/productattribute",
     )
       .then(({ productAttributes }) => setDefs(productAttributes))
       .catch((err) => console.error("Failed to load product attributes:", err));
@@ -109,14 +107,16 @@ export default function CreateProductPage() {
       setAttrPayload(attrs);
       setDetailsPayload(details);
     },
-    []
+    [],
   );
 
   const removeExtra = (idx: number) =>
     setExtraImages((prev) => prev.filter((_, i) => i !== idx));
 
   const onFixed = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -159,23 +159,20 @@ export default function CreateProductPage() {
     setError(null);
     if (step === 3) {
       const invalid = attrPayload.some((a) => {
-        if (typeof a.value === "string") {
-          return !a.value.trim();
-        }
+        if (typeof a.value === "string") return !a.value.trim();
+
         if (Array.isArray(a.value)) {
           return a.value.some((pair) => {
             const emptyName = !pair.name?.trim();
-            if ("value" in pair) {
+            if ("value" in pair)
               return emptyName || !String(pair.value).trim();
-            }
-            if ("hex" in pair) {
-              return emptyName || !String(pair.hex).trim();
-            }
+            if ("hex" in pair) return emptyName || !String(pair.hex).trim();
             return true;
           });
         }
         return true;
       });
+
       if (invalid) {
         setError("Please complete all attribute entries before proceeding.");
         return;
@@ -229,7 +226,10 @@ export default function CreateProductPage() {
         )}
 
         {step === 3 && (
-          <StepAttributesDetails defs={defs} onChange={handleAttrsAndDetails} />
+          <StepAttributesDetails
+            defs={defs}
+            onChange={handleAttrsAndDetails}
+          />
         )}
 
         {step === 4 && (
