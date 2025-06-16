@@ -257,7 +257,7 @@ export default function BlogsClientPage() {
                           ))}
                         </select>
 
-                        <Link href={`/dashboard/blog/articles/${p._id}`}>
+                        <Link href={`/dashboard/blog/articles/voir/${p._id}`}>
                           <button className="ButtonSquare">
                             <FaRegEye size={14} />
                           </button>
