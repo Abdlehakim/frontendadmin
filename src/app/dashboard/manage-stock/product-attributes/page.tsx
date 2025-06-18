@@ -5,7 +5,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FaRegEdit,FaTrashAlt } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import PaginationAdmin from "@/components/PaginationAdmin";
@@ -179,13 +179,7 @@ export default function ProductAttributesClientPage() {
                     </td>
                     <td className="py-2">
                       <div className="flex justify-center items-center gap-2">
-                        <Link
-                          href={`/dashboard/manage-stock/product-attributes/voir/${pa._id}`}
-                        >
-                          <button className="ButtonSquare">
-                            <FaRegEye size={14} />
-                          </button>
-                        </Link>
+                  
                         <Link
                           href={`/dashboard/manage-stock/product-attributes/update/${pa._id}`}
                         >

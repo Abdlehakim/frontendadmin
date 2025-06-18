@@ -8,17 +8,29 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import Overlay from "@/components/Overlay";
 import ErrorPopup from "@/components/Popup/ErrorPopup";
 
-/* ---------- allowed types ---------- */
+/* ------------------------------------------------------------------ */
+/* Types                                                              */
+/* ------------------------------------------------------------------ */
 type AttributeType = "dimension" | "color" | "other type";
 
 interface ProductAttribute {
   _id: string;
   name: string;
-  type: AttributeType;
+  /** may be a single type or an array (old → new schema transition) */
+  type: AttributeType | AttributeType[];
 }
 
+/* A helper that squashes “string | string[]” into a single string for
+   the 1-choice <select>. If the back-end later supports multiple types
+   in the UI, switch to a multi-select or check-boxes instead. */
+const firstType = (t: AttributeType | AttributeType[]): AttributeType =>
+  Array.isArray(t) ? t[0] : t;
+
+/* ------------------------------------------------------------------ */
+/* Component                                                          */
+/* ------------------------------------------------------------------ */
 export default function UpdateProductAttributePage() {
-  const { attributeId } = useParams();
+  const { attributeId } = useParams<{ attributeId: string }>();
   const router = useRouter();
 
   /* ---------- form state ---------- */
@@ -35,12 +47,15 @@ export default function UpdateProductAttributePage() {
   useEffect(() => {
     (async () => {
       try {
-        const { attribute }: { attribute: ProductAttribute } =
-          await fetchFromAPI(`/dashboardadmin/stock/productattribute/${attributeId}`);
+        const { attribute } = await fetchFromAPI<{ attribute: ProductAttribute }>(
+          `/dashboardadmin/stock/productattribute/${attributeId}`
+        );
         setName(attribute.name);
-        setType(attribute.type);
+        setType(firstType(attribute.type));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load attribute.");
+        setError(
+          err instanceof Error ? err.message : "Failed to load attribute."
+        );
       } finally {
         setLoading(false);
       }
@@ -83,6 +98,9 @@ export default function UpdateProductAttributePage() {
     }
   };
 
+  /* ------------------------------------------------------------------ */
+  /* render                                                             */
+  /* ------------------------------------------------------------------ */
   if (loading) return <Overlay show spinnerSize={60} />;
 
   return (
@@ -94,8 +112,11 @@ export default function UpdateProductAttributePage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name */}
         <div>
-          <label className="block mb-1">Name*</label>
+          <label className="block mb-1" htmlFor="attr-name">
+            Name*
+          </label>
           <input
+            id="attr-name"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -105,8 +126,11 @@ export default function UpdateProductAttributePage() {
 
         {/* Type */}
         <div>
-          <label className="block mb-1">Type*</label>
+          <label className="block mb-1" htmlFor="attr-type">
+            Type*
+          </label>
           <select
+            id="attr-type"
             required
             value={type}
             onChange={(e) => setType(e.target.value as AttributeType)}

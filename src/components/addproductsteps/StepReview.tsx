@@ -59,27 +59,38 @@ export default function StepReview({
         {attrPayload.length === 0 ? (
           <p className="text-sm text-gray-500">No attributes selected.</p>
         ) : (
-          <ul className="list-disc pl-6 space-y-1">
-            {attrPayload.map((p) => {
-              const displayValue = Array.isArray(p.value)
-                ? p.value
-                    .map((item) =>
-                      typeof item === "string"
-                        ? item
-                        : "value" in item
-                        ? `${item.name}: ${item.value}`
-                        : `${item.name}: ${item.hex}`
-                    )
-                    .join(", ")
-                : p.value;
+          <ul className="space-y-2">
+  {attrPayload.map((p) => (
+    <li key={p.attributeSelected}>
+      <strong className="block mb-1">{p.attributeName}:</strong>
+      <div className="ml-4 space-y-1">
+        {Array.isArray(p.value) ? (
+          p.value.map((item, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <span>
+                {item.name}
+                {"value" in item && item.value ? `: ${item.value}` : ""}
+                {"hex" in item && item.hex ? `: ${item.hex}` : ""}
+              </span>
+              {"image" in item && item.image && (
+                <Image
+                  src={item.image}
+                  alt="Attribute image"
+                  width={32}
+                  height={32}
+                  className="rounded border object-cover"
+                />
+              )}
+            </div>
+          ))
+        ) : (
+          <span>{p.value}</span>
+        )}
+      </div>
+    </li>
+  ))}
+</ul>
 
-              return (
-                <li key={p.attributeSelected}>
-                  <strong>{p.attributeName}:</strong> {displayValue}
-                </li>
-              );
-            })}
-          </ul>
         )}
       </div>
 

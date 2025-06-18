@@ -1,11 +1,14 @@
 // src/components/addproductsteps/StepAttributesDetails.tsx
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import Dimension, { DimPair } from "@/components/productattribute/Dimension";
 import Color, { ColorPair } from "@/components/productattribute/Color";
 import OtherType, { OtherPair } from "@/components/productattribute/OtherType";
 
+/* ------------------------------------------------------------------ */
+/* Types                                                              */
+/* ------------------------------------------------------------------ */
 export type BaseType = "dimension" | "color" | "other type";
 
 export interface AttributeDef {
@@ -27,19 +30,25 @@ export interface ProductDetailPair {
 
 interface Props {
   defs: AttributeDef[];
-  initialAttrs?: AttributePayload[];             // existing on edit
-  initialDetails?: ProductDetailPair[];           // existing on edit
-  /** 
-   * Only start initializing once parent is “ready” (create: always true; 
-   * update: pass in `ready = !loading` from your page component) 
-   **/
+  initialAttrs?: AttributePayload[];
+  initialDetails?: ProductDetailPair[];
   ready?: boolean;
-  onChange: (attrs: AttributePayload[], productDetails: ProductDetailPair[]) => void;
+  onChange: (
+    attrs: AttributePayload[],
+    productDetails: ProductDetailPair[],
+    fileMap: Map<string, File>
+  ) => void;
 }
 
-const hasType = (a: AttributeDef, t: BaseType) =>
-  Array.isArray(a.type) ? a.type.includes(t) : a.type === t;
+/* ------------------------------------------------------------------ */
+/* Helpers                                                            */
+/* ------------------------------------------------------------------ */
+const hasType = (d: AttributeDef, t: BaseType) =>
+  Array.isArray(d.type) ? d.type.includes(t) : d.type === t;
 
+/* ------------------------------------------------------------------ */
+/* Component                                                          */
+/* ------------------------------------------------------------------ */
 export default function StepAttributesDetails({
   defs,
   initialAttrs = [],
@@ -47,7 +56,9 @@ export default function StepAttributesDetails({
   ready = true,
   onChange,
 }: Props) {
-  const initialized = useRef(false);
+  /* ---------- state ---------- */
+  const initialised = useRef(false);
+  const [fileMap, setFileMap] = useState<Map<string, File>>(new Map());
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [text, setText] = useState<Record<string, string>>({});
@@ -56,10 +67,9 @@ export default function StepAttributesDetails({
   const [others, setOthers] = useState<Record<string, OtherPair[]>>({});
   const [details, setDetails] = useState<ProductDetailPair[]>([]);
 
-  // ─── Initial hydration ───
+  /* ---------- one-time init ---------- */
   useEffect(() => {
-    if (!initialized.current && ready && defs.length) {
-      // 1) Build default blank state for every def
+    if (!initialised.current && ready && defs.length) {
       const txt: Record<string, string> = {};
       const dms: Record<string, DimPair[]> = {};
       const cls: Record<string, ColorPair[]> = {};
@@ -72,71 +82,127 @@ export default function StepAttributesDetails({
         if (hasType(def, "other type")) oth[def._id] = [{ name: "", value: "" }];
       });
 
-      // 2) If we're editing, override with the existing values
       if (initialAttrs.length) {
         setSelectedIds(initialAttrs.map((a) => a.attributeSelected));
         initialAttrs.forEach((a) => {
           const id = a.attributeSelected;
-          if (typeof a.value === "string") {
-            txt[id] = a.value;
-          } else {
+          if (typeof a.value === "string") txt[id] = a.value;
+          else {
             const def = defs.find((d) => d._id === id)!;
             if (hasType(def, "dimension")) dms[id] = a.value as DimPair[];
             else if (hasType(def, "color")) cls[id] = a.value as ColorPair[];
-            else if (hasType(def, "other type")) oth[id] = a.value as OtherPair[];
+            else if (hasType(def, "other type"))
+              oth[id] = a.value as OtherPair[];
           }
         });
       }
 
-      // 3) Set everything in one batch
       setText(txt);
       setDims(dms);
       setColors(cls);
       setOthers(oth);
       setDetails(initialDetails);
-      initialized.current = true;
+      initialised.current = true;
     }
   }, [ready, defs, initialAttrs, initialDetails]);
 
-  // ─── Notify parent on *any* change ───
+  /* ------------------------------------------------------------------ */
+  /* file-map helpers                                                   */
+  /* ------------------------------------------------------------------ */
+  const putFile = useCallback(
+    (field: string, file: File) =>
+      setFileMap((prev) => {
+        const map = new Map(prev);
+        map.set(field, file);
+        return map;
+      }),
+    []
+  );
+
+  const removeFilesForAttribute = useCallback((attrIdx: number) => {
+    setFileMap((prev) => {
+      const map = new Map<string, File>();
+      prev.forEach((file, key) => {
+        const m = key.match(/^attributeImages-(\d+)-/);
+        if (!m || Number(m[1]) !== attrIdx) map.set(key, file);
+      });
+      return map;
+    });
+  }, []);
+
+  const shiftFileKeys = useCallback((removedIdx: number) => {
+    setFileMap((prev) => {
+      const map = new Map<string, File>();
+      prev.forEach((file, key) => {
+        const m = key.match(/^attributeImages-(\d+)-(\d+)$/);
+        if (!m) return map.set(key, file);
+        const aIdx = Number(m[1]);
+        const vIdx = m[2];
+        if (aIdx === removedIdx) return;
+        if (aIdx > removedIdx) map.set(`attributeImages-${aIdx - 1}-${vIdx}`, file);
+        else map.set(key, file);
+      });
+      return map;
+    });
+  }, []);
+
+  /* ------------------------------------------------------------------ */
+  /* outbound serialisation                                             */
+  /* ------------------------------------------------------------------ */
   useEffect(() => {
     const payload: AttributePayload[] = selectedIds.map((id) => {
       const def = defs.find((d) => d._id === id)!;
-      if (hasType(def, "dimension")) {
+
+      if (hasType(def, "dimension"))
         return { attributeSelected: id, attributeName: def.name, value: dims[id] || [] };
-      }
-      if (hasType(def, "color")) {
+
+      if (hasType(def, "color"))
         return { attributeSelected: id, attributeName: def.name, value: colors[id] || [] };
-      }
-      if (hasType(def, "other type")) {
+
+      if (hasType(def, "other type"))
         return { attributeSelected: id, attributeName: def.name, value: others[id] || [] };
-      }
+
       return { attributeSelected: id, attributeName: def.name, value: text[id] || "" };
     });
-    onChange(payload, details);
-  }, [selectedIds, text, dims, colors, others, details, defs, onChange]);
 
-  // ─── UI handlers ───
-  const removeAttribute = (id: string) =>
-    setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+    onChange(payload, details, fileMap);
+  }, [selectedIds, text, dims, colors, others, details, fileMap, defs, onChange]);
+
+  /* ------------------------------------------------------------------ */
+  /* handlers                                                           */
+  /* ------------------------------------------------------------------ */
+  const removeAttribute = (id: string) => {
+    setSelectedIds((prev) => {
+      const idx = prev.indexOf(id);
+      if (idx === -1) return prev;
+      removeFilesForAttribute(idx);
+      shiftFileKeys(idx);
+      return prev.filter((sid) => sid !== id);
+    });
+  };
+
   const addDetail = () =>
     setDetails((prev) => [...prev, { name: "", description: "" }]);
+
   const removeDetail = (i: number) =>
     setDetails((prev) => prev.filter((_, idx) => idx !== i));
 
+  /* ------------------------------------------------------------------ */
+  /* render                                                             */
+  /* ------------------------------------------------------------------ */
   return (
     <div className="flex gap-8 w-full">
-      {/* Attributes */}
+      {/* ---------- Attributes ---------- */}
       <div className="flex flex-col gap-2 w-1/2 px-4">
         <legend className="text-2xl font-bold">Attributes</legend>
+
         <select
           className="w-full border px-2 py-1 rounded mb-4"
           defaultValue=""
           onChange={(e) => {
             const id = e.target.value;
-            if (id && !selectedIds.includes(id)) {
+            if (id && !selectedIds.includes(id))
               setSelectedIds((p) => [...p, id]);
-            }
             e.target.value = "";
           }}
         >
@@ -154,8 +220,10 @@ export default function StepAttributesDetails({
           {selectedIds.length === 0 && (
             <p className="text-sm text-gray-500">No attributes selected.</p>
           )}
-          {selectedIds.map((id) => {
+
+          {selectedIds.map((id, attrIdx) => {
             const def = defs.find((d) => d._id === id)!;
+
             return (
               <div key={id} className="border rounded p-4 space-y-2">
                 <div className="flex h-16 justify-between items-start">
@@ -172,21 +240,53 @@ export default function StepAttributesDetails({
                 {hasType(def, "dimension") && (
                   <Dimension
                     pairs={dims[id]}
+                    attributeIndex={attrIdx}
                     onChange={(list) => setDims((d) => ({ ...d, [id]: list }))}
+                    onFileSelect={(file, field) => putFile(field, file)} 
+                    onRowDelete={(field) =>
+                      setFileMap((prev) => {
+                        const m = new Map(prev);
+                        m.delete(field);
+                        return m;
+                      })
+                    }
                   />
                 )}
+
                 {hasType(def, "color") && (
                   <Color
                     colors={colors[id]}
+                    attributeIndex={attrIdx}
                     onChange={(list) => setColors((c) => ({ ...c, [id]: list }))}
+                    onFileSelect={(file, field) => putFile(field, file)} 
+                    onRowDelete={(field) =>
+                      setFileMap((prev) => {
+                        const map = new Map(prev);
+                        map.delete(field);
+                        return map;
+                      })
+                    }
                   />
                 )}
+
                 {hasType(def, "other type") && (
                   <OtherType
                     pairs={others[id]}
-                    onChange={(list) => setOthers((o) => ({ ...o, [id]: list }))}
+                    attributeIndex={attrIdx}
+                    onChange={(list) =>
+                      setOthers((o) => ({ ...o, [id]: list }))
+                    }
+                    onFileSelect={(file, field) => putFile(field, file)} 
+                    onRowDelete={(field) =>
+                      setFileMap((prev) => {
+                        const m = new Map(prev);
+                        m.delete(field);
+                        return m;
+                      })
+                    }
                   />
                 )}
+
                 {!hasType(def, "dimension") &&
                   !hasType(def, "color") &&
                   !hasType(def, "other type") && (
@@ -205,9 +305,10 @@ export default function StepAttributesDetails({
         </div>
       </div>
 
-      {/* Product Details */}
+      {/* ---------- Product details ---------- */}
       <div className="flex flex-col gap-2 w-1/2 px-4">
         <legend className="text-2xl font-bold">Product Details</legend>
+
         <div className="space-y-4">
           {details.map((d, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -241,6 +342,7 @@ export default function StepAttributesDetails({
             </div>
           ))}
         </div>
+
         <button
           type="button"
           onClick={addDetail}
@@ -250,5 +352,5 @@ export default function StepAttributesDetails({
         </button>
       </div>
     </div>
-);
+  );
 }

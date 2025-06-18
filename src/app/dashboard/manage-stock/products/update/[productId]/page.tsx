@@ -37,7 +37,25 @@ import {
   Vadmin,
 } from "@/constants/product-options";
 
-/* ───────── local types ───────── */
+/* ------------------------------------------------------------------ */
+/* Extra types                                                        */
+/* ------------------------------------------------------------------ */
+export interface AttributeRow {
+  name: string;
+  value?: string;
+  hex?: string;
+  image?: string;
+  imageId?: string;
+}
+
+type ServerAttr =
+  | { definition: string; value: AttributeRow[] }
+  | { definition: string; value: string }
+  | null;
+
+/* ------------------------------------------------------------------ */
+/* Local form types                                                   */
+/* ------------------------------------------------------------------ */
 interface ProductForm {
   name: string;
   info: string;
@@ -76,6 +94,38 @@ interface FetchedProduct {
   extraImagesUrl?: string[];
 }
 
+/* ------------------------------------------------------------------ */
+/* helper: keep rows that have at least a non-blank name              */
+/* ------------------------------------------------------------------ */
+function cleanAttributeValue(
+  value: string | AttributeRow[] | undefined
+): string | AttributeRow[] {
+  if (typeof value === "string") return value.trim();
+
+  if (Array.isArray(value)) {
+    const rows = value
+      .filter((row) => row.name && row.name.trim())
+      .map((row) => {
+        const clean: AttributeRow = { name: row.name.trim() };
+
+        if (row.value && row.value.trim()) clean.value = row.value.trim();
+        if (row.hex && row.hex.trim()) {
+          clean.hex = row.hex.trim();
+          if (!clean.value) clean.value = clean.hex;
+        }
+        if (row.image && row.image.trim()) clean.image = row.image.trim();
+        if (row.imageId && row.imageId.trim()) clean.imageId = row.imageId.trim();
+
+        return clean;
+      });
+
+    return rows;
+  }
+
+  return "";
+}
+
+/* ================================================================== */
 export default function UpdateProductPage() {
   const router = useRouter();
   const { productId } = useParams();
@@ -107,43 +157,33 @@ export default function UpdateProductPage() {
   };
   const [form, setForm] = useState<ProductForm>(blankForm);
 
-  // existing image URLs
-  const [existingMainImageUrl, setExistingMainImageUrl] = useState<
-    string | null
-  >(null);
-  const [existingExtraImagesUrls, setExistingExtraImagesUrls] = useState<
-    string[]
-  >([]);
+  const [existingMainImageUrl, setExistingMainImageUrl] = useState<string | null>(null);
+  const [existingExtraImagesUrls, setExistingExtraImagesUrls] = useState<string[]>([]);
 
-  // newly selected files
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [extraImages, setExtraImages] = useState<File[]>([]);
 
-  // attribute definitions
   const [defs, setDefs] = useState<AttributeDef[]>([]);
-
-  // attributes & details payloads
   const [attrPayload, setAttrPayload] = useState<AttributePayload[]>([]);
   const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
+  const [attributeFiles, setAttributeFiles] = useState<Map<string, File>>(new Map());
 
-  /* ───────── fetch attribute definitions ───────── */
+  /* ---------- fetch attribute definitions ---------- */
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
-      "/dashboardadmin/stock/productattribute",
+      "/dashboardadmin/stock/productattribute"
     )
       .then(({ productAttributes }) => setDefs(productAttributes))
       .catch((err) => console.error("Failed to load attribute defs:", err));
   }, []);
 
-  /* ───────── fetch product data on mount ───────── */
+  /* ---------- fetch product data ---------- */
   useEffect(() => {
     (async () => {
       try {
         const data = await fetchFromAPI<FetchedProduct>(
-          `/dashboardadmin/stock/products/${productId}`,
+          `/dashboardadmin/stock/products/${productId}`
         );
-
-        // populate form
         setForm({
           name: data.name,
           info: data.info,
@@ -160,47 +200,42 @@ export default function UpdateProductPage() {
           statuspage: data.statuspage,
           vadmin: data.vadmin,
         });
-
-        // attrs & details
         setAttrPayload(data.attributes || []);
         setDetailsPayload(data.productDetails || []);
-
-        // images
         setExistingMainImageUrl(data.mainImageUrl ?? null);
         setExistingExtraImagesUrls(data.extraImagesUrl ?? []);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load product.",
-        );
+        setError(err instanceof Error ? err.message : "Failed to load product.");
       } finally {
         setLoading(false);
       }
     })();
   }, [productId]);
 
-  /* ───────── generic form handler ───────── */
+  /* ---------- handlers ---------- */
   const onFixed = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
-  };
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
-  /* ───────── sync attrs & details ───────── */
   const handleAttrsAndDetails = useCallback(
-    (attrs: AttributePayload[], details: ProductDetailPair[]) => {
+    (
+      attrs: AttributePayload[],
+      details: ProductDetailPair[],
+      fileMap: Map<string, File>
+    ) => {
       setAttrPayload(attrs);
       setDetailsPayload(details);
+      setAttributeFiles(fileMap);
     },
-    [],
+    []
   );
 
-  /* ───────── image handlers ───────── */
   const handleMainChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setMainImage(file);
     if (file) setExistingMainImageUrl(null);
   };
+
   const clearMain = () => {
     setMainImage(null);
     setExistingMainImageUrl(null);
@@ -211,6 +246,7 @@ export default function UpdateProductPage() {
     const files = e.target.files ? Array.from(e.target.files) : [];
     setExtraImages((prev) => [...prev, ...files]);
   };
+
   const removeExtra = (idx: number) => {
     if (idx < existingExtraImagesUrls.length) {
       setExistingExtraImagesUrls((prev) => prev.filter((_, i) => i !== idx));
@@ -220,32 +256,28 @@ export default function UpdateProductPage() {
     }
   };
 
-  /* ───────── navigation ───────── */
+  /* ---------- stepper nav ---------- */
   const next = () => {
     setError(null);
+
     if (step === 3) {
-      const invalid = attrPayload.some((a) => {
-        if (typeof a.value === "string") return !a.value.trim();
-        return Array.isArray(a.value)
-          ? a.value.some((pair) => {
-              const emptyName = !pair.name?.trim();
-              if ("value" in pair)
-                return emptyName || !String(pair.value).trim();
-              if ("hex" in pair) return emptyName || !String(pair.hex).trim();
-              return true;
-            })
-          : true;
-      });
+      /* relaxed validation: each row must have a name */
+      const invalid = attrPayload.some((a) =>
+        Array.isArray(a.value) ? a.value.some((row) => !row.name?.trim()) : false
+      );
+
       if (invalid) {
-        setError("Please complete all attribute entries before proceeding.");
+        setError("Each attribute row needs a name (other fields are optional).");
         return;
       }
     }
+
     setStep((s) => (s < 4 ? ((s + 1) as 2 | 3 | 4) : s));
   };
+
   const back = () => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
 
-  /* ───────── submit ───────── */
+  /* ---------- submit ---------- */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -253,23 +285,39 @@ export default function UpdateProductPage() {
 
     try {
       const fd = new FormData();
+
+      /* scalar fields */
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
 
-      if (mainImage) {
-        fd.append("mainImage", mainImage);
-      } else if (existingMainImageUrl === null) {
-        fd.append("removeMain", "1");
-      }
+      /* images */
+      if (mainImage) fd.append("mainImage", mainImage);
+      else if (existingMainImageUrl === null) fd.append("removeMain", "1");
 
       extraImages.forEach((f) => fd.append("extraImages", f));
       fd.append("remainingExtraUrls", JSON.stringify(existingExtraImagesUrls));
 
-      const serverAttrs = attrPayload.map(({ attributeSelected, value }) => ({
-        definition: attributeSelected,
-        value,
-      }));
+      /* attributes */
+      const serverAttrs = attrPayload
+        .map<ServerAttr>(({ attributeSelected, value }) => {
+          const cleaned = cleanAttributeValue(value);
+          return cleaned && Array.isArray(cleaned) && cleaned.length > 0
+            ? { definition: attributeSelected, value: cleaned }
+            : typeof cleaned === "string" && cleaned.trim()
+            ? { definition: attributeSelected, value: cleaned }
+            : null;
+        })
+        .filter(
+          (entry): entry is Exclude<ServerAttr, null> => entry !== null
+        );
+
       fd.append("attributes", JSON.stringify(serverAttrs));
       fd.append("productDetails", JSON.stringify(detailsPayload));
+
+      /* swatch images */
+      attributeFiles.forEach((origFile, key) => {
+        const wrapped = new File([origFile], key, { type: origFile.type });
+        fd.append("attributeImages", wrapped, key);
+      });
 
       await fetchFromAPI(`/dashboardadmin/stock/products/update/${productId}`, {
         method: "PUT",
@@ -277,15 +325,17 @@ export default function UpdateProductPage() {
       });
 
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard/manage-stock/products"), 2000);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update product.",
+      setTimeout(
+        () => router.push("/dashboard/manage-stock/products"),
+        2000
       );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update product.");
       setSaving(false);
     }
   };
 
+  /* ---------- render ---------- */
   if (loading) return <Overlay show spinnerSize={60} />;
 
   return (
@@ -363,7 +413,7 @@ export default function UpdateProductPage() {
           submittingLabel="Updating..."
         />
 
-        {/* hidden file inputs */}
+        {/* hidden inputs */}
         <input
           ref={mainRef}
           type="file"
