@@ -196,23 +196,23 @@ export default function BrandsClientPage() {
                     key={b._id}
                     className={i % 2 ? "bg-gray-100" : "bg-white"}
                   >
-                    <td className="py-2 text-center">{b.reference}</td>
-                    <td className="py-2 text-center font-semibold">
+                    <td className="w-1/9 py-2 text-center">{b.reference}</td>
+                    <td className="w-1/9 py-2 text-center font-semibold">
                       {b.name}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className=" w-1/9 not-[]:py-2 text-center">
                       {b.createdBy?.username || "—"}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="w-1/9 py-2 text-center">
                       {new Date(b.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className=" w-1/9 py-2 text-center">
                       {b.updatedBy?.username || "—"}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="w-1/9 py-2 text-center">
                       {new Date(b.updatedAt).toLocaleDateString()}
                     </td>
-                    <td className="py-2">
+                    <td className="w-2/9 py-2">
                       <div className="flex justify-center items-center gap-2">
                         <select
                           value={b.vadmin}

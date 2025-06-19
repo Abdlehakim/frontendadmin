@@ -16,6 +16,7 @@ interface ParentCategory {
   _id: string;
   name: string;
 }
+
 interface SubCategory {
   _id: string;
   reference: string;
@@ -33,7 +34,9 @@ const statusOptions = ["approve", "not-approve"] as const;
 export default function SubCategoriesClientPage() {
   /* data */
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
-  const [parentCategories, setParentCategories] = useState<ParentCategory[]>([]);
+  const [parentCategories, setParentCategories] = useState<ParentCategory[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
 
   /* ui */
@@ -45,16 +48,15 @@ export default function SubCategoriesClientPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
   const [deleteName, setDeleteName] = useState("");
-  const [deleteLoading, setDeleteLoading] = useState(false); // NEW
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   /* fetch parent categories */
   useEffect(() => {
     (async () => {
       try {
-        const { categories } =
-          await fetchFromAPI<{ categories: ParentCategory[] }>(
-            "/dashboardadmin/stock/categories",
-          );
+        const { categories } = await fetchFromAPI<{
+          categories: ParentCategory[];
+        }>("/dashboardadmin/stock/categories");
         setParentCategories(categories);
       } catch (err) {
         console.error("Failed to load parent categories:", err);
@@ -70,8 +72,9 @@ export default function SubCategoriesClientPage() {
         const url = filterCat
           ? `/dashboardadmin/stock/subcategories?categorie=${filterCat}`
           : "/dashboardadmin/stock/subcategories";
-        const { subCategories } =
-          await fetchFromAPI<{ subCategories: SubCategory[] }>(url);
+        const { subCategories } = await fetchFromAPI<{
+          subCategories: SubCategory[];
+        }>(url);
         setSubCategories(subCategories);
       } catch (err) {
         console.error("Failed to load sub-categories:", err);
@@ -85,15 +88,15 @@ export default function SubCategoriesClientPage() {
   const filtered = useMemo(
     () =>
       subCategories.filter((sc) =>
-        sc.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        sc.name.toLowerCase().includes(searchTerm.toLowerCase())
       ),
-    [subCategories, searchTerm],
+    [subCategories, searchTerm]
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const displayed = useMemo(
     () =>
       filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filtered, currentPage],
+    [filtered, currentPage]
   );
 
   /* server actions */
@@ -106,11 +109,11 @@ export default function SubCategoriesClientPage() {
 
   const updateStatus = async (
     id: string,
-    newStatus: (typeof statusOptions)[number],
+    newStatus: (typeof statusOptions)[number]
   ) => {
     const old = subCategories.find((sc) => sc._id === id)?.vadmin;
     setSubCategories((prev) =>
-      prev.map((sc) => (sc._id === id ? { ...sc, vadmin: newStatus } : sc)),
+      prev.map((sc) => (sc._id === id ? { ...sc, vadmin: newStatus } : sc))
     );
     try {
       await fetchFromAPI(`/dashboardadmin/stock/subcategories/update/${id}`, {
@@ -119,9 +122,9 @@ export default function SubCategoriesClientPage() {
         body: JSON.stringify({ vadmin: newStatus }),
       });
     } catch {
-      // rollback
+      // rollback on error
       setSubCategories((prev) =>
-        prev.map((sc) => (sc._id === id ? { ...sc, vadmin: old! } : sc)),
+        prev.map((sc) => (sc._id === id ? { ...sc, vadmin: old! } : sc))
       );
       alert("Failed to update status");
     }
@@ -135,7 +138,6 @@ export default function SubCategoriesClientPage() {
   };
   const closeDelete = () => setIsDeleteOpen(false);
 
-  // NOW complies with required signature
   const confirmDelete = async (id: string) => {
     setDeleteLoading(true);
     try {
@@ -162,27 +164,6 @@ export default function SubCategoriesClientPage() {
 
       {/* Filters */}
       <div className="flex justify-between items-end gap-6 h-[70px]">
-        {/* Parent category */}
-        <div className="flex items-center gap-2">
-          <label className="font-medium">Parent Category:</label>
-          <select
-            value={filterCat}
-            onChange={(e) => {
-              setFilterCat(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border border-gray-300 rounded px-2 py-1"
-          >
-            <option value="">All</option>
-            {parentCategories.map((pc) => (
-              <option key={pc._id} value={pc._id}>
-                {pc.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Search */}
         <div className="flex items-center gap-2">
           <label className="font-medium">Search:</label>
           <input
@@ -195,36 +176,53 @@ export default function SubCategoriesClientPage() {
             }}
           />
         </div>
+        <div className="flex items-center gap-2">
+          <label className="font-medium">Category:</label>
+          <select
+            value={filterCat}
+            onChange={(e) => {
+              setFilterCat(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="border border-gray-300 rounded px-4 py-1"
+          >
+            <option value="">All</option>
+            {parentCategories.map((pc) => (
+              <option key={pc._id} value={pc._id}>
+                {pc.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        
       </div>
 
       {/* Table */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* static header */}
         <table className="table-fixed w-full">
-          <thead className="bg-primary text-white relative z-10">
+          <thead className="bg-primary text-white">
             <tr>
-              <th className="w-1/9 py-2 text-sm font-medium text-center">Ref</th>
-              <th className="w-1/9 py-2 text-sm font-medium text-center border-x-4">
-                Name
-              </th>
-              <th className="w-1/9 py-2 text-sm font-medium text-center">
+              <th className="py-2 text-center border-x-4 w-1/8">Reference</th>
+              <th className="py-2 text-center border-x-4 w-1/8">Name</th>
+              <th className="py-2 text-center border-x-4 w-1/8">
                 Created By
               </th>
-              <th className="w-1/9 py-2 text-sm font-medium text-center border-x-4">
+              <th className="py-2 text-center border-x-4 w-1/8">
                 Created At
               </th>
-              <th className="w-1/9 py-2 text-sm font-medium text-center">
+              <th className="py-2 text-center border-x-4 w-1/8">
                 Updated By
               </th>
-              <th className="w-1/9 py-2 text-sm font-medium text-center border-x-4">
+              <th className="py-2 text-center border-x-4 w-1/8">
                 Updated At
               </th>
-              <th className="w-2/9 py-2 text-sm font-medium text-center">
-                Action
-              </th>
+              <th className="py-2 text-center border-x-4 w-2/8">Action</th>
             </tr>
           </thead>
         </table>
 
+        {/* scrollable body */}
         <div className="relative flex-1 overflow-auto">
           <table className="table-fixed w-full">
             {displayed.length === 0 && !loading ? (
@@ -242,28 +240,30 @@ export default function SubCategoriesClientPage() {
                     key={sc._id}
                     className={i % 2 ? "bg-gray-100" : "bg-white"}
                   >
-                    <td className="py-2 text-center">{sc.reference}</td>
-                    <td className="py-2 text-center font-semibold">{sc.name}</td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 w-1/8 text-center">{sc.reference}</td>
+                    <td className="py-2 w-1/8 text-center font-semibold">
+                      {sc.name}
+                    </td>
+                    <td className="py-2 w-1/8 text-center">
                       {sc.createdBy?.username || "—"}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 w-1/8 text-center">
                       {new Date(sc.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 w-1/8 text-center">
                       {sc.updatedBy?.username || "—"}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 w-1/8 text-center">
                       {new Date(sc.updatedAt).toLocaleDateString()}
                     </td>
-                    <td className="py-2">
+                    <td className="py-2 w-2/8">
                       <div className="flex justify-center items-center gap-2">
                         <select
                           value={sc.vadmin}
                           onChange={(e) =>
                             updateStatus(
                               sc._id,
-                              e.target.value as (typeof statusOptions)[number],
+                              e.target.value as (typeof statusOptions)[number]
                             )
                           }
                           className="ButtonRectangle"
@@ -274,6 +274,7 @@ export default function SubCategoriesClientPage() {
                             </option>
                           ))}
                         </select>
+
                         <Link
                           href={`/dashboard/manage-stock/sub-categories/voir/${sc._id}`}
                         >
@@ -281,6 +282,7 @@ export default function SubCategoriesClientPage() {
                             <FaRegEye size={14} />
                           </button>
                         </Link>
+
                         <Link
                           href={`/dashboard/manage-stock/sub-categories/update/${sc._id}`}
                         >
@@ -288,6 +290,7 @@ export default function SubCategoriesClientPage() {
                             <FaRegEdit size={14} />
                           </button>
                         </Link>
+
                         <button
                           onClick={() => openDelete(sc._id, sc.name)}
                           className="ButtonSquare"
@@ -327,7 +330,7 @@ export default function SubCategoriesClientPage() {
           name={deleteName}
           isLoading={deleteLoading}
           handleClosePopup={closeDelete}
-          Delete={confirmDelete}   /* signature ok */
+          Delete={confirmDelete}
         />
       )}
     </div>

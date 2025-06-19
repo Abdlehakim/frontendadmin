@@ -1,4 +1,6 @@
+// ───────────────────────────────────────────────────────────────
 // src/app/manage-stock/categories/page.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -9,6 +11,7 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 
+/* ───────── types ───────── */
 interface Category {
   _id: string;
   reference: string;
@@ -24,18 +27,21 @@ const PAGE_SIZE = 12;
 const statusOptions = ["approve", "not-approve"] as const;
 
 export default function CategoriesClientPage() {
+  /* data */
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+
+  /* ui */
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Popup/delete state
+  /* delete-popup */
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
   const [deleteName, setDeleteName] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Fetch all categories on mount
+  /* fetch once */
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -43,16 +49,17 @@ export default function CategoriesClientPage() {
         const { categories } = await fetchFromAPI<{ categories: Category[] }>(
           "/dashboardadmin/stock/categories"
         );
-        setCategories(categories);
+        setCategories(categories ?? []);
       } catch (err) {
         console.error("Failed to load categories:", err);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  // Filter + paginate
+  /* filter + paging */
   const filtered = useMemo(
     () =>
       categories.filter((c) =>
@@ -67,7 +74,7 @@ export default function CategoriesClientPage() {
     [filtered, currentPage]
   );
 
-  // Delete action
+  /* server delete */
   const deleteCategory = async (id: string) => {
     await fetchFromAPI(`/dashboardadmin/stock/categories/delete/${id}`, {
       method: "DELETE",
@@ -75,20 +82,26 @@ export default function CategoriesClientPage() {
     setCategories((prev) => prev.filter((c) => c._id !== id));
   };
 
-  // Confirm delete from popup
+  /* popup helpers */
+  const openDelete = (id: string, name: string) => {
+    setDeleteId(id);
+    setDeleteName(name);
+    setIsDeleteOpen(true);
+  };
+  const closeDelete = () => setIsDeleteOpen(false);
+
   const confirmDelete = async (id: string) => {
     setIsDeleting(true);
     try {
       await deleteCategory(id);
-    } catch (err) {
-      console.error("Delete failed:", err);
-    } finally {
-      setIsDeleting(false);
-      setIsDeleteOpen(false);
+    } catch {
+      alert("Deletion failed.");
     }
+    setIsDeleting(false);
+    closeDelete();
   };
 
-  // Status update action
+  /* status update */
   const updateStatus = async (
     id: string,
     newStatus: (typeof statusOptions)[number]
@@ -103,19 +116,11 @@ export default function CategoriesClientPage() {
         body: JSON.stringify({ vadmin: newStatus }),
       });
     } catch {
-      // rollback on failure
-      setCategories((prev) => [...prev]);
       alert("Failed to update status");
     }
   };
 
-  // Open delete confirmation
-  const openDelete = (id: string, name: string) => {
-    setDeleteId(id);
-    setDeleteName(name);
-    setIsDeleteOpen(true);
-  };
-
+  /* ───────── render ───────── */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       {/* Header */}
@@ -128,49 +133,35 @@ export default function CategoriesClientPage() {
         </Link>
       </div>
 
-      {/* Search filter */}
+      {/* Search */}
       <div className="flex justify-between items-end gap-6 h-[70px]">
         <div className="flex items-center gap-2">
           <label className="font-medium">Search:</label>
           <input
+            className="border border-gray-300 rounded px-2 py-1"
+            placeholder="Name"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="border border-gray-300 rounded px-2 py-1"
-            placeholder="Name"
           />
         </div>
       </div>
 
-      {/* Table + spinner */}
+      {/* Table */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Table header */}
+        {/* static header */}
         <table className="table-fixed w-full">
-          <thead className="bg-primary text-white relative z-10">
+          <thead className="bg-primary text-white">
             <tr>
-              <th className="w-1/8 py-2 text-sm font-medium text-center border-x-4">
-                Ref
-              </th>
-              <th className="w-1/8 py-2 text-sm font-medium text-center border-x-4">
-                Name
-              </th>
-              <th className="w-1/8 py-2 text-sm font-medium text-center border-x-4">
-                created At
-              </th>
-              <th className="w-1/8 py-2 text-sm font-medium text-center border-x-4">
-                created By
-              </th>
-              <th className="w-1/8 py-2 text-sm font-medium text-center border-x-4">
-                update At
-              </th>
-              <th className="w-1/8 py-2 text-sm font-medium text-center border-x-4">
-                updated By
-              </th>
-              <th className="w-2/8 py-2 text-sm font-medium text-center border-x-4">
-                Action
-              </th>
+              <th className="py-2 text-center border-x-4 w-1/8">Reference</th>
+              <th className="py-2 text-center border-x-4 w-1/8">Name</th>
+              <th className="py-2 text-center border-x-4 w-1/8">Created At</th>
+              <th className="py-2 text-center border-x-4 w-1/8">Created By</th>
+              <th className="py-2 text-center border-x-4 w-1/8">Updated At</th>
+              <th className="py-2 text-center border-x-4 w-1/8">Updated By</th>
+              <th className="py-2 text-center border-x-4 w-2/8">Action</th>
             </tr>
           </thead>
         </table>
@@ -193,20 +184,18 @@ export default function CategoriesClientPage() {
                     key={c._id}
                     className={i % 2 ? "bg-gray-100" : "bg-white"}
                   >
-                    <td className="py-2 text-center">{c.reference}</td>
-                    <td className="py-2 text-center font-semibold">
-                      {c.name}
-                    </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 w-1/8 text-center">{c.reference}</td>
+                    <td className="py-2 w-1/8 text-center font-semibold">{c.name}</td>
+                    <td className="py-2 w-1/8 text-center">
                       {new Date(c.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 w-1/8 text-center">
                       {c.createdBy?.username ?? "—"}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 w-1/8 text-center">
                       {new Date(c.updatedAt).toLocaleDateString()}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 w-1/8 text-center">
                       {c.updatedBy?.username ?? "—"}
                     </td>
                     <td className="py-2 w-2/8">
@@ -227,16 +216,23 @@ export default function CategoriesClientPage() {
                             </option>
                           ))}
                         </select>
-                        <Link href={`/dashboard/manage-stock/categories/voir/${c._id}`}>
+
+                        <Link
+                          href={`/dashboard/manage-stock/categories/voir/${c._id}`}
+                        >
                           <button className="ButtonSquare">
                             <FaRegEye size={14} />
                           </button>
                         </Link>
-                        <Link href={`/dashboard/manage-stock/categories/update/${c._id}`}>
+
+                        <Link
+                          href={`/dashboard/manage-stock/categories/update/${c._id}`}
+                        >
                           <button className="ButtonSquare">
                             <FaRegEdit size={14} />
                           </button>
                         </Link>
+
                         <button
                           onClick={() => openDelete(c._id, c.name)}
                           className="ButtonSquare"
@@ -251,7 +247,7 @@ export default function CategoriesClientPage() {
             )}
           </table>
 
-          {/* loading overlay */}
+          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -260,7 +256,7 @@ export default function CategoriesClientPage() {
         </div>
       </div>
 
-      {/* pagination */}
+      {/* Pagination */}
       <div className="flex justify-center mt-4">
         <PaginationAdmin
           currentPage={currentPage}
@@ -269,14 +265,14 @@ export default function CategoriesClientPage() {
         />
       </div>
 
-      {/* Delete popup */}
+      {/* Delete Popup */}
       {isDeleteOpen && (
         <Popup
           id={deleteId}
           name={deleteName}
-          handleClosePopup={() => setIsDeleteOpen(false)}
-          Delete={confirmDelete}
           isLoading={isDeleting}
+          handleClosePopup={closeDelete}
+          Delete={confirmDelete}
         />
       )}
     </div>
