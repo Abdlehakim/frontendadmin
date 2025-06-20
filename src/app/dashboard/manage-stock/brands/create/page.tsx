@@ -171,7 +171,7 @@ export default function CreateBrandPage() {
           />
         </div>
 
-        <div className="flex max-lg:flex-col w-full gap-4">
+        <div className="flex max-lg:flex-col w-160 gap-4 ">
           {/* Logo Upload */}
           <div
             className="relative border-2 lg:w-1/2 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"

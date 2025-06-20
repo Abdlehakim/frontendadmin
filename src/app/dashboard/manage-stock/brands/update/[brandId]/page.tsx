@@ -1,50 +1,69 @@
-/// brands/update/[brandId]/page.tsx
-
+// src/app/manage-stock/brands/update/[brandId]/page.tsx
 
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  ChangeEvent,
+  FormEvent,
+} from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { MdArrowForwardIos, MdDelete } from "react-icons/md";
-import { FaSpinner } from "react-icons/fa6";
-import { fetchFromAPI } from "@/lib/fetchFromAPI";
+import { PiImage } from "react-icons/pi";
+import Image from "next/image";
 import Overlay from "@/components/Overlay";
 import ErrorPopup from "@/components/Popup/ErrorPopup";
+import { fetchFromAPI } from "@/lib/fetchFromAPI";
+
+interface BrandData {
+  name: string;
+  place: string;
+  description?: string;
+  logoUrl?: string;
+  imageUrl?: string;
+}
 
 export default function UpdateBrandPage() {
   const router = useRouter();
-  const params = useParams();
-  const brandId = String(params.brandId);
-  const logoInput = useRef<HTMLInputElement>(null);
-  const imageInput = useRef<HTMLInputElement>(null);
+  const { brandId } = useParams();
+
+  const logoInput = useRef<HTMLInputElement | null>(null);
+  const imageInput = useRef<HTMLInputElement | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [form, setForm] = useState<{
+    name: string;
+    place: string;
+    description: string;
+  }>({ name: "", place: "", description: "" });
+
   const [initialLogoUrl, setInitialLogoUrl] = useState<string>("");
   const [initialImageUrl, setInitialImageUrl] = useState<string>("");
 
-  const [form, setForm] = useState({ name: "", place: "" });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const b = await fetchFromAPI<{
-          name: string;
-          place: string;
-          logoUrl?: string;
-          imageUrl?: string;
-        }>(`/dashboardadmin/stock/brands/${brandId}`);
-
-        setForm({ name: b.name, place: b.place });
-        if (b.logoUrl)  setInitialLogoUrl(b.logoUrl);
-        if (b.imageUrl) setInitialImageUrl(b.imageUrl);
-      } catch (err) {
+        const data = await fetchFromAPI<BrandData>(
+          `/dashboardadmin/stock/brands/${brandId}`
+        );
+        setForm({
+          name: data.name,
+          place: data.place,
+          description: data.description || "",
+        });
+        if (data.logoUrl) setInitialLogoUrl(data.logoUrl);
+        if (data.imageUrl) setInitialImageUrl(data.imageUrl);
+      } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load brand.");
       } finally {
         setLoading(false);
@@ -53,35 +72,51 @@ export default function UpdateBrandPage() {
     load();
   }, [brandId]);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
-  const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setLogoFile(e.target.files?.[0] ?? null);
-  };
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setImageFile(e.target.files?.[0] ?? null);
-  };
-  const clearLogo = () => {
-    setLogoFile(null);
-    setInitialLogoUrl("");
-    if (logoInput.current) logoInput.current.value = "";
-  };
-  const clearImage = () => {
-    setImageFile(null);
-    setInitialImageUrl("");
-    if (imageInput.current) imageInput.current.value = "";
-  };
+
+  const handleFileChange =
+    (
+      setter: React.Dispatch<React.SetStateAction<File | null>>,
+      inputRef: React.RefObject<HTMLInputElement | null>
+    ) =>
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0] ?? null;
+      setter(file);
+      if (!file && inputRef.current) {
+        inputRef.current.value = "";
+      }
+    };
+
+  const clearFile =
+    (
+      setter: React.Dispatch<React.SetStateAction<File | null>>,
+      inputRef: React.RefObject<HTMLInputElement | null>,
+      clearUrl: () => void
+    ) =>
+    () => {
+      setter(null);
+      clearUrl();
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
+    };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setError(null);
+
     try {
       const fd = new FormData();
       fd.append("name", form.name.trim());
       fd.append("place", form.place.trim());
-      if (logoFile)  fd.append("logo", logoFile);
+      if (form.description) fd.append("description", form.description.trim());
+      if (logoFile) fd.append("logo", logoFile);
       if (imageFile) fd.append("image", imageFile);
 
       await fetchFromAPI<{ message: string }>(
@@ -90,7 +125,7 @@ export default function UpdateBrandPage() {
       );
 
       setShowSuccess(true);
-      setTimeout(() => router.push("/dashboard/manage-stock/brands"), 2000);
+      setTimeout(() => router.push("/dashboard/manage-stock/brands"), 1500);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to update brand.");
       setSubmitting(false);
@@ -110,106 +145,156 @@ export default function UpdateBrandPage() {
           >
             All Brands
           </Link>
-          <MdArrowForwardIos className="text-gray-400" />
+          <MdArrowForwardIos className="text-gray-400" size={14} />
           <span className="text-gray-700 font-medium">Update Brand</span>
         </nav>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-        {/* Name & Place */}
-        <div className="grid grid-cols-3 gap-6">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">Name*</span>
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleInputChange}
-              required
-              className="border border-gray-300 bg-inputcolor rounded px-3 py-2"
-            />
+        {/* Name */}
+        <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
+          <label htmlFor="name" className="text-sm font-medium">
+            Name*
           </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">Place*</span>
-            <input
-              name="place"
-              value={form.place}
-              onChange={handleInputChange}
-              required
-              className="border border-gray-300 bg-inputcolor rounded px-3 py-2"
-            />
-          </label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            value={form.name}
+            onChange={handleInputChange}
+            required
+            className="border-2 border-gray-300 rounded px-3 py-2"
+          />
         </div>
 
-        {/* Logo Upload */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium">Logo</span>
+        {/* Place */}
+        <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
+          <label htmlFor="place" className="text-sm font-medium">
+            Place*
+          </label>
           <input
-            ref={logoInput}
-            type="file"
-            accept="image/*"
-            onChange={handleLogoChange}
-            className="hidden"
+            id="place"
+            name="place"
+            type="text"
+            value={form.place}
+            onChange={handleInputChange}
+            required
+            className="border-2 border-gray-300 rounded px-3 py-2"
           />
-          <button
-            type="button"
+        </div>
+
+        {/* Description */}
+        <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
+          <label htmlFor="description" className="text-sm font-medium">
+            Description
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            value={form.description}
+            onChange={handleInputChange}
+            rows={4}
+            className="border-2 border-gray-300 rounded px-3 py-2"
+          />
+        </div>
+
+        {/* Logo & Image Uploads */}
+        <div className="flex max-lg:flex-col w-160 gap-4">
+          {/* Logo */}
+          <div
+            className="relative border-2 lg:w-1/2 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"
             onClick={() => logoInput.current?.click()}
-            disabled={submitting}
-            className="px-6 py-2 bg-tertiary text-white rounded"
           >
-            Choose Logo
-          </button>
-          {(logoFile || initialLogoUrl) && (
-            <div className="flex items-center gap-2">
-              <span className="truncate max-w-xs">
-                {logoFile
-                  ? logoFile.name
-                  : initialLogoUrl.split("/").pop()}
-              </span>
-              <button
-                type="button"
-                onClick={clearLogo}
-                className="text-red-600 hover:text-red-800"
-              >
-                <MdDelete size={18} />
-              </button>
+            <div className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+              <PiImage size={24} />
             </div>
-          )}
-        </div>
+            <input
+              ref={logoInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange(setLogoFile, logoInput)}
+            />
+            {(logoFile || initialLogoUrl) ? (
+              <div className="relative w-full h-full rounded overflow-hidden">
+                <Image
+                  src={
+                    logoFile
+                      ? URL.createObjectURL(logoFile)
+                      : initialLogoUrl
+                  }
+                  alt="Logo Preview"
+                  fill
+                  className="object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={clearFile(
+                    setLogoFile,
+                    logoInput,
+                    () => setInitialLogoUrl("")
+                  )}
+                  className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
+                >
+                  <MdDelete size={16} className="text-red-600" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                Click to upload
+                <br />
+                Logo
+              </div>
+            )}
+          </div>
 
-        {/* Image Upload */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium">Image</span>
-          <input
-            ref={imageInput}
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="hidden"
-          />
-          <button
-            type="button"
+          {/* Image */}
+          <div
+            className="relative border-2 lg:w-1/2 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"
             onClick={() => imageInput.current?.click()}
-            disabled={submitting}
-            className="px-6 py-2 bg-tertiary text-white rounded"
           >
-            Choose Image
-          </button>
-          {(imageFile || initialImageUrl) && (
-            <div className="flex items-center gap-2">
-              <span className="truncate max-w-xs">
-                {imageFile
-                  ? imageFile.name
-                  : initialImageUrl.split("/").pop()}
-              </span>
-              <button
-                type="button"
-                onClick={clearImage}
-                className="text-red-600 hover:text-red-800"
-              >
-                <MdDelete size={18} />
-              </button>
+            <div className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+              <PiImage size={24} />
             </div>
-          )}
+            <input
+              ref={imageInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange(setImageFile, imageInput)}
+            />
+            {(imageFile || initialImageUrl) ? (
+              <div className="relative w-full h-full rounded overflow-hidden">
+                <Image
+                  src={
+                    imageFile
+                      ? URL.createObjectURL(imageFile)
+                      : initialImageUrl
+                  }
+                  alt="Image Preview"
+                  fill
+                  className="object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={clearFile(
+                    setImageFile,
+                    imageInput,
+                    () => setInitialImageUrl("")
+                  )}
+                  className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
+                >
+                  <MdDelete size={16} className="text-red-600" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                Click to upload
+                <br />
+                Image
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Actions */}
@@ -217,6 +302,7 @@ export default function UpdateBrandPage() {
           <Link href="/dashboard/manage-stock/brands">
             <button
               type="button"
+              disabled={submitting}
               className="px-6 py-2 bg-quaternary text-white rounded"
             >
               Cancel
@@ -227,18 +313,16 @@ export default function UpdateBrandPage() {
             disabled={submitting}
             className="px-6 py-2 bg-tertiary text-white rounded"
           >
-            {submitting ? <FaSpinner className="animate-spin" /> : "Update Brand"}
+            {submitting ? "Updating..." : "Update Brand"}
           </button>
         </div>
       </form>
 
-      {/* Overlays */}
+      {/* Overlay & Error */}
       <Overlay
         show={submitting || showSuccess}
         message={showSuccess ? "Brand updated successfully" : undefined}
       />
-
-      {/* Error */}
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
   );
