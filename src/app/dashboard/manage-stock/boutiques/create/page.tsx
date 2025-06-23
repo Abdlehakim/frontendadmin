@@ -1,3 +1,4 @@
+// src/app/dashboard/manage-stock/boutiques/create/page.tsx
 "use client";
 
 import React, {
@@ -40,7 +41,7 @@ export type TextFieldKey =
   | "localisation";
 
 /* ---------- constants ---------- */
-export const days = [
+const days = [
   "Monday",
   "Tuesday",
   "Wednesday",
@@ -49,14 +50,9 @@ export const days = [
   "Saturday",
   "Sunday",
 ] as const;
-export const textFieldIds: readonly TextFieldKey[] = [
-  "name",
-  "phoneNumber",
-  "address",
-  "city",
-  "localisation",
-];
-export const MAX_RANGES = 3;
+
+
+const MAX_RANGES = 3;
 
 /* ---------- steps components ---------- */
 import DetailsStep from "@/components/boutique/Steps/DetailsStep";
@@ -204,7 +200,7 @@ export default function CreateBoutiquePage() {
         {step === 1 && (
           <DetailsStep
             form={form}
-            initialImageUrl=""      
+            initialImageUrl=""
             onText={onText}
             onFile={onFile}
             clearImage={clearImage}
@@ -229,14 +225,14 @@ export default function CreateBoutiquePage() {
         {step === 3 && (
           <ReviewStep
             form={form}
-            initialImageUrl=""  /* vide */
+            initialImageUrl=""
             onBack={() => setStep(2)}
             submitting={submitting}
           />
         )}
       </form>
 
-      {/* overlays & erreurs */}
+      {/* overlays & errors */}
       <Overlay
         show={submitting || showSuccess}
         message={showSuccess ? "Boutique created successfully" : undefined}
