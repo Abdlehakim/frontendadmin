@@ -1,3 +1,4 @@
+// src/app/dashboard/manage-stock/boutiques/update/[boutiqueId]/page.tsx
 "use client";
 
 import React, {
@@ -40,7 +41,7 @@ export type TextFieldKey =
   | "localisation";
 
 /* ---------- constants ---------- */
-export const days = [
+const days = [
   "Monday",
   "Tuesday",
   "Wednesday",
@@ -49,14 +50,8 @@ export const days = [
   "Saturday",
   "Sunday",
 ] as const;
-export const textFieldIds: readonly TextFieldKey[] = [
-  "name",
-  "phoneNumber",
-  "address",
-  "city",
-  "localisation",
-];
-export const MAX_RANGES = 3;
+
+const MAX_RANGES = 3;
 
 /* ---------- steps ---------- */
 import DetailsStep from "@/components/boutique/Steps/DetailsStep";
@@ -67,7 +62,7 @@ export default function UpdateBoutiquePage() {
   const router = useRouter();
   const params = useParams<{ boutiqueId: string }>();
   const boutiqueId = params.boutiqueId;
-const fileInput = useRef<HTMLInputElement | null>(null);
+  const fileInput = useRef<HTMLInputElement | null>(null);
 
   /* ---------- ui state ---------- */
   const [loading, setLoading] = useState(true);
