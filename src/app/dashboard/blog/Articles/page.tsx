@@ -1,4 +1,4 @@
-// src/app/dashboard/blog/articles/BlogsClientPage.tsx
+// src/app/dashboard/blog/articles/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
