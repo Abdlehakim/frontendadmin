@@ -1,6 +1,5 @@
 // src/app/dashboard/manage-website/banners/create/page.tsx
 
-
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent } from "react";
@@ -17,6 +16,7 @@ interface FormFields {
   BCbannerTitle: string;
   PromotionBannerTitle: string;
   NPBannerTitle: string;
+  BlogBannerTitle: string;
 }
 
 /* --------------------------- component --------------------------- */
@@ -25,15 +25,18 @@ export default function CreateBannersPage() {
     BCbannerTitle: "",
     PromotionBannerTitle: "",
     NPBannerTitle: "",
+    BlogBannerTitle: "",
   });
 
   const [BCbannerFile, setBCbannerFile] = useState<File | null>(null);
   const [PromotionBannerFile, setPromotionBannerFile] = useState<File | null>(null);
   const [NPBannerFile, setNPBannerFile] = useState<File | null>(null);
+  const [BlogBannerFile, setBlogBannerFile] = useState<File | null>(null);
 
   const [BCpreview, setBCpreview] = useState<string | null>(null);
   const [PromoPreview, setPromoPreview] = useState<string | null>(null);
   const [NPPreview, setNPPreview] = useState<string | null>(null);
+  const [BlogPreview, setBlogPreview] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -65,6 +68,7 @@ export default function CreateBannersPage() {
       if (BCbannerFile) data.append("BCbanner", BCbannerFile);
       if (PromotionBannerFile) data.append("PromotionBanner", PromotionBannerFile);
       if (NPBannerFile) data.append("NPBanner", NPBannerFile);
+      if (BlogBannerFile) data.append("BlogBanner", BlogBannerFile);
 
       const res = await fetchFromAPI<{ success: boolean; message?: string }>(
         "/dashboardadmin/website/banners/createBanners",
@@ -106,8 +110,8 @@ export default function CreateBannersPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 py-6">
-          {/* banner upload trio */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* banner upload grid */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Best-Collection */}
             <div className="flex flex-col gap-2">
               <div className="relative h-64 border-2 border-gray-300 rounded-lg overflow-hidden">
@@ -199,6 +203,38 @@ export default function CreateBannersPage() {
                 value={form.NPBannerTitle}
                 onChange={handleTextChange}
                 placeholder="e.g. Just Arrived"
+                required
+                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
+              />
+            </div>
+
+            {/* Blog */}
+            <div className="flex flex-col gap-2">
+              <div className="relative h-64 border-2 border-gray-300 rounded-lg overflow-hidden">
+                {BlogPreview ? (
+                  <Image src={BlogPreview} alt="Blog Preview" fill className="object-cover" />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    No Blog banner selected
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, setBlogBannerFile, setBlogPreview)}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  required
+                />
+              </div>
+              <label htmlFor="BlogBannerTitle" className="text-sm font-medium">
+                Blog Title
+              </label>
+              <input
+                id="BlogBannerTitle"
+                type="text"
+                value={form.BlogBannerTitle}
+                onChange={handleTextChange}
+                placeholder="e.g. Latest Insights"
                 required
                 className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
               />

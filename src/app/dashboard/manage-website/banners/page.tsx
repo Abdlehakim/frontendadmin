@@ -18,6 +18,9 @@ interface BannersData {
   /* New-Products */
   NPBannerImgUrl?: string;
   NPBannerTitle: string;
+  /* Blog */
+  BlogBannerImgUrl?: string;
+  BlogBannerTitle: string;
 }
 
 export default function BannersAdminPage() {
@@ -34,7 +37,7 @@ export default function BannersAdminPage() {
         setItem(banners ?? null);
       } catch (err: unknown) {
         if (err instanceof Error && /not\s+found/i.test(err.message)) {
-          setItem(null); // no banners yet
+          setItem(null);
         } else {
           console.error("Fetch Banners Error:", err);
           setError("Failed to load banners.");
@@ -77,7 +80,7 @@ export default function BannersAdminPage() {
           {/* Banner Images */}
           <div className="flex flex-col md:flex-row gap-4">
             {/* Best-Collection */}
-            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/3 overflow-hidden">
+            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/4 overflow-hidden">
               {item?.BCbannerImgUrl ? (
                 <Image
                   src={item.BCbannerImgUrl}
@@ -93,7 +96,7 @@ export default function BannersAdminPage() {
             </div>
 
             {/* Promotion */}
-            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/3 overflow-hidden">
+            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/4 overflow-hidden">
               {item?.PromotionBannerImgUrl ? (
                 <Image
                   src={item.PromotionBannerImgUrl}
@@ -109,7 +112,7 @@ export default function BannersAdminPage() {
             </div>
 
             {/* New-Products */}
-            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/3 overflow-hidden">
+            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/4 overflow-hidden">
               {item?.NPBannerImgUrl ? (
                 <Image
                   src={item.NPBannerImgUrl}
@@ -123,10 +126,26 @@ export default function BannersAdminPage() {
                 </div>
               )}
             </div>
+
+            {/* Blog */}
+            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/4 overflow-hidden">
+              {item?.BlogBannerImgUrl ? (
+                <Image
+                  src={item.BlogBannerImgUrl}
+                  alt="Blog Banner"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No Blog banner uploaded
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Banner Titles */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pb-8">
             <div className="flex flex-col gap-2">
               <label htmlFor="bcTitle" className="text-sm font-medium">
                 Best-Collection Title
@@ -161,6 +180,19 @@ export default function BannersAdminPage() {
                 id="npTitle"
                 type="text"
                 value={item?.NPBannerTitle ?? ""}
+                disabled
+                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="blogTitle" className="text-sm font-medium">
+                Blog Title
+              </label>
+              <input
+                id="blogTitle"
+                type="text"
+                value={item?.BlogBannerTitle ?? ""}
                 disabled
                 className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
               />

@@ -25,6 +25,8 @@ interface BannerDoc {
   PromotionBannerTitle: string;
   NPBannerImgUrl?: string;
   NPBannerTitle: string;
+  BlogBannerImgUrl?: string;
+  BlogBannerTitle: string;
 }
 
 /* ------------ editable form fields ------------- */
@@ -32,6 +34,7 @@ interface FormFields {
   BCbannerTitle: string;
   PromotionBannerTitle: string;
   NPBannerTitle: string;
+  BlogBannerTitle: string;
 }
 
 export default function UpdateBannersPage() {
@@ -44,17 +47,18 @@ export default function UpdateBannersPage() {
     BCbannerTitle: "",
     PromotionBannerTitle: "",
     NPBannerTitle: "",
+    BlogBannerTitle: "",
   });
 
   const [BCbannerFile, setBCbannerFile] = useState<File | null>(null);
-  const [PromotionBannerFile, setPromotionBannerFile] = useState<File | null>(
-    null
-  );
+  const [PromotionBannerFile, setPromotionBannerFile] = useState<File | null>(null);
   const [NPBannerFile, setNPBannerFile] = useState<File | null>(null);
+  const [BlogBannerFile, setBlogBannerFile] = useState<File | null>(null);
 
   const [BCpreview, setBCpreview] = useState<string | null>(null);
   const [PromoPreview, setPromoPreview] = useState<string | null>(null);
   const [NPPreview, setNPPreview] = useState<string | null>(null);
+  const [BlogPreview, setBlogPreview] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,11 +80,13 @@ export default function UpdateBannersPage() {
           BCbannerTitle: banners.BCbannerTitle,
           PromotionBannerTitle: banners.PromotionBannerTitle,
           NPBannerTitle: banners.NPBannerTitle,
+          BlogBannerTitle: banners.BlogBannerTitle,
         });
 
         setBCpreview(banners.BCbannerImgUrl ?? null);
         setPromoPreview(banners.PromotionBannerImgUrl ?? null);
         setNPPreview(banners.NPBannerImgUrl ?? null);
+        setBlogPreview(banners.BlogBannerImgUrl ?? null);
       } catch (err) {
         console.error("Load banner doc error:", err);
         setErrorMsg("Failed to load banner data.");
@@ -118,6 +124,7 @@ export default function UpdateBannersPage() {
       if (BCbannerFile) data.append("BCbanner", BCbannerFile);
       if (PromotionBannerFile) data.append("PromotionBanner", PromotionBannerFile);
       if (NPBannerFile) data.append("NPBanner", NPBannerFile);
+      if (BlogBannerFile) data.append("BlogBanner", BlogBannerFile);
 
       const res = await fetchFromAPI<{ success: boolean; message?: string }>(
         `/dashboardadmin/website/banners/updateBanners/${bannerId}`,
@@ -143,8 +150,7 @@ export default function UpdateBannersPage() {
     preview: string | null,
     previewSetter: React.Dispatch<React.SetStateAction<string | null>>,
     inputId: keyof FormFields,
-    labelText: string,
-    accept?: string
+    labelText: string
   ) => (
     <div className="flex flex-col gap-2">
       <div className="relative h-64 border-2 border-gray-300 rounded-lg overflow-hidden">
@@ -157,7 +163,7 @@ export default function UpdateBannersPage() {
         )}
         <input
           type="file"
-          accept={accept ?? "image/*"}
+          accept="image/*"
           onChange={fileChange(fileSetter, previewSetter)}
           className="absolute inset-0 opacity-0 cursor-pointer"
         />
@@ -198,16 +204,11 @@ export default function UpdateBannersPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {UploadCell(setBCbannerFile, BCpreview, setBCpreview, "BCbannerTitle", "Best-Collection Title")}
-            {UploadCell(
-              setPromotionBannerFile,
-              PromoPreview,
-              setPromoPreview,
-              "PromotionBannerTitle",
-              "Promotion Title"
-            )}
+            {UploadCell(setPromotionBannerFile, PromoPreview, setPromoPreview, "PromotionBannerTitle", "Promotion Title")}
             {UploadCell(setNPBannerFile, NPPreview, setNPPreview, "NPBannerTitle", "New-Products Title")}
+            {UploadCell(setBlogBannerFile, BlogPreview, setBlogPreview, "BlogBannerTitle", "Blog Title")}
           </div>
 
           {/* buttons */}
@@ -223,8 +224,8 @@ export default function UpdateBannersPage() {
             </Link>
             <button
               type="submit"
-              disabled={saving}
-              className="px-6 py-2 bg-tertiary text-white rounded disabled:opacity-50"
+                disabled={saving}
+                className="px-6 py-2 bg-tertiary text-white rounded disabled:opacity-50"
             >
               {saving ? "Updating…" : "Update Banners"}
             </button>
