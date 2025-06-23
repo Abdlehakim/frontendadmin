@@ -3,7 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FormState, days } from "@/app/dashboard/manage-stock/boutiques/update/[boutiqueId]/page"; // ← adjust if path differs
+import { FormState } from "@/app/dashboard/manage-stock/boutiques/update/[boutiqueId]/page"; // ← adjust if path differs
+import { days } from "@/lib/openingHours";
 
 interface Props {
   form: FormState;

@@ -6,9 +6,8 @@ import Link from "next/link";
 import { MdAdd, MdDelete } from "react-icons/md";
 import {
   FormState,
-  days,
-  MAX_RANGES,
 } from "@/app/dashboard/manage-stock/boutiques/update/[boutiqueId]/page";
+import { days, MAX_RANGES } from "@/lib/openingHours";
 
 /* ---------- types ---------- */
 interface Props {
