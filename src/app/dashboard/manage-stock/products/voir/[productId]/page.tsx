@@ -1,6 +1,4 @@
-// ───────────────────────────────────────────────────────────────
 // src/app/dashboard/manage-stock/products/voir/[productId]/page.tsx
-// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -9,15 +7,13 @@ import Image from "next/image";
 import { FaSpinner } from "react-icons/fa6";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
-// ⬇️ Only import what you need
 import {
-  ADMIN_OPTIONS,                 // runtime value
-  type StockStatus,               // compile-time types
+  ADMIN_OPTIONS,
+  type StockStatus,
   type StatusPage,
   type Vadmin,
 } from "@/constants/product-options";
 
-/* ───────── attribute/value helpers ───────── */
 type AttrValueItem =
   | { name: string; value: string }
   | { name: string; hex: string };
@@ -28,16 +24,15 @@ interface FetchedAttribute {
   value: string | AttrValueItem[];
 }
 
-/* ───────── product type ───────── */
 interface FetchedProduct {
   _id: string;
   name: string;
   info: string;
   description: string;
-  categorie: { _id: string; name: string } | string;
-  subcategorie: { _id: string; name: string } | string;
-  boutique: { _id: string; name: string } | string;
-  brand: { _id: string; name: string } | string;
+  categorie: { _id: string; name: string } | string | null;
+  subcategorie: { _id: string; name: string } | string | null;
+  boutique: { _id: string; name: string } | string | null;
+  brand: { _id: string; name: string } | string | null;
   stock: number;
   price: number;
   tva: number;
@@ -63,7 +58,6 @@ export default function ProductViewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  /* ───────── fetch product ───────── */
   useEffect(() => {
     if (!productId) return;
     setLoading(true);
@@ -74,17 +68,22 @@ export default function ProductViewPage() {
         setError(null);
       })
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Failed to load product"),
+        setError(err instanceof Error ? err.message : "Failed to load product")
       )
       .finally(() => setLoading(false));
   }, [productId]);
 
-  /* ───────── UI helpers ───────── */
   const isAttrArray = (
-    val: string | AttrValueItem[],
+    val: string | AttrValueItem[]
   ): val is AttrValueItem[] => Array.isArray(val);
 
-  /* ───────── render states ───────── */
+  const renderName = (
+    field: { name: string } | string | null | undefined
+  ) => {
+    if (!field) return "—";
+    return typeof field === "string" ? field : field.name ?? "—";
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -111,7 +110,6 @@ export default function ProductViewPage() {
 
   const extraUrls = product.extraImagesUrl ?? [];
 
-  /* ───────── main render ───────── */
   return (
     <div className="p-6 w-[80%] mx-auto flex flex-col gap-6">
       {/* Header */}
@@ -137,28 +135,16 @@ export default function ProductViewPage() {
           <strong>Description:</strong> {product.description}
         </div>
         <div>
-          <strong>Category:</strong>{" "}
-          {typeof product.categorie === "string"
-            ? product.categorie
-            : product.categorie.name}
+          <strong>Category:</strong> {renderName(product.categorie)}
         </div>
         <div>
-          <strong>Subcategory:</strong>{" "}
-          {typeof product.subcategorie === "string"
-            ? product.subcategorie
-            : product.subcategorie.name}
+          <strong>Subcategory:</strong> {renderName(product.subcategorie)}
         </div>
         <div>
-          <strong>Boutique:</strong>{" "}
-          {typeof product.boutique === "string"
-            ? product.boutique
-            : product.boutique.name}
+          <strong>Boutique:</strong> {renderName(product.boutique)}
         </div>
         <div>
-          <strong>Brand:</strong>{" "}
-          {typeof product.brand === "string"
-            ? product.brand
-            : product.brand.name}
+          <strong>Brand:</strong> {renderName(product.brand)}
         </div>
         <div>
           <strong>Stock:</strong> {product.stock}
@@ -182,9 +168,7 @@ export default function ProductViewPage() {
           <strong>Admin Status:</strong>{" "}
           <span
             className={
-              product.vadmin === ADMIN_OPTIONS[1]
-                ? "text-green-600"
-                : "text-red-600"
+              product.vadmin === ADMIN_OPTIONS[1] ? "text-green-600" : "text-red-600"
             }
           >
             {product.vadmin}
@@ -194,15 +178,13 @@ export default function ProductViewPage() {
           <strong>Created By:</strong> {product.createdBy?.username ?? "—"}
         </div>
         <div>
-          <strong>Created At:</strong>{" "}
-          {new Date(product.createdAt).toLocaleString()}
+          <strong>Created At:</strong> {new Date(product.createdAt).toLocaleString()}
         </div>
         <div>
           <strong>Updated By:</strong> {product.updatedBy?.username ?? "—"}
         </div>
         <div>
-          <strong>Updated At:</strong>{" "}
-          {new Date(product.updatedAt).toLocaleString()}
+          <strong>Updated At:</strong> {new Date(product.updatedAt).toLocaleString()}
         </div>
       </div>
 
@@ -254,7 +236,7 @@ export default function ProductViewPage() {
                       .map((item) =>
                         "hex" in item
                           ? `${item.name} (${item.hex})`
-                          : `${item.name}: ${item.value}`,
+                          : `${item.name}: ${item.value}`
                       )
                       .join(", ")
                   : a.value}
@@ -264,7 +246,7 @@ export default function ProductViewPage() {
         </div>
       )}
 
-      {/* Product Details Pairs */}
+      {/* Product Details */}
       {product.productDetails.length > 0 && (
         <div className="bg-white shadow rounded p-6">
           <strong>Product Details</strong>
