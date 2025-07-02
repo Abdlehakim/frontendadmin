@@ -26,7 +26,8 @@ interface CategoryOption {
 
 interface SubCategoryData {
   name: string;
-  categorie: string;
+  // populated as an object since you did .populate('categorie', 'name')
+  categorie: { _id: string; name: string };
   iconUrl?: string;
   imageUrl?: string;
   bannerUrl?: string;
@@ -66,12 +67,16 @@ export default function UpdateSubCategoryPage() {
         const data = await fetchFromAPI<SubCategoryData>(
           `/dashboardadmin/stock/subcategories/${subCatId}`
         );
-        setForm({ name: data.name, categorie: data.categorie });
+        setForm({
+          name: data.name,
+          // set the form field to the category _id
+          categorie: data.categorie._id,
+        });
         if (data.iconUrl) setInitialIconUrl(data.iconUrl);
         if (data.imageUrl) setInitialImageUrl(data.imageUrl);
         if (data.bannerUrl) setInitialBannerUrl(data.bannerUrl);
 
-        // load categories
+        // load categories list
         const resp = await fetchFromAPI<{ categories: CategoryOption[] }>(
           `/dashboardadmin/stock/categories`
         );
@@ -184,7 +189,7 @@ export default function UpdateSubCategoryPage() {
           />
         </div>
 
-        {/* Parent Category */}
+        {/* Parent Category SELECT */}
         <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
           <label htmlFor="categorie" className="text-sm font-medium">
             Category*
@@ -206,9 +211,10 @@ export default function UpdateSubCategoryPage() {
           </select>
         </div>
 
-        {/* Preview Uploads */}
+        {/* Preview Uploads for Icon, Image, Banner */}
         <div className="flex max-lg:flex-col w-full gap-4">
-          {/* Icon */}
+          {/* ... (rest of the upload UI unchanged) ... */}
+          {/* Icon Upload */}
           <div
             className="relative border-2 lg:w-1/3 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"
             onClick={() => iconInput.current?.click()}
@@ -256,7 +262,7 @@ export default function UpdateSubCategoryPage() {
             )}
           </div>
 
-          {/* Image */}
+          {/* Image Upload */}
           <div
             className="relative border-2 lg:w-1/3 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"
             onClick={() => imageInput.current?.click()}
@@ -304,7 +310,7 @@ export default function UpdateSubCategoryPage() {
             )}
           </div>
 
-          {/* Banner */}
+          {/* Banner Upload */}
           <div
             className="relative border-2 lg:w-1/3 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"
             onClick={() => bannerInput.current?.click()}
@@ -333,7 +339,7 @@ export default function UpdateSubCategoryPage() {
                 />
                 <button
                   type="button"
-                  onClick={clearFile( 
+                  onClick={clearFile(
                     setBannerFile,
                     setInitialBannerUrl,
                     bannerInput
