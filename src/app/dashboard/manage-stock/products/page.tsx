@@ -1,6 +1,3 @@
-// ───────────────────────────────────────────────────────────────
-// src/app/dashboard/manage-stock/products/page.tsx
-// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, {
@@ -40,7 +37,8 @@ interface Product {
   statuspage: StatusPage;
 }
 
-const PAGE_SIZE = 12;
+const DEFAULT_PAGE_SIZE = 10;
+const BREAKPOINT_QUERY = "(max-width: 1535px)";
 
 export default function ProductsClientPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -48,10 +46,30 @@ export default function ProductsClientPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // dynamic page size based on screen width
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+
+  // delete-popup state
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
   const [deleteName, setDeleteName] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  /* ───────── handle responsive page size ───────── */
+  useEffect(() => {
+    const mql = window.matchMedia(BREAKPOINT_QUERY);
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      setPageSize(e.matches ? 7 : DEFAULT_PAGE_SIZE);
+      setCurrentPage(7);
+    };
+
+    // initial check
+    setPageSize(mql.matches ? 7 : DEFAULT_PAGE_SIZE);
+
+    // listen for changes
+    mql.addEventListener("change", handleMediaChange);
+    return () => mql.removeEventListener("change", handleMediaChange);
+  }, []);
 
   /* ───────── fetch products ───────── */
   useEffect(() => {
@@ -59,7 +77,7 @@ export default function ProductsClientPage() {
       setLoading(true);
       try {
         const { products } = await fetchFromAPI<{ products: Product[] }>(
-          "/dashboardadmin/stock/products",
+          "/dashboardadmin/stock/products"
         );
         setProducts(products);
       } catch (err) {
@@ -74,25 +92,25 @@ export default function ProductsClientPage() {
   const filtered = useMemo(
     () =>
       products.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
       ),
-    [products, searchTerm],
+    [products, searchTerm]
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const displayed = useMemo(
     () =>
-      filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filtered, currentPage],
+      filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize]
   );
 
   /* ───────── single-field update ───────── */
   async function updateField<K extends keyof Product>(
     id: string,
     key: K,
-    value: Product[K],
+    value: Product[K]
   ) {
     setProducts((prev) =>
-      prev.map((p) => (p._id === id ? { ...p, [key]: value } : p)),
+      prev.map((p) => (p._id === id ? { ...p, [key]: value } : p))
     );
     try {
       await fetchFromAPI(`/dashboardadmin/stock/products/update/${id}`, {
@@ -101,7 +119,7 @@ export default function ProductsClientPage() {
         body: JSON.stringify({ [key]: value }),
       });
     } catch {
-      setProducts((prev) => [...prev]); // revert
+      setProducts((prev) => [...prev]); // revert on error
       alert(`Failed to update ${key}`);
     }
   }
@@ -169,10 +187,10 @@ export default function ProductsClientPage() {
               <th className="py-2 text-sm font-medium text-center">
                 Cre/updt By
               </th>
-              <th className="py-2 text-sm font-medium text-center border-x-4">
+              <th className="py-2 text-sm font-medium text-center border-x-4 max-2xl:hidden">
                 Cre/updt At
               </th>
-              <th className="w-5/9 py-2 text-sm font-medium text-center">
+              <th className="w-5/9 py-2 text-sm font-medium text-center border-x-4">
                 Actions
               </th>
             </tr>
@@ -203,9 +221,9 @@ export default function ProductsClientPage() {
                     <td className="py-2 text-center">
                       {p.updatedBy?.username || p.createdBy?.username || "—"}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 text-center max-2xl:hidden">
                       {new Date(
-                        p.updatedAt || p.createdAt,
+                        p.updatedAt || p.createdAt
                       ).toLocaleDateString()}
                     </td>
                     <td className="py-2 w-5/9">
@@ -217,7 +235,7 @@ export default function ProductsClientPage() {
                             updateField(
                               p._id,
                               "vadmin",
-                              e.target.value as Product["vadmin"],
+                              e.target.value as Product["vadmin"]
                             )
                           }
                           className="ButtonRectangle"
@@ -236,7 +254,7 @@ export default function ProductsClientPage() {
                             updateField(
                               p._id,
                               "stockStatus",
-                              e.target.value as Product["stockStatus"],
+                              e.target.value as Product["stockStatus"]
                             )
                           }
                           className="ButtonRectangle truncate"
@@ -255,7 +273,7 @@ export default function ProductsClientPage() {
                             updateField(
                               p._id,
                               "statuspage",
-                              e.target.value as Product["statuspage"],
+                              e.target.value as Product["statuspage"]
                             )
                           }
                           className="ButtonRectangle truncate"
