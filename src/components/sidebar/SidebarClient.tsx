@@ -59,8 +59,13 @@ const sidebarItems: SidebarItem[] = [
     icon: <CgWebsite size={20} />,
     children: [
       {
-        name: "Home page",
+        name: "Home page data",
         href: "/dashboard/manage-website/home-page",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Product page data",
+        href: "/dashboard/manage-website/product-page",
         icon: <LuCircleParking size={20} />,
       },
       {
