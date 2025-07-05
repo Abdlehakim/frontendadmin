@@ -6,6 +6,8 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { fetchFromAPI } from "@/lib/fetchFromAPI";
+
 
 const TIMER_COOKIE = "token_FrontEndAdmin_exp";
 const LOGOUT_PATH  = "/dashboardAuth/logout";
@@ -33,8 +35,8 @@ export default function useAutoLogout() {
     const bc = new BroadcastChannel("auth");
 
     timer.current = setTimeout(async () => {
-      await fetch(LOGOUT_PATH, { method: "POST" }).catch(() => {});
-      bc.postMessage({ type: "logout" });        // notify other tabs
+       await fetchFromAPI(LOGOUT_PATH, { method: "POST" }).catch(() => {});
+      bc.postMessage({ type: "logout" }); 
       router.replace("/");
     }, delay);
 
