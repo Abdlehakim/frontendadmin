@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import Image from "next/image";
+import { FiImage, FiX } from "react-icons/fi";
 import Dimension, { DimPair } from "@/components/productattribute/Dimension";
 import Color, { ColorPair } from "@/components/productattribute/Color";
 import OtherType, { OtherPair } from "@/components/productattribute/OtherType";
@@ -26,6 +28,7 @@ export interface AttributePayload {
 export interface ProductDetailPair {
   name: string;
   description?: string;
+  image?: string;
 }
 
 interface Props {
@@ -119,6 +122,7 @@ export default function StepAttributesDetails({
     []
   );
 
+  /* attribute-scoped helpers */
   const removeFilesForAttribute = useCallback((attrIdx: number) => {
     setFileMap((prev) => {
       const map = new Map<string, File>();
@@ -140,6 +144,33 @@ export default function StepAttributesDetails({
         const vIdx = m[2];
         if (aIdx === removedIdx) return;
         if (aIdx > removedIdx) map.set(`attributeImages-${aIdx - 1}-${vIdx}`, file);
+        else map.set(key, file);
+      });
+      return map;
+    });
+  }, []);
+
+  /* detail-image helpers */
+  const removeFilesForDetail = useCallback((detailIdx: number) => {
+    setFileMap((prev) => {
+      const map = new Map<string, File>();
+      prev.forEach((file, key) => {
+        const m = key.match(/^detailsImages-(\d+)$/);
+        if (!m || Number(m[1]) !== detailIdx) map.set(key, file);
+      });
+      return map;
+    });
+  }, []);
+
+  const shiftDetailFileKeys = useCallback((removedIdx: number) => {
+    setFileMap((prev) => {
+      const map = new Map<string, File>();
+      prev.forEach((file, key) => {
+        const m = key.match(/^detailsImages-(\d+)$/);
+        if (!m) return map.set(key, file);
+        const dIdx = Number(m[1]);
+        if (dIdx === removedIdx) return;
+        if (dIdx > removedIdx) map.set(`detailsImages-${dIdx - 1}`, file);
         else map.set(key, file);
       });
       return map;
@@ -182,10 +213,13 @@ export default function StepAttributesDetails({
   };
 
   const addDetail = () =>
-    setDetails((prev) => [...prev, { name: "", description: "" }]);
+    setDetails((prev) => [...prev, { name: "", description: "", image: "" }]);
 
-  const removeDetail = (i: number) =>
+  const removeDetail = (i: number) => {
     setDetails((prev) => prev.filter((_, idx) => idx !== i));
+    removeFilesForDetail(i);
+    shiftDetailFileKeys(i);
+  };
 
   /* ------------------------------------------------------------------ */
   /* render                                                             */
@@ -242,7 +276,7 @@ export default function StepAttributesDetails({
                     pairs={dims[id]}
                     attributeIndex={attrIdx}
                     onChange={(list) => setDims((d) => ({ ...d, [id]: list }))}
-                    onFileSelect={(file, field) => putFile(field, file)} 
+                    onFileSelect={(file, field) => putFile(field, file)}
                     onRowDelete={(field) =>
                       setFileMap((prev) => {
                         const m = new Map(prev);
@@ -258,7 +292,7 @@ export default function StepAttributesDetails({
                     colors={colors[id]}
                     attributeIndex={attrIdx}
                     onChange={(list) => setColors((c) => ({ ...c, [id]: list }))}
-                    onFileSelect={(file, field) => putFile(field, file)} 
+                    onFileSelect={(file, field) => putFile(field, file)}
                     onRowDelete={(field) =>
                       setFileMap((prev) => {
                         const map = new Map(prev);
@@ -276,7 +310,7 @@ export default function StepAttributesDetails({
                     onChange={(list) =>
                       setOthers((o) => ({ ...o, [id]: list }))
                     }
-                    onFileSelect={(file, field) => putFile(field, file)} 
+                    onFileSelect={(file, field) => putFile(field, file)}
                     onRowDelete={(field) =>
                       setFileMap((prev) => {
                         const m = new Map(prev);
@@ -311,34 +345,98 @@ export default function StepAttributesDetails({
 
         <div className="space-y-4">
           {details.map((d, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                className="flex-1 border px-2 py-1 rounded"
-                placeholder="Detail name"
-                value={d.name}
-                onChange={(e) => {
-                  const copy = [...details];
-                  copy[i].name = e.target.value;
-                  setDetails(copy);
-                }}
-              />
-              <input
-                className="flex-1 border px-2 py-1 rounded"
+            <div key={i} className="border rounded p-4 space-y-2">
+              {/* row 1: name + remove */}
+              <div className="flex items-center gap-2">
+                <input
+                  className="flex-1 border px-2 py-1 rounded"
+                  placeholder="Detail name"
+                  value={d.name}
+                  onChange={(e) => {
+                    const copy = [...details];
+                    copy[i].name = e.target.value;
+                    setDetails(copy);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeDetail(i)}
+                  className="text-red-600"
+                >
+                  Remove
+                </button>
+              </div>
+
+              {/* row 2: description textarea */}
+              <textarea
+                rows={2}
+                className="border px-2 py-1 rounded w-full resize-none"
                 placeholder="Detail description"
-                value={d.description}
+                value={d.description ?? ""}
                 onChange={(e) => {
                   const copy = [...details];
                   copy[i].description = e.target.value;
                   setDetails(copy);
                 }}
               />
-              <button
-                type="button"
-                onClick={() => removeDetail(i)}
-                className="text-red-600"
-              >
-                Remove
-              </button>
+
+              {/* row 3: image cell */}
+              <div className="w-1/3 flex justify-center items-center gap-2 relative">
+                {/* upload icon */}
+                {!d.image && (
+                  <label
+                    className="flex items-center gap-1 text-gray-600 cursor-pointer hover:text-blue-600"
+                    title="Upload image"
+                  >
+                    <FiImage className="w-5 h-5" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        putFile(`detailsImages-${i}`, file);
+                        const url = URL.createObjectURL(file);
+                        const copy = [...details];
+                        copy[i].image = url;
+                        setDetails(copy);
+                      }}
+                    />
+                  </label>
+                )}
+
+                {/* preview + clear */}
+                {d.image && (
+                  <div className="relative w-8 h-8 group rounded overflow-hidden border">
+                    <Image
+                      src={d.image}
+                      alt="Preview"
+                      width={32}
+                      height={32}
+                      className="object-cover w-8 h-8"
+                    />
+                    <button
+                      type="button"
+                      title="Remove image"
+                      onClick={() => {
+                        setFileMap((prev) => {
+                          const map = new Map(prev);
+                          map.delete(`detailsImages-${i}`);
+                          return map;
+                        });
+                        const copy = [...details];
+                        delete copy[i].image;
+                        setDetails(copy);
+                      }}
+                      className="absolute inset-0 bg-white/80 text-red-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <FiX className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

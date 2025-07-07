@@ -7,7 +7,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { useAuth, User } from "@/hooks/useAuthDashboard";
 import { MdOutlineDashboard } from "react-icons/md";
-import { FaUsersViewfinder } from "react-icons/fa6";
+import { FaUsersViewfinder, FaRegMoneyBill1 } from "react-icons/fa6";
 import {
   LuCircleParking,
   LuArrowBigLeft,
@@ -18,6 +18,7 @@ import { CgWebsite } from "react-icons/cg";
 import { BiChevronRight } from "react-icons/bi";
 import { VscSignOut } from "react-icons/vsc";
 import IconButton from "@/components/sidebar/IconButton";
+import { TbTruckDelivery } from "react-icons/tb";
 
 interface Props {
   initialUser: User | null;
@@ -132,7 +133,27 @@ const sidebarItems: SidebarItem[] = [
       },
     ],
   },
-
+  {
+    name: "Payment Options",
+    icon: <FaRegMoneyBill1 size={20} />,
+    children: [
+      {
+        name: "Payment Methods",
+        href: "/dashboard/payment-options/payment-methods/",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Currency",
+      href: "/payment-options/currency",
+        icon: <LuCircleParking size={20} />,
+      },
+    ],
+  },
+  {
+    name: "Delivery options",
+    href: "/payment-options",
+    icon: <TbTruckDelivery  size={20} />,
+  },
   {
     name: "Blog",
     icon: <PiArticleMediumBold size={20} />,

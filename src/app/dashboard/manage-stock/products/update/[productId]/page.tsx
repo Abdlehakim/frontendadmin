@@ -1,6 +1,4 @@
-// ───────────────────────────────────────────────────────────────
 // src/app/dashboard/manage-stock/products/update/[productId]/page.tsx
-// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, {
@@ -78,9 +76,9 @@ interface FetchedProduct {
   info: string;
   description: string;
   categorie: string;
-  subcategorie: string;
-  boutique: string;
-  brand: string;
+  subcategorie?: string | null;
+  boutique?: string | null;
+  brand?: string | null;
   stock: number;
   price: number;
   tva: number;
@@ -101,27 +99,21 @@ function cleanAttributeValue(
   value: string | AttributeRow[] | undefined
 ): string | AttributeRow[] {
   if (typeof value === "string") return value.trim();
-
   if (Array.isArray(value)) {
-    const rows = value
-      .filter((row) => row.name && row.name.trim())
-      .map((row) => {
-        const clean: AttributeRow = { name: row.name.trim() };
-
-        if (row.value && row.value.trim()) clean.value = row.value.trim();
-        if (row.hex && row.hex.trim()) {
-          clean.hex = row.hex.trim();
+    return value
+      .filter((r) => r.name.trim())
+      .map((r) => {
+        const clean: AttributeRow = { name: r.name.trim() };
+        if (r.value?.trim()) clean.value = r.value.trim();
+        if (r.hex?.trim()) {
+          clean.hex = r.hex.trim();
           if (!clean.value) clean.value = clean.hex;
         }
-        if (row.image && row.image.trim()) clean.image = row.image.trim();
-        if (row.imageId && row.imageId.trim()) clean.imageId = row.imageId.trim();
-
+        if (r.image?.trim()) clean.image = r.image.trim();
+        if (r.imageId?.trim()) clean.imageId = r.imageId.trim();
         return clean;
       });
-
-    return rows;
   }
-
   return "";
 }
 
@@ -157,8 +149,12 @@ export default function UpdateProductPage() {
   };
   const [form, setForm] = useState<ProductForm>(blankForm);
 
-  const [existingMainImageUrl, setExistingMainImageUrl] = useState<string | null>(null);
-  const [existingExtraImagesUrls, setExistingExtraImagesUrls] = useState<string[]>([]);
+  const [existingMainImageUrl, setExistingMainImageUrl] = useState<string | null>(
+    null
+  );
+  const [existingExtraImagesUrls, setExistingExtraImagesUrls] = useState<string[]>(
+    []
+  );
 
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [extraImages, setExtraImages] = useState<File[]>([]);
@@ -166,9 +162,11 @@ export default function UpdateProductPage() {
   const [defs, setDefs] = useState<AttributeDef[]>([]);
   const [attrPayload, setAttrPayload] = useState<AttributePayload[]>([]);
   const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
-  const [attributeFiles, setAttributeFiles] = useState<Map<string, File>>(new Map());
+  const [attributeFiles, setAttributeFiles] = useState<Map<string, File>>(
+    new Map()
+  );
 
-  /* ---------- fetch attribute definitions ---------- */
+  /* fetch attribute definitions */
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
       "/dashboardadmin/stock/productattribute"
@@ -177,21 +175,22 @@ export default function UpdateProductPage() {
       .catch((err) => console.error("Failed to load attribute defs:", err));
   }, []);
 
-  /* ---------- fetch product data ---------- */
+  /* fetch product data */
   useEffect(() => {
     (async () => {
       try {
         const data = await fetchFromAPI<FetchedProduct>(
           `/dashboardadmin/stock/products/${productId}`
         );
+
         setForm({
           name: data.name,
           info: data.info,
           description: data.description,
           categorie: data.categorie,
-          subcategorie: data.subcategorie,
-          boutique: data.boutique,
-          brand: data.brand,
+          subcategorie: data.subcategorie ?? "",
+          boutique: data.boutique ?? "",
+          brand: data.brand ?? "",
           stock: String(data.stock),
           price: String(data.price),
           tva: String(data.tva),
@@ -203,7 +202,7 @@ export default function UpdateProductPage() {
         setAttrPayload(data.attributes || []);
         setDetailsPayload(data.productDetails || []);
         setExistingMainImageUrl(data.mainImageUrl ?? null);
-        setExistingExtraImagesUrls(data.extraImagesUrl ?? []);
+        setExistingExtraImagesUrls(data.extraImagesUrl || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load product.");
       } finally {
@@ -212,10 +211,12 @@ export default function UpdateProductPage() {
     })();
   }, [productId]);
 
-  /* ---------- handlers ---------- */
+  /* handlers */
   const onFixed = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  ) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  };
 
   const handleAttrsAndDetails = useCallback(
     (
@@ -256,28 +257,26 @@ export default function UpdateProductPage() {
     }
   };
 
-  /* ---------- stepper nav ---------- */
+  /* stepper nav */
   const next = () => {
     setError(null);
-
     if (step === 3) {
-      /* relaxed validation: each row must have a name */
       const invalid = attrPayload.some((a) =>
         Array.isArray(a.value) ? a.value.some((row) => !row.name?.trim()) : false
       );
-
       if (invalid) {
-        setError("Each attribute row needs a name (other fields are optional).");
+        setError(
+          "Each attribute row needs a name (other fields are optional)."
+        );
         return;
       }
     }
-
     setStep((s) => (s < 4 ? ((s + 1) as 2 | 3 | 4) : s));
   };
 
   const back = () => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
 
-  /* ---------- submit ---------- */
+  /* submit */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -286,56 +285,64 @@ export default function UpdateProductPage() {
     try {
       const fd = new FormData();
 
-      /* scalar fields */
+      // scalar fields
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
 
-      /* images */
+      // images: main & extra
       if (mainImage) fd.append("mainImage", mainImage);
       else if (existingMainImageUrl === null) fd.append("removeMain", "1");
-
       extraImages.forEach((f) => fd.append("extraImages", f));
-      fd.append("remainingExtraUrls", JSON.stringify(existingExtraImagesUrls));
+      fd.append(
+        "remainingExtraUrls",
+        JSON.stringify(existingExtraImagesUrls)
+      );
 
-      /* attributes */
+      // attributes
       const serverAttrs = attrPayload
         .map<ServerAttr>(({ attributeSelected, value }) => {
           const cleaned = cleanAttributeValue(value);
-          return cleaned && Array.isArray(cleaned) && cleaned.length > 0
-            ? { definition: attributeSelected, value: cleaned }
-            : typeof cleaned === "string" && cleaned.trim()
-            ? { definition: attributeSelected, value: cleaned }
-            : null;
+          if (typeof cleaned === "string" && cleaned.trim())
+            return { definition: attributeSelected, value: cleaned };
+          if (Array.isArray(cleaned) && cleaned.length > 0)
+            return { definition: attributeSelected, value: cleaned };
+          return null;
         })
-        .filter(
-          (entry): entry is Exclude<ServerAttr, null> => entry !== null
-        );
-
+        .filter((entry): entry is Exclude<ServerAttr, null> => entry !== null);
       fd.append("attributes", JSON.stringify(serverAttrs));
-      fd.append("productDetails", JSON.stringify(detailsPayload));
 
-      /* swatch images */
-      attributeFiles.forEach((origFile, key) => {
-        const wrapped = new File([origFile], key, { type: origFile.type });
-        fd.append("attributeImages", wrapped, key);
-      });
+      // productDetails JSON (only name & description)
+      const serverDetails = detailsPayload
+        .filter((d) => d.name.trim())
+        .map(({ name, description }) => ({
+          name: name.trim(),
+          description: description?.trim() ?? "",
+        }));
+      fd.append("productDetails", JSON.stringify(serverDetails));
 
-      await fetchFromAPI(`/dashboardadmin/stock/products/update/${productId}`, {
-        method: "PUT",
-        body: fd,
-      });
+      // file uploads: attributeImages & detailsImages
+      for (const [key, file] of attributeFiles.entries()) {
+        if (key.startsWith("attributeImages-"))
+          fd.append("attributeImages", file, key);
+        if (key.startsWith("detailsImages-"))
+          fd.append("detailsImages", file, key);
+      }
+
+      await fetchFromAPI(
+        `/dashboardadmin/stock/products/update/${productId}`,
+        { method: "PUT", body: fd }
+      );
 
       setSuccess(true);
-      setTimeout(
-        () => router.push("/dashboard/manage-stock/products"),
-        2000
-      );
+      setTimeout(() => router.push("/dashboard/manage-stock/products"), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update product.");
+      setError(
+        err instanceof Error ? err.message : "Failed to update product."
+      );
       setSaving(false);
     }
   };
 
-  /* ---------- render ---------- */
+  // render loading state
   if (loading) return <Overlay show spinnerSize={60} />;
 
   return (
@@ -413,7 +420,7 @@ export default function UpdateProductPage() {
           submittingLabel="Updating..."
         />
 
-        {/* hidden inputs */}
+        {/* hidden file inputs */}
         <input
           ref={mainRef}
           type="file"

@@ -23,12 +23,14 @@ import WizardNav from "@/components/addproductsteps/WizardNav";
 
 import StepDetails from "@/components/addproductsteps/StepDetails";
 import StepData from "@/components/addproductsteps/StepData";
-import StepAttributesDetails, {
+import StepAttributesDetails from "@/components/addproductsteps/StepAttributesDetails";
+import StepReview from "@/components/addproductsteps/StepReview";
+
+import type {
   AttributePayload,
   AttributeDef,
   ProductDetailPair,
 } from "@/components/addproductsteps/StepAttributesDetails";
-import StepReview from "@/components/addproductsteps/StepReview";
 
 import {
   STOCK_OPTIONS,
@@ -39,9 +41,6 @@ import {
   Vadmin,
 } from "@/constants/product-options";
 
-/* ------------------------------------------------------------------ */
-/* Helpers & types                                                    */
-/* ------------------------------------------------------------------ */
 export interface AttributeRow {
   name: string;
   value?: string;
@@ -50,38 +49,28 @@ export interface AttributeRow {
   imageId?: string;
 }
 
-/** Keep any row that has a non-blank name (other fields optional). */
 function cleanAttributeValue(
   value: string | AttributeRow[] | undefined
 ): string | AttributeRow[] {
   if (typeof value === "string") return value.trim();
-
   if (Array.isArray(value)) {
-    const rows = value
-      .filter((r) => r.name && r.name.trim())
+    return value
+      .filter((r) => r.name.trim())
       .map((r) => {
         const row: AttributeRow = { name: r.name.trim() };
-
-        if (r.value && r.value.trim()) row.value = r.value.trim();
-        if (r.hex && r.hex.trim()) {
+        if (r.value?.trim()) row.value = r.value.trim();
+        if (r.hex?.trim()) {
           row.hex = r.hex.trim();
           if (!row.value) row.value = row.hex;
         }
-        if (r.image && r.image.trim()) row.image = r.image.trim();
-        if (r.imageId && r.imageId.trim()) row.imageId = r.imageId.trim();
-
+        if (r.image?.trim()) row.image = r.image.trim();
+        if (r.imageId?.trim()) row.imageId = r.imageId.trim();
         return row;
       });
-
-    return rows;
   }
-
   return "";
 }
 
-/* ------------------------------------------------------------------ */
-/* Product form                                                       */
-/* ------------------------------------------------------------------ */
 export interface ProductForm {
   name: string;
   info: string;
@@ -116,135 +105,136 @@ const blankForm: ProductForm = {
   vadmin: "not-approve",
 };
 
-/* ================================================================== */
 export default function CreateProductPage() {
   const router = useRouter();
 
-  /* hidden file inputs */
-  const mainRef = useRef<HTMLInputElement>(null);
+  const mainRef  = useRef<HTMLInputElement>(null);
   const extraRef = useRef<HTMLInputElement>(null);
 
-  /* wizard state */
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [saving, setSaving] = useState(false);
+  const [step, setStep]       = useState<1 | 2 | 3 | 4>(1);
+  const [saving, setSaving]   = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
 
-  /* form state */
-  const [form, setForm] = useState<ProductForm>(blankForm);
-  const [mainImage, setMainImage] = useState<File | null>(null);
+  const [form, setForm]         = useState<ProductForm>(blankForm);
+  const [mainImage, setMainImage]     = useState<File | null>(null);
   const [extraImages, setExtraImages] = useState<File[]>([]);
 
-  /* attributes & details */
-  const [defs, setDefs] = useState<AttributeDef[]>([]);
-  const [attrPayload, setAttrPayload] = useState<AttributePayload[]>([]);
+  const [defs,           setDefs]            = useState<AttributeDef[]>([]);
+  const [attrPayload,    setAttrPayload]     = useState<AttributePayload[]>([]);
   const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
-  const [attributeFiles, setAttributeFiles] = useState<Map<string, File>>(new Map());
+  const [fileMap,        setFileMap]         = useState<Map<string, File>>(new Map());
 
-  /* ---------- load attribute definitions ---------- */
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
       "/dashboardadmin/stock/productattribute"
     )
       .then(({ productAttributes }) => setDefs(productAttributes))
-      .catch((e) => console.error("Failed to load product attributes:", e));
+      .catch((e) => console.error(e));
   }, []);
 
-  /* ---------- child → parent callback ---------- */
   const handleAttrsAndDetails = useCallback(
     (
       attrs: AttributePayload[],
-      details: ProductDetailPair[],
-      fileMap: Map<string, File>
+      dets: ProductDetailPair[],
+      fmap: Map<string, File>
     ) => {
       setAttrPayload(attrs);
-      setDetailsPayload(details);
-      setAttributeFiles(fileMap);
+      setDetailsPayload(dets);
+      setFileMap(new Map(fmap));
     },
     []
   );
 
-  /* ---------- misc handlers ---------- */
   const removeExtra = (idx: number) =>
     setExtraImages((prev) => prev.filter((_, i) => i !== idx));
 
   const onFixed = (
-    e: ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
-  /* ---------- wizard navigation ---------- */
   const next = () => {
     setError(null);
-
     if (step === 3) {
       const invalid = attrPayload.some((a) =>
         Array.isArray(a.value)
-          ? a.value.some((row) => !row.name?.trim())
+          ? a.value.some((r) => !r.name.trim())
           : false
       );
-
       if (invalid) {
-        setError("Each attribute row needs a name (other fields are optional).");
+        setError("Each attribute row needs a name.");
         return;
       }
     }
-
     setStep((s) => (s < 4 ? ((s + 1) as 2 | 3 | 4) : s));
   };
+  const back = () => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
 
-  const back = () =>
-    setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
-
-  /* ---------- submit ---------- */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
     if (!mainImage) {
       setError("Main image required");
       setStep(1);
       return;
     }
-
     setSaving(true);
 
     try {
       const fd = new FormData();
 
-      /* scalar fields */
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      // scalar fields
+      Object.entries(form).forEach(([k, v]) => {
+        fd.append(k, v);
+      });
 
-      /* images */
+      // root images
       fd.append("mainImage", mainImage);
       extraImages.forEach((f) => fd.append("extraImages", f));
 
-      /* attributes */
+      // attributes
       type AttrEither =
         | { definition: string; value: AttributeRow[] }
-        | { definition: string; value: string }
-        | null;
-
+        | { definition: string; value: string };
       const serverAttrs = attrPayload
-        .map<AttrEither>(({ attributeSelected, value }) => {
+        .map<AttrEither | null>(({ attributeSelected, value }) => {
           const cleaned = cleanAttributeValue(value);
-          return cleaned && Array.isArray(cleaned) && cleaned.length > 0
-            ? { definition: attributeSelected, value: cleaned }
-            : typeof cleaned === "string" && cleaned.trim()
-            ? { definition: attributeSelected, value: cleaned }
-            : null;
+          if (typeof cleaned === "string" && cleaned.trim()) {
+            return { definition: attributeSelected, value: cleaned };
+          }
+          if (Array.isArray(cleaned) && cleaned.length > 0) {
+            return { definition: attributeSelected, value: cleaned };
+          }
+          return null;
         })
-        .filter(
-          (entry): entry is Exclude<AttrEither, null> => entry !== null
-        );
-
+        .filter((x): x is AttrEither => x !== null);
       fd.append("attributes", JSON.stringify(serverAttrs));
-      fd.append("productDetails", JSON.stringify(detailsPayload));
 
-      /* swatch images */
-      attributeFiles.forEach((file, key) => {
-        const wrapped = new File([file], key, { type: file.type });
-        fd.append("attributeImages", wrapped, key);
+      // details
+      const serverDetails = detailsPayload
+        .filter((d) => d.name.trim())
+        .map(({ name, description }) => ({
+          name: name.trim(),
+          description: description?.trim(),
+        }));
+      fd.append("productDetails", JSON.stringify(serverDetails));
+
+      // dynamic image uploads
+      const attrEntries = [...fileMap.entries()].filter(([k]) =>
+        k.startsWith("attributeImages-")
+      );
+      const detailEntries = [...fileMap.entries()]
+        .filter(([k]) => k.startsWith("detailsImages-"))
+        .sort((a, b) => {
+          const ia = +a[0].split("-")[1]!;
+          const ib = +b[0].split("-")[1]!;
+          return ia - ib;
+        });
+
+      attrEntries.forEach(([key, file]) => {
+        fd.append("attributeImages", file, key);
+      });
+      detailEntries.forEach(([key, file]) => {
+        fd.append("detailsImages", file, key);
       });
 
       await fetchFromAPI("/dashboardadmin/stock/products/create", {
@@ -253,21 +243,18 @@ export default function CreateProductPage() {
       });
 
       setSuccess(true);
-      setTimeout(
-        () => router.push("/dashboard/manage-stock/products"),
-        3000
-      );
+      setTimeout(() => router.push("/dashboard/manage-stock/products"), 3000);
     } catch (err: unknown) {
+      console.error(err);
+      const message =
+        err instanceof Error ? err.message : String(err) || "Failed to create product";
+      setError(message);
       setSaving(false);
-      setError(
-        err instanceof Error ? err.message : "Failed to create product"
-      );
     }
   };
 
-  /* ---------- render ---------- */
   return (
-    <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 relative h-full">
+    <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 h-full">
       <ProductBreadcrumb
         baseHref="/dashboard/manage-stock/products"
         baseLabel="All Products"
@@ -280,10 +267,7 @@ export default function CreateProductPage() {
         onStepClick={(s) => setStep(s as 1 | 2 | 3 | 4)}
       />
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col justify-between gap-8 h-full"
-      >
+      <form onSubmit={handleSubmit} className="flex flex-col h-full gap-8">
         {step === 1 && (
           <StepDetails
             form={form}
@@ -296,7 +280,6 @@ export default function CreateProductPage() {
             removeExtra={removeExtra}
           />
         )}
-
         {step === 2 && (
           <StepData
             form={form}
@@ -306,14 +289,15 @@ export default function CreateProductPage() {
             ADMIN_OPTIONS={ADMIN_OPTIONS}
           />
         )}
-
         {step === 3 && (
           <StepAttributesDetails
             defs={defs}
+            initialAttrs={[]}
+            initialDetails={[]}
+            ready={true}
             onChange={handleAttrsAndDetails}
           />
         )}
-
         {step === 4 && (
           <StepReview
             form={form}
@@ -331,20 +315,19 @@ export default function CreateProductPage() {
           onCancel={() => router.push("/dashboard/manage-stock/products")}
         />
 
-        {/* hidden inputs */}
         <input
           ref={mainRef}
           type="file"
-          className="hidden"
           accept="image/*"
+          className="hidden"
           onChange={(e) => setMainImage(e.target.files?.[0] || null)}
         />
         <input
           ref={extraRef}
           type="file"
-          className="hidden"
           multiple
           accept="image/*"
+          className="hidden"
           onChange={(e) => {
             const files = e.target.files ? Array.from(e.target.files) : [];
             setExtraImages((prev) => [...prev, ...files]);
