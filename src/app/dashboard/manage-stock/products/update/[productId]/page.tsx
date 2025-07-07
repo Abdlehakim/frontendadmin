@@ -1,4 +1,6 @@
+// ───────────────────────────────────────────────────────────────
 // src/app/dashboard/manage-stock/products/update/[productId]/page.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, {
@@ -10,7 +12,6 @@ import React, {
   FormEvent,
 } from "react";
 import { useRouter, useParams } from "next/navigation";
-
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import Overlay from "@/components/Overlay";
 import ErrorPopup from "@/components/Popup/ErrorPopup";
@@ -25,7 +26,6 @@ import StepAttributesDetails, {
   ProductDetailPair,
 } from "@/components/addproductsteps/StepAttributesDetails";
 import StepReview from "@/components/addproductsteps/StepReview";
-
 import {
   STOCK_OPTIONS,
   PAGE_OPTIONS,
@@ -50,6 +50,13 @@ type ServerAttr =
   | { definition: string; value: AttributeRow[] }
   | { definition: string; value: string }
   | null;
+
+/* detail payload sent to the server ─ eslint-safe */
+type ServerDetail = {
+  name: string;
+  description: string;
+  image?: string | null;
+};
 
 /* ------------------------------------------------------------------ */
 /* Local form types                                                   */
@@ -292,10 +299,7 @@ export default function UpdateProductPage() {
       if (mainImage) fd.append("mainImage", mainImage);
       else if (existingMainImageUrl === null) fd.append("removeMain", "1");
       extraImages.forEach((f) => fd.append("extraImages", f));
-      fd.append(
-        "remainingExtraUrls",
-        JSON.stringify(existingExtraImagesUrls)
-      );
+      fd.append("remainingExtraUrls", JSON.stringify(existingExtraImagesUrls));
 
       // attributes
       const serverAttrs = attrPayload
@@ -304,22 +308,31 @@ export default function UpdateProductPage() {
           if (typeof cleaned === "string" && cleaned.trim())
             return { definition: attributeSelected, value: cleaned };
           if (Array.isArray(cleaned) && cleaned.length > 0)
-            return { definition: attributeSelected, value: cleaned };
+            return {
+              definition: attributeSelected,
+              value: cleaned,
+            };
           return null;
         })
-        .filter((entry): entry is Exclude<ServerAttr, null> => entry !== null);
+        .filter(
+          (entry): entry is Exclude<ServerAttr, null> => entry !== null
+        );
       fd.append("attributes", JSON.stringify(serverAttrs));
 
-      // productDetails JSON (only name & description)
-      const serverDetails = detailsPayload
+      // productDetails (typed — no "any")
+      const serverDetails: ServerDetail[] = detailsPayload
         .filter((d) => d.name.trim())
-        .map(({ name, description }) => ({
-          name: name.trim(),
-          description: description?.trim() ?? "",
-        }));
+        .map(({ name, description, image }) => {
+          const detail: ServerDetail = {
+            name: name.trim(),
+            description: description?.trim() ?? "",
+          };
+          if (image !== undefined) detail.image = image; // string | null
+          return detail;
+        });
       fd.append("productDetails", JSON.stringify(serverDetails));
 
-      // file uploads: attributeImages & detailsImages
+      // files
       for (const [key, file] of attributeFiles.entries()) {
         if (key.startsWith("attributeImages-"))
           fd.append("attributeImages", file, key);
@@ -333,7 +346,10 @@ export default function UpdateProductPage() {
       );
 
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard/manage-stock/products"), 2000);
+      setTimeout(
+        () => router.push("/dashboard/manage-stock/products"),
+        2000
+      );
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to update product."
@@ -342,7 +358,7 @@ export default function UpdateProductPage() {
     }
   };
 
-  // render loading state
+  /* render */
   if (loading) return <Overlay show spinnerSize={60} />;
 
   return (

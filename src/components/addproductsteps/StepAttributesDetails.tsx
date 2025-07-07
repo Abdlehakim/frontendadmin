@@ -1,4 +1,6 @@
+// ───────────────────────────────────────────────────────────────
 // src/components/addproductsteps/StepAttributesDetails.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
@@ -25,10 +27,14 @@ export interface AttributePayload {
   value: string | DimPair[] | ColorPair[] | OtherPair[];
 }
 
+/*  image is now  string | null | undefined
+    • string   → keep / preview
+    • null     → user cleared (delete on save)
+    • undefined→ not set yet                                      */
 export interface ProductDetailPair {
   name: string;
   description?: string;
-  image?: string;
+  image?: string | null;
 }
 
 interface Props {
@@ -185,15 +191,31 @@ export default function StepAttributesDetails({
       const def = defs.find((d) => d._id === id)!;
 
       if (hasType(def, "dimension"))
-        return { attributeSelected: id, attributeName: def.name, value: dims[id] || [] };
+        return {
+          attributeSelected: id,
+          attributeName: def.name,
+          value: dims[id] || [],
+        };
 
       if (hasType(def, "color"))
-        return { attributeSelected: id, attributeName: def.name, value: colors[id] || [] };
+        return {
+          attributeSelected: id,
+          attributeName: def.name,
+          value: colors[id] || [],
+        };
 
       if (hasType(def, "other type"))
-        return { attributeSelected: id, attributeName: def.name, value: others[id] || [] };
+        return {
+          attributeSelected: id,
+          attributeName: def.name,
+          value: others[id] || [],
+        };
 
-      return { attributeSelected: id, attributeName: def.name, value: text[id] || "" };
+      return {
+        attributeSelected: id,
+        attributeName: def.name,
+        value: text[id] || "",
+      };
     });
 
     onChange(payload, details, fileMap);
@@ -213,7 +235,7 @@ export default function StepAttributesDetails({
   };
 
   const addDetail = () =>
-    setDetails((prev) => [...prev, { name: "", description: "", image: "" }]);
+    setDetails((prev) => [...prev, { name: "", description: "", image: null }]);
 
   const removeDetail = (i: number) => {
     setDetails((prev) => prev.filter((_, idx) => idx !== i));
@@ -421,13 +443,15 @@ export default function StepAttributesDetails({
                       type="button"
                       title="Remove image"
                       onClick={() => {
+                        /* remove pending upload */
                         setFileMap((prev) => {
                           const map = new Map(prev);
                           map.delete(`detailsImages-${i}`);
                           return map;
                         });
+                        /* mark image as cleared */
                         const copy = [...details];
-                        delete copy[i].image;
+                        copy[i].image = null;
                         setDetails(copy);
                       }}
                       className="absolute inset-0 bg-white/80 text-red-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
