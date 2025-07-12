@@ -173,7 +173,9 @@ export default function UpdateProductPage() {
     new Map()
   );
 
-  /* fetch attribute definitions */
+  /* ------------------------------------------------------------------ */
+  /* Fetch attribute definitions                                        */
+  /* ------------------------------------------------------------------ */
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
       "/dashboardadmin/stock/productattribute"
@@ -182,7 +184,9 @@ export default function UpdateProductPage() {
       .catch((err) => console.error("Failed to load attribute defs:", err));
   }, []);
 
-  /* fetch product data */
+  /* ------------------------------------------------------------------ */
+  /* Fetch product data                                                 */
+  /* ------------------------------------------------------------------ */
   useEffect(() => {
     (async () => {
       try {
@@ -218,7 +222,9 @@ export default function UpdateProductPage() {
     })();
   }, [productId]);
 
-  /* handlers */
+  /* ------------------------------------------------------------------ */
+  /* Handlers                                                           */
+  /* ------------------------------------------------------------------ */
   const onFixed = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -238,6 +244,9 @@ export default function UpdateProductPage() {
     []
   );
 
+  /* ----------------------------- */
+  /* Main image                    */
+  /* ----------------------------- */
   const handleMainChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setMainImage(file);
@@ -250,21 +259,49 @@ export default function UpdateProductPage() {
     if (mainRef.current) mainRef.current.value = "";
   };
 
+  /* ----------------------------- */
+  /* Extra images (add / remove)   */
+  /* ----------------------------- */
+
+  /**
+   * Updates the FileList on the <input type="file" multiple> element.
+   * Browsers treat FileList as read-only, so we rebuild via DataTransfer.
+   */
+  const syncExtraInput = (files: File[]) => {
+    if (!extraRef.current) return;
+    const dt = new DataTransfer();
+    files.forEach((f) => dt.items.add(f));
+    extraRef.current.files = dt.files;
+  };
+
   const handleExtraChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
-    setExtraImages((prev) => [...prev, ...files]);
+    setExtraImages((prev) => {
+      const updated = [...prev, ...files];
+      syncExtraInput(updated);
+      return updated;
+    });
   };
 
   const removeExtra = (idx: number) => {
+    // Removing an existing URL (already on server)
     if (idx < existingExtraImagesUrls.length) {
       setExistingExtraImagesUrls((prev) => prev.filter((_, i) => i !== idx));
-    } else {
-      const newIdx = idx - existingExtraImagesUrls.length;
-      setExtraImages((prev) => prev.filter((_, i) => i !== newIdx));
+      return;
     }
+
+    // Removing a not-yet-uploaded File
+    const fileIdx = idx - existingExtraImagesUrls.length;
+    setExtraImages((prev) => {
+      const newArr = prev.filter((_, i) => i !== fileIdx);
+      syncExtraInput(newArr);
+      return newArr;
+    });
   };
 
-  /* stepper nav */
+  /* ------------------------------------------------------------------ */
+  /* Stepper navigation                                                 */
+  /* ------------------------------------------------------------------ */
   const next = () => {
     setError(null);
     if (step === 3) {
@@ -272,9 +309,7 @@ export default function UpdateProductPage() {
         Array.isArray(a.value) ? a.value.some((row) => !row.name?.trim()) : false
       );
       if (invalid) {
-        setError(
-          "Each attribute row needs a name (other fields are optional)."
-        );
+        setError("Each attribute row needs a name (other fields are optional).");
         return;
       }
     }
@@ -283,7 +318,9 @@ export default function UpdateProductPage() {
 
   const back = () => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
 
-  /* submit */
+  /* ------------------------------------------------------------------ */
+  /* Submit                                                             */
+  /* ------------------------------------------------------------------ */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -298,6 +335,7 @@ export default function UpdateProductPage() {
       // images: main & extra
       if (mainImage) fd.append("mainImage", mainImage);
       else if (existingMainImageUrl === null) fd.append("removeMain", "1");
+
       extraImages.forEach((f) => fd.append("extraImages", f));
       fd.append("remainingExtraUrls", JSON.stringify(existingExtraImagesUrls));
 
@@ -314,9 +352,7 @@ export default function UpdateProductPage() {
             };
           return null;
         })
-        .filter(
-          (entry): entry is Exclude<ServerAttr, null> => entry !== null
-        );
+        .filter((entry): entry is Exclude<ServerAttr, null> => entry !== null);
       fd.append("attributes", JSON.stringify(serverAttrs));
 
       // productDetails (typed — no "any")
@@ -332,7 +368,7 @@ export default function UpdateProductPage() {
         });
       fd.append("productDetails", JSON.stringify(serverDetails));
 
-      // files
+      // attribute & details images
       for (const [key, file] of attributeFiles.entries()) {
         if (key.startsWith("attributeImages-"))
           fd.append("attributeImages", file, key);
@@ -346,19 +382,16 @@ export default function UpdateProductPage() {
       );
 
       setSuccess(true);
-      setTimeout(
-        () => router.push("/dashboard/manage-stock/products"),
-        2000
-      );
+      setTimeout(() => router.push("/dashboard/manage-stock/products"), 2000);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update product."
-      );
+      setError(err instanceof Error ? err.message : "Failed to update product.");
       setSaving(false);
     }
   };
 
-  /* render */
+  /* ------------------------------------------------------------------ */
+  /* Render                                                             */
+  /* ------------------------------------------------------------------ */
   if (loading) return <Overlay show spinnerSize={60} />;
 
   return (

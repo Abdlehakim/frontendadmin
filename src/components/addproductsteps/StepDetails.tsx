@@ -1,3 +1,6 @@
+// ───────────────────────────────────────────────────────────────
+// src/components/addproductsteps/StepDetails.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
 import React, { ChangeEvent } from "react";
@@ -33,7 +36,7 @@ export default function StepDetails({
 }: Props) {
   return (
     <section className="flex gap-6 h-full">
-      {/* Right column: text inputs */}
+      {/* ---------- text inputs ---------- */}
       <div className="flex flex-col gap-4 w-1/2 h-full px-6">
         {(["name", "info", "description"] as const).map((k) => (
           <label
@@ -63,9 +66,9 @@ export default function StepDetails({
         ))}
       </div>
 
-      {/* Left column: two image boxes */}
+      {/* ---------- image pickers ---------- */}
       <div className="flex flex-col gap-4 w-1/2 h-full">
-        {/* Main Image box */}
+        {/* Main image */}
         <div
           onClick={chooseMain}
           className="relative border-2 border-gray-300 rounded-lg h-1/2 cursor-pointer hover:border-gray-400 transition"
@@ -74,8 +77,8 @@ export default function StepDetails({
             <PiImage size={24} />
           </div>
 
-          {/* existing or new preview */}
           {mainImage ? (
+            /* fresh main preview */
             <div className="relative w-full h-full rounded overflow-hidden">
               <Image
                 src={URL.createObjectURL(mainImage)}
@@ -95,6 +98,7 @@ export default function StepDetails({
               </button>
             </div>
           ) : existingMainImageUrl ? (
+            /* existing main preview */
             <div className="relative w-full h-full rounded overflow-hidden">
               <Image
                 src={existingMainImageUrl}
@@ -114,7 +118,8 @@ export default function StepDetails({
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            /* placeholder */
+            <div className="flex items-center justify-center h-full text-gray-400 text-center">
               Click to upload
               <br />
               Main Image
@@ -122,7 +127,7 @@ export default function StepDetails({
           )}
         </div>
 
-        {/* Extra Images box */}
+        {/* Extra images */}
         <div
           onClick={chooseExtra}
           className="relative border-2 border-gray-300 rounded-lg h-1/2 cursor-pointer hover:border-gray-400 transition"
@@ -134,7 +139,10 @@ export default function StepDetails({
           <div className="flex flex-wrap items-start gap-2 p-2 overflow-auto h-full">
             {/* existing extras */}
             {existingExtraImagesUrls.map((url, idx) => (
-              <div key={idx} className="relative w-[80px] h-[100px] rounded overflow-hidden">
+              <div
+                key={idx}
+                className="relative w-[80px] h-[100px] rounded overflow-hidden"
+              >
                 <Image
                   src={url}
                   alt={`Extra ${idx + 1}`}
@@ -142,6 +150,7 @@ export default function StepDetails({
                   className="object-cover"
                 />
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     removeExtra(idx);
@@ -152,11 +161,15 @@ export default function StepDetails({
                 </button>
               </div>
             ))}
-            {/* newly selected */}
+
+            {/* newly selected extras */}
             {extraImages.map((file, i) => {
               const idx = i + existingExtraImagesUrls.length;
               return (
-                <div key={idx} className="relative w-[80px] h-[100px] rounded overflow-hidden">
+                <div
+                  key={idx}
+                  className="relative w-[80px] h-[100px] rounded overflow-hidden"
+                >
                   <Image
                     src={URL.createObjectURL(file)}
                     alt={`New Extra ${i + 1}`}
@@ -164,6 +177,7 @@ export default function StepDetails({
                     className="object-cover"
                   />
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeExtra(idx);
@@ -175,8 +189,9 @@ export default function StepDetails({
                 </div>
               );
             })}
+
             {existingExtraImagesUrls.length + extraImages.length === 0 && (
-              <div className="flex items-center justify-center w-full h-full text-gray-400">
+              <div className="flex items-center justify-center w-full h-full text-gray-400 text-center">
                 Click to upload
                 <br />
                 Extra Images
