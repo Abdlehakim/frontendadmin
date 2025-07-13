@@ -55,7 +55,7 @@ const sidebarItems: SidebarItem[] = [
       },
     ],
   },
-    {
+  {
     name: "Manage Website",
     icon: <CgWebsite size={20} />,
     children: [
@@ -78,7 +78,7 @@ const sidebarItems: SidebarItem[] = [
         name: "Banners",
         href: "/dashboard/manage-website/banners",
         icon: <LuCircleParking size={20} />,
-      }
+      },
     ],
   },
   {
@@ -144,15 +144,15 @@ const sidebarItems: SidebarItem[] = [
       },
       {
         name: "Currency",
-      href: "/payment-options/currency",
+        href: "/payment-options/currency",
         icon: <LuCircleParking size={20} />,
       },
     ],
   },
   {
     name: "Delivery options",
-    href: "/payment-options",
-    icon: <TbTruckDelivery  size={20} />,
+    href: "/dashboard/delivery-options",
+    icon: <TbTruckDelivery size={20} />,
   },
   {
     name: "Blog",
@@ -356,7 +356,7 @@ export default function SidebarClient({ initialUser }: Props) {
                     ) : (
                       <Link
                         href={item.href!}
-                        className="flex items-center px-8 h-8 hover:bg-hoverButton hover:text-hoverText transition-all  text-xs my-2"
+                        className="flex items-center px-8 h-8 hover:bg-hoverButton hover:text-hoverText transition-all  text-xs mb-2"
                       >
                         <span className="mr-3">{item.icon}</span>
                         {item.name}
