@@ -144,7 +144,7 @@ const sidebarItems: SidebarItem[] = [
       },
       {
         name: "Currency",
-        href: "/payment-options/currency",
+        href: "/dashboard/payment-options/currency",
         icon: <LuCircleParking size={20} />,
       },
     ],
