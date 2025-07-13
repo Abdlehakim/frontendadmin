@@ -11,7 +11,7 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 
-/* ───────── types ───────── */
+/* ---------- types ---------- */
 interface DeliveryOption {
   _id: string;
   name: string;
@@ -24,7 +24,8 @@ interface DeliveryOption {
   updatedAt: string;
 }
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE     = 12;
+const statusOptions = [true, false] as const;
 
 export default function DeliveryOptionsPage() {
   /* data */
@@ -37,8 +38,8 @@ export default function DeliveryOptionsPage() {
 
   /* delete-popup */
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState("");
-  const [deleteName, setDeleteName] = useState("");
+  const [deleteId, setDeleteId]         = useState("");
+  const [deleteName, setDeleteName]     = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   /* fetch once */
@@ -69,7 +70,26 @@ export default function DeliveryOptionsPage() {
     [filtered, currentPage]
   );
 
-  /* API actions */
+  /* ---------- helpers (updateStatus, deleteOption, etc.) ---------- */
+  const updateStatus = async (
+    id: string,
+    newStatus: (typeof statusOptions)[number]
+  ) => {
+    setOptions((prev) =>
+      prev.map((o) => (o._id === id ? { ...o, isActive: newStatus } : o))
+    );
+    try {
+      await fetchFromAPI(`/dashboardadmin/delivery-options/update/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: newStatus }),
+      });
+    } catch {
+      setOptions((prev) => [...prev]); // revert
+      alert("Failed to update status");
+    }
+  };
+
   const deleteOption = async (id: string) => {
     await fetchFromAPI(`/dashboardadmin/delivery-options/delete/${id}`, {
       method: "DELETE",
@@ -77,20 +97,16 @@ export default function DeliveryOptionsPage() {
     setOptions((prev) => prev.filter((o) => o._id !== id));
   };
 
-  /* clipboard helper */
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).catch(() => {
-      alert("Copy failed.");
-    });
-  };
+  const copyToClipboard = (text: string) =>
+    navigator.clipboard.writeText(text).catch(() => alert("Copy failed."));
 
-  /* delete-popup helpers */
+  /* popup helpers */
   const openDelete = (id: string, name: string) => {
     setDeleteId(id);
     setDeleteName(name);
     setIsDeleteOpen(true);
   };
-  const closeDelete = () => setIsDeleteOpen(false);
+  const closeDelete   = () => setIsDeleteOpen(false);
   const confirmDelete = async (id: string) => {
     setDeleteLoading(true);
     try {
@@ -102,10 +118,10 @@ export default function DeliveryOptionsPage() {
     closeDelete();
   };
 
-  /* ───────── render ───────── */
+  /* ---------- render ---------- */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* Header */}
+      {/* header */}
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Delivery Options</h1>
         <Link href="/dashboard/delivery-options/create">
@@ -115,7 +131,7 @@ export default function DeliveryOptionsPage() {
         </Link>
       </div>
 
-      {/* Search */}
+      {/* search */}
       <div className="flex justify-between items-end gap-6 h-[70px]">
         <div className="flex items-center gap-2">
           <label className="font-medium">Search:</label>
@@ -131,41 +147,54 @@ export default function DeliveryOptionsPage() {
         </div>
       </div>
 
-      {/* Table header */}
+      {/* table header */}
       <table className="table-fixed w-full">
         <thead className="bg-primary text-white relative z-10">
           <tr>
-            <th className="w-1/9 py-2 text-sm font-medium text-center">ID</th>
-            <th className="w-1/9 py-2 text-sm font-medium text-center border-x-4">
+            <th className="w-1/10 py-2 text-sm font-medium text-center">ID</th>
+            <th className="w-1/10 py-2 text-sm font-medium text-center border-x-4">
               Name
             </th>
-            <th className="w-1/9 py-2 text-sm font-medium text-center">
-              Created By
+            <th className="w-1/10 py-2 text-sm font-medium text-center">
+              Created&nbsp;By
             </th>
-            <th className="w-1/9 py-2 text-sm font-medium text-center border-x-4">
-              Created At
+            <th className="w-1/10 py-2 text-sm font-medium text-center border-x-4">
+              Created&nbsp;At
             </th>
-            <th className="w-1/9 py-2 text-sm font-medium text-center">
-              Updated By
+            <th className="w-1/10 py-2 text-sm font-medium text-center">
+              Updated&nbsp;By
             </th>
-            <th className="w-1/9 py-2 text-sm font-medium text-center border-x-4">
-              Updated At
+            <th className="w-1/10 py-2 text-sm font-medium text-center border-x-4">
+              Updated&nbsp;At
             </th>
-            <th className="w-2/9 py-2 text-sm font-medium text-center">
+            <th className="w-3/10 py-2 text-sm font-medium text-center">
               Action
             </th>
           </tr>
         </thead>
       </table>
 
-      {/* Scrollable body */}
+      {/* scrollable body */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="relative flex-1 overflow-auto">
           <table className="table-fixed w-full">
             <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
+              {/* show placeholder row if nothing to display */}
+              {!loading && displayed.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-6 text-center text-gray-500 italic"
+                  >
+                    No delivery options found.
+                  </td>
+                </tr>
+              )}
+
               {displayed.map((o, i) => (
                 <tr key={o._id} className={i % 2 ? "bg-gray-100" : "bg-white"}>
-                  <td className="w-1/9 py-2">
+                  {/* id */}
+                  <td className="w-1/10 py-2">
                     <div className="flex items-center justify-center gap-1">
                       <span>{`${o._id.slice(0, 9)}...`}</span>
                       <button
@@ -177,23 +206,46 @@ export default function DeliveryOptionsPage() {
                       </button>
                     </div>
                   </td>
-                  <td className="w-1/9 py-2 text-center font-semibold">
+
+                  {/* name */}
+                  <td className="w-1/10 py-2 text-center font-semibold">
                     {o.name}
                   </td>
-                  <td className="w-1/9 py-2 text-center">
+
+                  {/* created / updated meta */}
+                  <td className="w-1/10 py-2 text-center">
                     {o.createdBy?.username || "—"}
                   </td>
-                  <td className="w-1/9 py-2 text-center">
+                  <td className="w-1/10 py-2 text-center">
                     {new Date(o.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="w-1/9 py-2 text-center">
+                  <td className="w-1/10 py-2 text-center">
                     {o.updatedBy?.username || "—"}
                   </td>
-                  <td className="w-1/9 py-2 text-center">
+                  <td className="w-1/10 py-2 text-center">
                     {new Date(o.updatedAt).toLocaleDateString()}
                   </td>
-                  <td className="w-2/9 py-2">
+
+                  {/* action column */}
+                  <td className="w-3/10 py-2">
                     <div className="flex justify-center items-center gap-2">
+                      <select
+                        value={o.isActive.toString()}
+                        onChange={(e) =>
+                          updateStatus(
+                            o._id,
+                            e.target.value === "true"
+                          )
+                        }
+                        className="border rounded px-2 py-1"
+                      >
+                        {statusOptions.map((s) => (
+                          <option key={s.toString()} value={s.toString()}>
+                            {s ? "active" : "inactive"}
+                          </option>
+                        ))}
+                      </select>
+
                       <Link
                         href={`/dashboard/delivery-options/update/${o._id}`}
                       >
@@ -214,7 +266,7 @@ export default function DeliveryOptionsPage() {
             </tbody>
           </table>
 
-          {/* Loading overlay */}
+          {/* loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -223,7 +275,7 @@ export default function DeliveryOptionsPage() {
         </div>
       </div>
 
-      {/* Pagination */}
+      {/* pagination */}
       <div className="flex justify-center mt-6">
         <PaginationAdmin
           currentPage={currentPage}
@@ -232,7 +284,7 @@ export default function DeliveryOptionsPage() {
         />
       </div>
 
-      {/* Delete Popup */}
+      {/* delete popup */}
       {isDeleteOpen && (
         <Popup
           id={deleteId}
