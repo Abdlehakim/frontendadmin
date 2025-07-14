@@ -11,7 +11,7 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
 const TIMER_COOKIE = "token_FrontEndAdmin_exp";
 const LOGOUT_PATH  = "/dashboardAuth/logout";
-const MAX_DELAY    = 2_147_483_647;          // 24.8 d cap  :contentReference[oaicite:1]{index=1}
+const MAX_DELAY    = 2_147_483_647;          
 
 export default function useAutoLogout() {
   const router = useRouter();
@@ -29,7 +29,6 @@ export default function useAutoLogout() {
     if (!Number.isFinite(expMs)) return;
 
     const delay = Math.min(Math.max(expMs - Date.now(), 0), MAX_DELAY);
-    console.log("⏲️  ms till logout =", delay);
 
     /* 🟡 BroadcastChannel must exist before we use it in the timeout */
     const bc = new BroadcastChannel("auth");
