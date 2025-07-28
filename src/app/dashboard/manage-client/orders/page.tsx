@@ -1,6 +1,4 @@
-// ───────────────────────────────────────────────────────────────
-// dashboard/manage-client/orders/page.tsx
-// ───────────────────────────────────────────────────────────────
+// src/app/dashboard/manage-client/orders/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -16,12 +14,17 @@ interface Order {
   _id: string;
   ref: string;
   user: { _id: string; username?: string; email: string } | null;
-  total: number;
   createdAt: string;
   orderStatus: string;
+  deliveryMethod: string;
+  deliveryCost?: number;
+  DeliveryAddress: Array<{
+    Address: string;
+    DeliverToAddress: string;
+  }>;
 }
 
-const pageSize = 10;
+const pageSize = 8;
 const statusOptions = [
   "Processing",
   "Shipped",
@@ -41,7 +44,7 @@ export default function OrdersPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteOrderId, setDeleteOrderId] = useState("");
   const [deleteOrderRef, setDeleteOrderRef] = useState("");
-  const [deleteLoading, setDeleteLoading] = useState(false); // NEW
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   /* ───────── derived lists ───────── */
   const filteredOrders = useMemo(
@@ -49,9 +52,9 @@ export default function OrdersPage() {
       orders
         .filter((o) => !filterStatus || o.orderStatus === filterStatus)
         .filter((o) =>
-          o.ref.toLowerCase().includes(searchTerm.toLowerCase()),
+          o.ref.toLowerCase().includes(searchTerm.toLowerCase())
         ),
-    [orders, filterStatus, searchTerm],
+    [orders, filterStatus, searchTerm]
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
@@ -66,7 +69,7 @@ export default function OrdersPage() {
     async function fetchData() {
       try {
         const { orders } = await fetchFromAPI<{ orders: Order[] }>(
-          "/dashboardadmin/orders",
+          "/dashboardadmin/orders"
         );
         setOrders(orders);
       } catch (err) {
@@ -93,7 +96,7 @@ export default function OrdersPage() {
       body: JSON.stringify({ orderStatus: status }),
     });
     setOrders((prev) =>
-      prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o)),
+      prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o))
     );
   };
 
@@ -105,7 +108,6 @@ export default function OrdersPage() {
   };
   const closeDelete = () => setIsDeleteOpen(false);
 
-  // NOW returns Promise<void>
   const confirmDelete = async (id: string) => {
     setDeleteLoading(true);
     try {
@@ -177,7 +179,7 @@ export default function OrdersPage() {
             <tr className="text-sm">
               <th className="px-4 py-2 text-center">REF</th>
               <th className="px-4 py-2 text-center">Client Name</th>
-              <th className="px-4 py-2 text-center">Total</th>
+              <th className="px-4 py-2 text-center">Delivery Address</th>
               <th className="px-4 py-2 text-center">Date</th>
               <th className="px-4 py-2 text-center">Status</th>
               <th className="px-4 py-2 text-center">Action</th>
@@ -199,18 +201,22 @@ export default function OrdersPage() {
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
                 {displayedOrders.map((o) => (
                   <tr key={o._id} className="even:bg-gray-100 odd:bg-white">
-                    <td className="px-4 text-center font-semibold">{o.ref}</td>
+                    <td className="px-4 text-center truncate font-semibold">{o.ref}</td>
                     <td className="px-4 text-center">
                       {o.user?.username ?? o.user?.email ?? "Unknown user"}
                     </td>
-                    <td className="px-4 text-center">{o.total.toFixed(2)}</td>
+                    <td className="px-4 text-center line-clamp-2">
+                      {o.DeliveryAddress[0]?.DeliverToAddress || "—"}
+                    </td>
                     <td className="px-4 text-center">
                       {new Date(o.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 text-center">
                       <select
                         value={o.orderStatus}
-                        onChange={(e) => updateStatus(o._id, e.target.value)}
+                        onChange={(e) =>
+                          updateStatus(o._id, e.target.value)
+                        }
                         className="border border-gray-300 rounded px-2 py-1 text-sm"
                       >
                         {statusOptions.map((s) => (
@@ -222,7 +228,9 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-4 text-center">
                       <div className="flex justify-center items-center gap-2">
-                        <Link href={`/dashboard/manage-client/orders/${o._id}`}>
+                        <Link
+                          href={`/dashboard/manage-client/orders/voir/${o._id}`}
+                        >
                           <button className="ButtonSquare">
                             <FaRegEye size={14} />
                           </button>
@@ -265,9 +273,9 @@ export default function OrdersPage() {
         <Popup
           id={deleteOrderId}
           name={deleteOrderRef}
-          isLoading={deleteLoading}   
+          isLoading={deleteLoading}
           handleClosePopup={closeDelete}
-          Delete={confirmDelete}    
+          Delete={confirmDelete}
         />
       )}
     </div>
