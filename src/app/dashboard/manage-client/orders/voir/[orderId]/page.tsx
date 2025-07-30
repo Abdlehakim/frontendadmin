@@ -143,7 +143,7 @@ export default function OrderDetailsPage() {
                 (1 + item.tva / 100);
               return (
                 <tr key={item.product}>
-                  <td className="p-2">
+                  <td className="p-2 flex justify-center">
                     {item.mainImageUrl && (
                       <Image
                         src={item.mainImageUrl}
@@ -154,7 +154,7 @@ export default function OrderDetailsPage() {
                       />
                     )}
                   </td>
-                  <td className="p-2">{item.name}</td>
+                  <td className="p-2 text-center">{item.name}</td>
                   <td className="p-2 text-center">{item.quantity}</td>
                   <td className="p-2 text-center">
                     {item.price.toFixed(2)}

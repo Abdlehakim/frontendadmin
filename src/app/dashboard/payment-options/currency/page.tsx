@@ -26,7 +26,7 @@ export default function CurrencySettingsPage() {
       try {
         const { currencySettings } = await fetchFromAPI<{
           currencySettings: CurrencySettings;
-        }>("/dashboardadmin/checkout/payment-currency");
+        }>("/dashboardadmin/payment/payment-currency");
         setSettings(currencySettings);
       } catch (err) {
         console.error("Fetch currency settings failed:", err);
@@ -49,7 +49,7 @@ export default function CurrencySettingsPage() {
     if (!settings) return;
     setSaving(true);
     try {
-      await fetchFromAPI("/dashboardadmin/checkout/payment-currency/update", {
+      await fetchFromAPI("/dashboardadmin/payment/payment-currency/update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
