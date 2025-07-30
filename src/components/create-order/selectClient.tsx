@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
-   Sélection d’un client (Client “account” ou ClientShop “shop”)
+   Sélection d’un client : Account (“account”), ClientShop (“shop”)
+   ou ClientCompany (“company”)
 ------------------------------------------------------------------ */
 "use client";
 
@@ -14,14 +15,14 @@ const DEBOUNCE  = 300;
 /* ---------- types ---------- */
 export interface Client {
   _id: string;
-  /** nom de compte (utilisateur “classique”) */
+  /** nom d’utilisateur (compte classique) */
   username?: string;
-  /** nom du client boutique */
+  /** nom boutique ou nom société (normalisé dans back‑end → `name`) */
   name?: string;
   phone?: string;
   email?: string;
-  /** provenance des données */
-  origin: "account" | "shop";
+  /** source des données */
+  origin: "account" | "shop" | "company";
 }
 
 interface SelectClientProps {
@@ -32,8 +33,16 @@ interface SelectClientProps {
 
 /* ---------- helpers ---------- */
 const displayName = (c: Client) => c.username || c.name || "—";
-const badgeColor  = (o: Client["origin"]) =>
-  o === "shop" ? "bg-purple-200 text-purple-800" : "bg-blue-200 text-blue-800";
+const badgeColor = (o: Client["origin"]) => {
+  switch (o) {
+    case "shop":
+      return "bg-purple-200 text-purple-800";
+    case "company":
+      return "bg-green-200 text-green-800";
+    default:
+      return "bg-blue-200 text-blue-800";
+  }
+};
 
 /* ---------- component ---------- */
 export default function SelectClient({
@@ -41,11 +50,11 @@ export default function SelectClient({
   onSelect,
   onClear,
 }: SelectClientProps) {
-  const [query, setQuery]       = useState("");
-  const [results, setResults]   = useState<Client[]>([]);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
-  const boxRef                  = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const boxRef = useRef<HTMLDivElement>(null);
 
   /* ───────── fetch suggestions ───────── */
   useEffect(() => {
@@ -58,10 +67,7 @@ export default function SelectClient({
     const id = setTimeout(async () => {
       setLoading(true);
       setError("");
-
       try {
-        /* Backend renvoie déjà le mélange Account + Shop
-            (ex : { _id, name, phone, email, origin }) */
         const { clients }: { clients: Client[] } = await fetchFromAPI(
           `/dashboardadmin/client/find?q=${encodeURIComponent(query.trim())}`,
         );

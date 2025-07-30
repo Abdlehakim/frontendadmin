@@ -131,6 +131,11 @@ const sidebarItems: SidebarItem[] = [
         href: "/dashboard/manage-client/clients-shop",
         icon: <LuCircleParking size={20} />,
       },
+        {
+        name: "Clients Societe",
+        href: "/dashboard/manage-client/client-company",
+        icon: <LuCircleParking size={20} />,
+      },
       {
         name: "Orders",
         href: "/dashboard/manage-client/orders",
@@ -322,7 +327,7 @@ export default function SidebarClient({ initialUser }: Props) {
                       <>
                         <div
                           onClick={() => toggleExpand(item.name)}
-                          className="flex items-center px-8 h-8 cursor-pointer hover:bg-hoverButton hover:text-hoverText text-xs select-none"
+                          className="flex items-center px-8 h-8 cursor-pointer hover:bg-white hover:text-hoverText text-xs select-none"
                         >
                           <span className="mr-3">{item.icon}</span>
                           <span className="flex-1 whitespace-nowrap overflow-hidden">
@@ -350,7 +355,7 @@ export default function SidebarClient({ initialUser }: Props) {
                             <li key={child.name}>
                               <Link
                                 href={child.href!}
-                                className="flex items-center px-8 h-6 hover:bg-hoverButton hover:text-hoverText"
+                                className="flex items-center px-8 h-6 hover:bg-white hover:text-hoverText"
                               >
                                 <span className="ml-5">{child.name}</span>
                               </Link>
@@ -361,7 +366,7 @@ export default function SidebarClient({ initialUser }: Props) {
                     ) : (
                       <Link
                         href={item.href!}
-                        className="flex items-center px-8 h-8 hover:bg-hoverButton hover:text-hoverText transition-all  text-xs mb-2"
+                        className="flex items-center px-8 h-8 hover:bg-white hover:text-hoverText transition-all  text-xs mb-2"
                       >
                         <span className="mr-3">{item.icon}</span>
                         {item.name}
