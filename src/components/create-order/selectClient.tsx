@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   Sélection d’un client pour la création de commande
+   Sélection d’un client (Client “account” ou ClientShop “shop”)
 ------------------------------------------------------------------ */
 "use client";
 
@@ -14,9 +14,14 @@ const DEBOUNCE  = 300;
 /* ---------- types ---------- */
 export interface Client {
   _id: string;
+  /** nom de compte (utilisateur “classique”) */
   username?: string;
+  /** nom du client boutique */
+  name?: string;
   phone?: string;
-  email: string;
+  email?: string;
+  /** provenance des données */
+  origin: "account" | "shop";
 }
 
 interface SelectClientProps {
@@ -24,6 +29,11 @@ interface SelectClientProps {
   onSelect(client: Client): void;
   onClear(): void;
 }
+
+/* ---------- helpers ---------- */
+const displayName = (c: Client) => c.username || c.name || "—";
+const badgeColor  = (o: Client["origin"]) =>
+  o === "shop" ? "bg-purple-200 text-purple-800" : "bg-blue-200 text-blue-800";
 
 /* ---------- component ---------- */
 export default function SelectClient({
@@ -37,19 +47,23 @@ export default function SelectClient({
   const [error, setError]       = useState("");
   const boxRef                  = useRef<HTMLDivElement>(null);
 
-  /* ───────── search effect ───────── */
+  /* ───────── fetch suggestions ───────── */
   useEffect(() => {
     if (query.trim().length < MIN_CHARS) {
       setResults([]);
       setError("");
       return;
     }
+
     const id = setTimeout(async () => {
       setLoading(true);
       setError("");
+
       try {
-        const { clients } = await fetchFromAPI<{ clients: Client[] }>(
-          `/dashboardadmin/client/find?q=${encodeURIComponent(query.trim())}`
+        /* Backend renvoie déjà le mélange Account + Shop
+            (ex : { _id, name, phone, email, origin }) */
+        const { clients }: { clients: Client[] } = await fetchFromAPI(
+          `/dashboardadmin/client/find?q=${encodeURIComponent(query.trim())}`,
         );
         setResults(clients);
         if (clients.length === 0) setError("Aucun résultat.");
@@ -59,6 +73,7 @@ export default function SelectClient({
         setLoading(false);
       }
     }, DEBOUNCE);
+
     return () => clearTimeout(id);
   }, [query]);
 
@@ -73,7 +88,7 @@ export default function SelectClient({
   }, []);
 
   /* ───────── UI ───────── */
-  if (client)
+  if (client) {
     return (
       <div className="border rounded-lg p-4 bg-white space-y-2">
         <div className="flex justify-between items-start">
@@ -85,11 +100,26 @@ export default function SelectClient({
             <FaTimesCircle /> Changer
           </button>
         </div>
-        <p><strong>Nom :</strong> {client.username || "—"}</p>
-        <p><strong>Email :</strong> {client.email}</p>
-        <p><strong>Téléphone :</strong> {client.phone || "—"}</p>
+
+        <p>
+          <strong>Nom :</strong> {displayName(client)}
+        </p>
+        <p>
+          <strong>Email :</strong> {client.email || "—"}
+        </p>
+        <p>
+          <strong>Téléphone :</strong> {client.phone || "—"}
+        </p>
+        <span
+          className={`${badgeColor(
+            client.origin,
+          )} text-[10px] uppercase px-2 py-[2px] rounded`}
+        >
+          {client.origin}
+        </span>
       </div>
     );
+  }
 
   return (
     <div ref={boxRef} className="relative">
@@ -101,34 +131,48 @@ export default function SelectClient({
             setQuery(e.target.value);
             setError("");
           }}
-          placeholder="Email ou téléphone…"
+          placeholder="Nom, email ou téléphone…"
           className="flex-1 border border-gray-300 rounded px-4 py-2"
         />
         <div className="bg-primary text-white px-4 py-2 rounded flex items-center">
           {loading ? <FaSpinner className="animate-spin" /> : <FaSearch />}
         </div>
       </div>
+
+      {/* suggestions */}
       {query && results.length > 0 && (
         <ul className="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded shadow max-h-60 overflow-y-auto">
           {results.map((c) => (
             <li
-              key={c._id}
+              key={`${c.origin}-${c._id}`}
               onClick={() => {
                 onSelect(c);
                 setQuery("");
                 setResults([]);
               }}
-              className="cursor-pointer px-3 py-2 hover:bg-gray-100 flex flex-col"
+              className="cursor-pointer px-3 py-2 hover:bg-gray-100 flex justify-between items-start"
             >
-              <span className="font-medium">{c.username || "—"}</span>
-              <span className="text-sm text-gray-600">{c.email}</span>
-              {c.phone && (
-                <span className="text-xs text-gray-500">{c.phone}</span>
-              )}
+              <div className="flex flex-col">
+                <span className="font-medium">{displayName(c)}</span>
+                {c.email && (
+                  <span className="text-sm text-gray-600">{c.email}</span>
+                )}
+                {c.phone && (
+                  <span className="text-xs text-gray-500">{c.phone}</span>
+                )}
+              </div>
+              <span
+                className={`${badgeColor(
+                  c.origin,
+                )} text-[10px] uppercase px-2 py-[2px] rounded self-start`}
+              >
+                {c.origin}
+              </span>
             </li>
           ))}
         </ul>
       )}
+
       {error && !loading && (
         <p className="text-red-600 mt-1 text-sm">{error}</p>
       )}
