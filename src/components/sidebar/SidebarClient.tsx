@@ -122,8 +122,13 @@ const sidebarItems: SidebarItem[] = [
     icon: <PiUsersThree size={20} />,
     children: [
       {
-        name: "Clients",
+        name: "Clients siteweb",
         href: "/dashboard/manage-client/clients",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Clients boutique",
+        href: "/dashboard/manage-client/clients-shop",
         icon: <LuCircleParking size={20} />,
       },
       {
