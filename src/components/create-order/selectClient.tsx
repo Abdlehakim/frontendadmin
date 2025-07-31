@@ -15,13 +15,10 @@ const DEBOUNCE  = 300;
 /* ---------- types ---------- */
 export interface Client {
   _id: string;
-  /** nom d’utilisateur (compte classique) */
   username?: string;
-  /** nom boutique ou nom société (normalisé dans back‑end → `name`) */
   name?: string;
   phone?: string;
   email?: string;
-  /** source des données */
   origin: "account" | "shop" | "company";
 }
 

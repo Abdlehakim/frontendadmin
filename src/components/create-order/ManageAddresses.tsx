@@ -14,14 +14,16 @@ import LoadingDots from "@/components/LoadingDots";
 interface ManageAddressesProps {
   isVisible: boolean;
   addresses: Address[];
+  fetched: boolean;
   onClose(): void;
-  refresh(): void;          // callback pour refetch côté parent
+  refresh(): void;
 }
 
 /* ---------- component ---------- */
 export default function ManageAddresses({
   isVisible,
   addresses,
+  fetched,
   onClose,
   refresh,
 }: ManageAddressesProps) {
@@ -52,7 +54,7 @@ export default function ManageAddresses({
       setTimeout(() => {
         setShowSuccess(false);
         setDeletingId(null);
-        refresh();          // recharge la liste dans SelectAddress
+        refresh(); // recharge la liste dans SelectAddress
       }, 3000);
     } catch (err) {
       console.error(err);
@@ -65,8 +67,8 @@ export default function ManageAddresses({
 
   /* ---------- UI ---------- */
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-filter backdrop-brightness-75 ">
-      <div className="relative mx-auto my-auto max-md:w-[90%] rounded-xl bg-white p-5 shadow-lg flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-filter backdrop-brightness-75">
+      <div className="relative mx-auto my-auto w-[60%] max-md:w-[90%] rounded-xl bg-white p-5 shadow-lg flex flex-col gap-4">
         {/* Loading + Success Overlay */}
         {(deletingId || showSuccess) && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white bg-opacity-75">
@@ -78,22 +80,28 @@ export default function ManageAddresses({
           </div>
         )}
 
-        <h2 className="text-center text-xl font-semibold">
-          Mes adresses
-        </h2>
+        <h2 className="text-center text-xl font-semibold">All Adresses</h2>
 
-        {addresses.length === 0 ? (
+        {/* -------- contenu principal -------- */}
+        {!fetched ? (
+          <div className="space-y-2 h-64 max-h-64 overflow-y-auto">
+            <LoadingDots />
+          </div>
+        ) : addresses.length === 0 ? (
           <p className="text-center text-gray-500">
             Aucune adresse enregistrée.
           </p>
         ) : (
-          <ul className="space-y-2">
+          /* max-h-64 ≈ 4 lignes puis scroll */
+          <ul className="space-y-2 h-64 max-h-64 overflow-y-auto py-6">
             {addresses.map((a) => (
               <li
                 key={a._id}
-                className="flex items-start justify-between rounded border border-gray-200 p-3"
+                className="flex justify-between items-center rounded border border-gray-200 p-3"
               >
-                <span className="text-sm leading-5 w-1/3">{`${a.StreetAddress}, ${a.City} ${a.PostalCode}, ${a.Country}`}</span>
+                <span className="text-sm leading-5 w-full">
+                  {`${a.StreetAddress}, ${a.City} ${a.PostalCode}, ${a.Country}`}
+                </span>
                 <button
                   type="button"
                   onClick={() => handleDelete(a._id)}
