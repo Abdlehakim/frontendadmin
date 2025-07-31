@@ -6,7 +6,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
-import { FaSearch, FaSpinner, FaTimesCircle } from "react-icons/fa";
+import { FaSearch, FaSpinner } from "react-icons/fa";
 
 /* ---------- constants ---------- */
 const MIN_CHARS = 2;
@@ -101,9 +101,9 @@ export default function SelectClient({
           <h2 className="font-bold">Client sélectionné</h2>
           <button
             onClick={onClear}
-            className="text-red-600 flex items-center gap-1"
+            className="text-red-600 text-sm hover:underline"
           >
-            <FaTimesCircle /> Changer
+           Retirer
           </button>
         </div>
 

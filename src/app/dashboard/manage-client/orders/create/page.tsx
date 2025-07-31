@@ -1,23 +1,28 @@
 /* ------------------------------------------------------------------
+   src/app/dashboard/manage-client/orders/create/page.tsx
    Page de création d’une commande client
 ------------------------------------------------------------------ */
 "use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
-import SelectClient, {
-  Client,
-} from "@/components/create-order/selectClient";
+import SelectClient, { Client } from "@/components/create-order/selectClient";
+import SelectAddress from "@/components/create-order/selectAddress";
 import SelectProducts, {
   BasketItem,
 } from "@/components/create-order/selectProducts";
 
 export default function CreateOrderPage() {
-  const [client, setClient]     = useState<Client | null>(null);
-  const [basket, setBasket]     = useState<BasketItem[]>([]);
+  /* ---------- state ---------- */
+  const [client, setClient] = useState<Client | null>(null);
+  const [basket, setBasket] = useState<BasketItem[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
 
+  /* ---------- render ---------- */
   return (
-    <div className="w-[95%] max-w-5xl mx-auto py-6 space-y-8">
+    <div className="w-[95%] max-w-5xl mx-auto py-6 space-y-6">
       {/* header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold uppercase">Créer une commande</h1>
@@ -35,7 +40,15 @@ export default function CreateOrderPage() {
         onClear={() => {
           setClient(null);
           setBasket([]);
+          setSelectedAddressId(null);
         }}
+      />
+
+      {/* Sélection de l’adresse (si client “account”) */}
+      <SelectAddress
+        client={client}
+        value={selectedAddressId}
+        onChange={setSelectedAddressId}
       />
 
       {/* Sélection des produits */}
