@@ -18,31 +18,33 @@ interface DeliveryOption {
   price: number;
   estimatedDays: number;
   isActive: boolean;
+  isPickup: boolean;
   createdBy?: { username: string };
   updatedBy?: { username: string };
   createdAt: string;
   updatedAt: string;
 }
 
-const PAGE_SIZE     = 12;
-const statusOptions = [true, false] as const;
+/* ---------- constants ---------- */
+const PAGE_SIZE    = 12;
+const yesNoOptions = [true, false] as const; // pour isActive et isPickup
 
 export default function DeliveryOptionsPage() {
-  /* data */
+  /* ---------- data / loading ---------- */
   const [options, setOptions] = useState<DeliveryOption[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* UI */
-  const [searchTerm, setSearchTerm] = useState("");
+  /* ---------- UI state ---------- */
+  const [searchTerm, setSearchTerm]   = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  /* delete-popup */
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deleteId, setDeleteId]         = useState("");
-  const [deleteName, setDeleteName]     = useState("");
+  /* ---------- delete-popup state ---------- */
+  const [isDeleteOpen,  setIsDeleteOpen]  = useState(false);
+  const [deleteId,      setDeleteId]      = useState("");
+  const [deleteName,    setDeleteName]    = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  /* fetch once */
+  /* ---------- initial fetch ---------- */
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -55,7 +57,7 @@ export default function DeliveryOptionsPage() {
     })();
   }, []);
 
-  /* filter + paging */
+  /* ---------- filter + pagination ---------- */
   const filtered = useMemo(
     () =>
       options.filter((o) =>
@@ -64,29 +66,33 @@ export default function DeliveryOptionsPage() {
     [options, searchTerm]
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const displayed = useMemo(
-    () =>
-      filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+  const displayed  = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
     [filtered, currentPage]
   );
 
-  /* ---------- helpers (updateStatus, deleteOption, etc.) ---------- */
-  const updateStatus = async (
+  /* ---------- helpers ---------- */
+  const updateField = async (
     id: string,
-    newStatus: (typeof statusOptions)[number]
+    field: "isActive" | "isPickup",
+    value: boolean
   ) => {
+    // optimistic UI update
     setOptions((prev) =>
-      prev.map((o) => (o._id === id ? { ...o, isActive: newStatus } : o))
+      prev.map((o) =>
+        o._id === id ? { ...o, [field]: value } as DeliveryOption : o
+      )
     );
     try {
       await fetchFromAPI(`/dashboardadmin/delivery-options/update/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: newStatus }),
+        body: JSON.stringify({ [field]: value }),
       });
     } catch {
-      setOptions((prev) => [...prev]); // revert
-      alert("Failed to update status");
+      // revert on failure
+      setOptions((prev) => [...prev]);
+      alert(`Failed to update ${field === "isActive" ? "status" : "pickup"}.`);
     }
   };
 
@@ -100,7 +106,7 @@ export default function DeliveryOptionsPage() {
   const copyToClipboard = (text: string) =>
     navigator.clipboard.writeText(text).catch(() => alert("Copy failed."));
 
-  /* popup helpers */
+  /* ---------- popup helpers ---------- */
   const openDelete = (id: string, name: string) => {
     setDeleteId(id);
     setDeleteName(name);
@@ -179,7 +185,7 @@ export default function DeliveryOptionsPage() {
         <div className="relative flex-1 overflow-auto">
           <table className="table-fixed w-full">
             <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
-              {/* show placeholder row if nothing to display */}
+              {/* placeholder row */}
               {!loading && displayed.length === 0 && (
                 <tr>
                   <td
@@ -191,6 +197,7 @@ export default function DeliveryOptionsPage() {
                 </tr>
               )}
 
+              {/* data rows */}
               {displayed.map((o, i) => (
                 <tr key={o._id} className={i % 2 ? "bg-gray-100" : "bg-white"}>
                   {/* id */}
@@ -226,29 +233,41 @@ export default function DeliveryOptionsPage() {
                     {new Date(o.updatedAt).toLocaleDateString()}
                   </td>
 
-                  {/* action column */}
+                  {/* action */}
                   <td className="w-3/10 py-2">
-                    <div className="flex justify-center items-center gap-2">
+                    <div className="flex flex-wrap justify-center items-center gap-2">
+                      {/* Active dropdown */}
                       <select
                         value={o.isActive.toString()}
                         onChange={(e) =>
-                          updateStatus(
-                            o._id,
-                            e.target.value === "true"
-                          )
+                          updateField(o._id, "isActive", e.target.value === "true")
                         }
                         className="border rounded px-2 py-1"
                       >
-                        {statusOptions.map((s) => (
-                          <option key={s.toString()} value={s.toString()}>
-                            {s ? "active" : "inactive"}
+                        {yesNoOptions.map((v) => (
+                          <option key={v.toString()} value={v.toString()}>
+                            {v ? "Active" : "Inactive"}
                           </option>
                         ))}
                       </select>
 
-                      <Link
-                        href={`/dashboard/delivery-options/update/${o._id}`}
+                      {/* Pickup dropdown */}
+                      <select
+                        value={o.isPickup.toString()}
+                        onChange={(e) =>
+                          updateField(o._id, "isPickup", e.target.value === "true")
+                        }
+                        className="border rounded px-2 py-1"
                       >
+                        {yesNoOptions.map((v) => (
+                          <option key={v.toString()} value={v.toString()}>
+                            {v ? "Pickup" : "Delivery"}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Edit & Delete */}
+                      <Link href={`/dashboard/delivery-options/update/${o._id}`}>
                         <button className="ButtonSquare">
                           <FaRegEdit size={14} />
                         </button>

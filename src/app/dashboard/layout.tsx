@@ -16,7 +16,9 @@ export default async function RootLayout({ children }: RootLayoutProps) {
 
   return (
     <DashboardClientShell initialUser={initialUser}>
+      <div className='overflow-y-scroll h-screen'>
       {children}
+      </div>
     </DashboardClientShell>
   );
 }

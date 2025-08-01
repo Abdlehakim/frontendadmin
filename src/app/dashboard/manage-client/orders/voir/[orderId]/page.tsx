@@ -1,11 +1,13 @@
-// src/app/dashboard/manage-client/orders/voir/[orderId]/page.tsx
+/* ------------------------------------------------------------------
+   src/app/dashboard/manage-client/orders/voir/[orderId]/page.tsx
+------------------------------------------------------------------ */
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
+/* ---------- types ---------- */
 interface OrderItem {
   product: string;
   reference: string;
@@ -39,6 +41,7 @@ export default function OrderDetailsPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /* ---------- fetch order ---------- */
   useEffect(() => {
     async function fetchOrder() {
       try {
@@ -55,16 +58,22 @@ export default function OrderDetailsPage() {
     if (orderId) fetchOrder();
   }, [orderId]);
 
-  if (loading) return <div className="p-8">Loading…</div>;
-  if (!order) return <div className="p-8">Order not found.</div>;
+  if (loading)   return <div className="p-8">Loading…</div>;
+  if (!order)    return <div className="p-8">Order not found.</div>;
 
-  const total = order.orderItems.reduce((sum, item) => {
-    const line = (item.price - item.discount) * item.quantity * (1 + item.tva / 100);
+  /* ---------- totals ---------- */
+  const total = order.orderItems.reduce((sum, it) => {
+    const line =
+      (it.price - it.discount) *
+      it.quantity *
+      (1 + it.tva / 100);
     return sum + line;
   }, 0);
 
+  /* ---------- render ---------- */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-6">
+      {/* header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Order {order.ref}</h1>
         <button
@@ -77,7 +86,7 @@ export default function OrderDetailsPage() {
 
       {/* summary row */}
       <div className="flex flex-col md:flex-row md:divide-x divide-gray-200 text-center md:text-left py-4">
-        {/* Order # */}
+        {/* N° commande */}
         <div className="flex-1 px-4 flex flex-col space-y-1">
           <p className="text-xs text-gray-400">N° de commande</p>
           <p className="text-sm font-medium">{order.ref}</p>
@@ -95,7 +104,7 @@ export default function OrderDetailsPage() {
           </p>
         </div>
 
-        {/* Delivery */}
+        {/* Livraison */}
         <div className="flex-1 px-4 flex flex-col space-y-1">
           <p className="text-xs text-gray-400">Méthode de livraison</p>
           <p className="text-sm font-medium">
@@ -103,79 +112,69 @@ export default function OrderDetailsPage() {
           </p>
         </div>
 
-        {/* Payment */}
+        {/* Paiement */}
         <div className="flex-1 px-4 flex flex-col space-y-1">
           <p className="text-xs text-gray-400">Moyen de paiement</p>
           <p className="text-sm font-medium">{order.paymentMethod || "—"}</p>
         </div>
 
-        {/* Delivery address */}
+        {/* Adresse de livraison */}
         <div className="flex-1 px-4 flex flex-col space-y-1">
           <p className="text-xs text-gray-400">Lieu de livraison</p>
           <div className="space-y-0.5 text-sm font-medium">
-            {order.DeliveryAddress.map((da, idx) => (
-              <p key={idx}>{da.DeliverToAddress}</p>
+            {order.DeliveryAddress.map((addr, idx) => (
+              <p key={idx}>{addr.DeliverToAddress}</p>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Items table */}
+      {/* table des items */}
       <div>
-        <h2 className="text-xl font-semibold mb-2">Items</h2>
-        <table className="table-fixed w-full border-collapse">
-          <thead className="bg-primary text-white">
+        <table className="w-full text-sm border border-gray-200">
+          <thead className="bg-gray-100">
             <tr>
-              <th className="p-2">Image</th>
-              <th className="p-2">Name</th>
-              <th className="p-2">Qty</th>
-              <th className="p-2">Price</th>
-              <th className="p-2">TVA</th>
-              <th className="p-2">Discount</th>
-              <th className="p-2">Subtotal</th>
+              <th className="py-1 px-2 text-left">Produit</th>
+              <th className="py-1 px-2 text-right">Qté</th>
+              <th className="py-1 px-2 text-right">Prix</th>
+              <th className="py-1 px-2 text-right">TVA</th>
+              <th className="py-1 px-2 text-right">Remise</th>
+              <th className="py-1 px-2 text-right">Sous-total</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
-            {order.orderItems.map((item) => {
+          <tbody>
+            {order.orderItems.map((it) => {
               const subtotal =
-                (item.price - item.discount) *
-                item.quantity *
-                (1 + item.tva / 100);
+                (it.price - it.discount) *
+                it.quantity *
+                (1 + it.tva / 100);
               return (
-                <tr key={item.product}>
-                  <td className="p-2 flex justify-center">
-                    {item.mainImageUrl && (
-                      <Image
-                        src={item.mainImageUrl}
-                        alt={item.name}
-                        width={48}
-                        height={48}
-                        className="object-cover rounded"
-                      />
-                    )}
+                <tr key={it.product} className="border-t">
+                  <td className="py-1 px-2 text-left">{it.name}</td>
+                  <td className="py-1 px-2 text-right">{it.quantity}</td>
+                  <td className="py-1 px-2 text-right">
+                    {it.price.toFixed(2)}
                   </td>
-                  <td className="p-2 text-center">{item.name}</td>
-                  <td className="p-2 text-center">{item.quantity}</td>
-                  <td className="p-2 text-center">
-                    {item.price.toFixed(2)}
+                  <td className="py-1 px-2 text-right">{it.tva}%</td>
+                  <td className="py-1 px-2 text-right">
+                    {it.discount.toFixed(2)}
                   </td>
-                  <td className="p-2 text-center">{item.tva}%</td>
-                  <td className="p-2 text-center">
-                    {item.discount.toFixed(2)}
-                  </td>
-                  <td className="p-2 text-center">
+                  <td className="py-1 px-2 text-right">
                     {subtotal.toFixed(2)}
                   </td>
                 </tr>
               );
             })}
           </tbody>
+          <tfoot>
+            <tr className="border-t font-semibold">
+              <td colSpan={5} className="py-1 px-2 text-right">
+                Total
+              </td>
+              <td className="py-1 px-2 text-right">{total.toFixed(2)}</td>
+            </tr>
+          </tfoot>
         </table>
-      </div>
-
-      {/* Total */}
-      <div className="text-lg flex items-center pl-4 font-semibold h-10 bg-primary text-white">
-        <span>Total : </span>&nbsp;{total.toFixed(2)}
       </div>
     </div>
   );

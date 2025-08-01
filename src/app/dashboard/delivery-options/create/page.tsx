@@ -16,6 +16,7 @@ interface FormData {
   price: string;          // hold as string for controlled input
   estimatedDays: string;
   isActive: boolean;
+  isPickup: boolean;      // ⇦ NEW
 }
 
 export default function CreateDeliveryOptionPage() {
@@ -27,6 +28,7 @@ export default function CreateDeliveryOptionPage() {
     price: "",
     estimatedDays: "",
     isActive: true,
+    isPickup: false,      // ⇦ NEW
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -54,7 +56,7 @@ export default function CreateDeliveryOptionPage() {
         body: JSON.stringify({
           ...form,
           price: Number(form.price),
-          estimatedDays: Number(form.estimatedDays),
+          estimatedDays: form.isPickup ? 0 : Number(form.estimatedDays), // ⇦ NEW
         }),
       });
       router.push("/dashboard/delivery-options");
@@ -122,10 +124,11 @@ export default function CreateDeliveryOptionPage() {
               name="estimatedDays"
               type="number"
               min="0"
-              required
+              required={!form.isPickup}             // ⇦ NEW
+              disabled={form.isPickup}             // ⇦ NEW
               value={form.estimatedDays}
               onChange={handleInput}
-              className="border border-gray-300 rounded px-3 py-2"
+              className="border border-gray-300 rounded px-3 py-2 disabled:bg-gray-100"
             />
           </div>
         </div>
@@ -146,17 +149,32 @@ export default function CreateDeliveryOptionPage() {
           />
         </div>
 
-        {/* isActive */}
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="isActive"
-            checked={form.isActive}
-            onChange={handleInput}
-            className="accent-primary h-4 w-4"
-          />
-          <span className="font-medium">Active</span>
-        </label>
+        {/* Flags */}
+        <div className="flex flex-wrap gap-8">
+          {/* isActive */}
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="isActive"
+              checked={form.isActive}
+              onChange={handleInput}
+              className="accent-primary h-4 w-4"
+            />
+            <span className="font-medium">Active</span>
+          </label>
+
+          {/* isPickup  ⇦ NEW */}
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="isPickup"
+              checked={form.isPickup}
+              onChange={handleInput}
+              className="accent-primary h-4 w-4"
+            />
+            <span className="font-medium">Pickup (customer collects in store)</span>
+          </label>
+        </div>
 
         {/* CTA */}
         <div className="flex gap-4">

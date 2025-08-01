@@ -3,12 +3,7 @@
 ------------------------------------------------------------------ */
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  ChangeEvent,
-  FormEvent,
-} from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
@@ -21,13 +16,15 @@ interface DeliveryOption {
   price: number;
   estimatedDays: number;
   isActive: boolean;
+  isPickup: boolean;        // ⇦ NEW
 }
 
 export default function UpdateDeliveryOptionPage() {
-  const router         = useRouter();
-  const { id }         = useParams<{ id: string }>();
-  const [loading, setLoading]       = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const router   = useRouter();
+  const { id }   = useParams<{ id: string }>();
+
+  const [loading,     setLoading]     = useState(true);
+  const [submitting,  setSubmitting]  = useState(false);
 
   /* ---------- form state ---------- */
   const [form, setForm] = useState<DeliveryOption>({
@@ -36,6 +33,7 @@ export default function UpdateDeliveryOptionPage() {
     price: 0,
     estimatedDays: 0,
     isActive: true,
+    isPickup: false,        // ⇦ NEW
   });
 
   /* ---------- preload data ---------- */
@@ -79,7 +77,7 @@ export default function UpdateDeliveryOptionPage() {
         body: JSON.stringify({
           ...form,
           price: Number(form.price),
-          estimatedDays: Number(form.estimatedDays),
+          estimatedDays: form.isPickup ? 0 : Number(form.estimatedDays), // ⇦ NEW
         }),
       });
       router.push("/dashboard/delivery-options");
@@ -155,10 +153,11 @@ export default function UpdateDeliveryOptionPage() {
               name="estimatedDays"
               type="number"
               min="0"
-              required
+              required={!form.isPickup}        // ⇦ NEW
+              disabled={form.isPickup}         // ⇦ NEW
               value={form.estimatedDays}
               onChange={handleInput}
-              className="border border-gray-300 rounded px-3 py-2"
+              className="border border-gray-300 rounded px-3 py-2 disabled:bg-gray-100"
             />
           </div>
         </div>
@@ -179,17 +178,32 @@ export default function UpdateDeliveryOptionPage() {
           />
         </div>
 
-        {/* isActive */}
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="isActive"
-            checked={form.isActive}
-            onChange={handleInput}
-            className="accent-primary h-4 w-4"
-          />
-          <span className="font-medium">Active</span>
-        </label>
+        {/* Flags */}
+        <div className="flex flex-wrap gap-8">
+          {/* isActive */}
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="isActive"
+              checked={form.isActive}
+              onChange={handleInput}
+              className="accent-primary h-4 w-4"
+            />
+            <span className="font-medium">Active</span>
+          </label>
+
+          {/* isPickup  ⇦ NEW */}
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="isPickup"
+              checked={form.isPickup}
+              onChange={handleInput}
+              className="accent-primary h-4 w-4"
+            />
+            <span className="font-medium">Pickup (customer collects in store)</span>
+          </label>
+        </div>
 
         {/* CTA */}
         <div className="flex gap-4">
