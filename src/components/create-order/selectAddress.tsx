@@ -64,7 +64,6 @@ export default function SelectAddress({
   /* ---------- fetch addresses ---------- */
 const fetchAddresses = useCallback(async () => {
   setAddresses([]);
-  onChange(null, null);
   if (!client) return;
 
   setLoading(true);
@@ -80,7 +79,7 @@ const fetchAddresses = useCallback(async () => {
     setLoading(false);
     setFetched(true);
   }
-}, [client, onChange]); 
+}, [client]); 
 
   /* fetch on mount / client change */
   useEffect(() => {

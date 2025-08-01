@@ -52,7 +52,7 @@ export default function BannersAdminPage() {
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       {/* Header */}
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Special Page Banners</h1>
+        <h1 className="text-3xl font-bold uppercase">Banners</h1>
         {item ? (
           <Link href={`/dashboard/manage-website/banners/update/${item._id}`}>
             <button className="px-4 py-2 bg-tertiary text-white rounded hover:opacity-90">
