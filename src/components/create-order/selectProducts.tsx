@@ -224,7 +224,7 @@ export default function SelectProducts({
 
       {/* ---------- Basket preview ---------- */}
       {basket.length > 0 && (
-        <div className="border rounded-lg p-4 bg-white space-y-4 mt-6">
+        <div className="border rounded-lg p-4 bg-white space-y-4">
           <h2 className="font-bold">Produits sélectionnés</h2>
 
           {basket.map((item, idx) => (
