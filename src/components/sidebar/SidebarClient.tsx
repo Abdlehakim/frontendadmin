@@ -86,8 +86,8 @@ const sidebarItems: SidebarItem[] = [
     icon: <LuCircleParking size={20} />,
     children: [
       {
-        name: "Boutiques",
-        href: "/dashboard/manage-stock/boutiques",
+        name: "Magasins",
+        href: "/dashboard/manage-stock/magasins",
         icon: <LuCircleParking size={20} />,
       },
       {
@@ -127,7 +127,7 @@ const sidebarItems: SidebarItem[] = [
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Clients boutique",
+        name: "Clients magasin",
         href: "/dashboard/manage-client/clients-shop",
         icon: <LuCircleParking size={20} />,
       },

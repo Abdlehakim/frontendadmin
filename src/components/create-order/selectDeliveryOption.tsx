@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   components/create-order/selectDeliveryOption.tsx
+   components/create-order/SelectDeliveryOption.tsx
 ------------------------------------------------------------------ */
 "use client";
 
@@ -13,13 +13,20 @@ import React, {
 import { AiOutlineDown, AiOutlineUp } from "react-icons/ai";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
+/* ---------- redux ---------- */
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  cacheDeliveryOptions,
+  selectOrderCreation,
+} from "@/features/orderCreation/orderCreationSlice";
+
 /* ---------- types ---------- */
 export interface DeliveryOption {
   _id: string;
   name: string;
   description: string;
   price: number;
-  isPickup: boolean;                // ⇦ NOUVEAU
+  isPickup: boolean;
 }
 
 interface SelectDeliveryOptionProps {
@@ -36,28 +43,36 @@ export default function SelectDeliveryOption({
   value,
   onChange,
 }: SelectDeliveryOptionProps) {
-  const [options, setOptions] = useState<DeliveryOption[]>([]);
+  const dispatch      = useAppDispatch();
+  const cachedOptions = useAppSelector(
+    (s) => selectOrderCreation(s).deliveryOptions
+  );
+
+  const [options, setOptions] = useState<DeliveryOption[]>(cachedOptions);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen]       = useState(false);
+  const dropdownRef           = useRef<HTMLDivElement>(null);
 
   /* ---------- fetch delivery options ---------- */
   const fetchDeliveryOptions = useCallback(async () => {
+    if (cachedOptions.length) return;          // déjà disponible
+
     setLoading(true);
     try {
       const data = await fetchFromAPI("/dashboardadmin/delivery-options");
 
       const mapped: DeliveryOption[] = (Array.isArray(data) ? data : []).map(
         (o) => ({
-          _id:  (o._id ?? o.id ?? "").toString(),
-          name: o.name,
-          description: o.description ?? "",
-          price: Number(o.price ?? o.cost ?? 0),
-          isPickup: Boolean(o.isPickup),          // ⇦ NOUVEAU
+          _id:        String(o._id ?? o.id ?? ""),
+          name:       o.name,
+          description:o.description ?? "",
+          price:      Number(o.price ?? o.cost ?? 0),
+          isPickup:   Boolean(o.isPickup),
         })
       );
 
       setOptions(mapped);
+      dispatch(cacheDeliveryOptions(mapped));  // ⇦ mise en cache globale
 
       if (!mapped.find((opt) => opt._id === value)) onChange(null, null);
     } catch (err) {
@@ -65,7 +80,7 @@ export default function SelectDeliveryOption({
     } finally {
       setLoading(false);
     }
-  }, [value, onChange]);
+  }, [cachedOptions.length, value, onChange, dispatch]);
 
   /* ---------- lifecycle ---------- */
   useEffect(() => {

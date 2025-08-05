@@ -131,16 +131,16 @@ export default function HomePageAdminPage() {
             </div>
           </div>
 
-          {/* Boutique Title & Sub Title */}
+          {/* Magasin Title & Sub Title */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium">Boutique Title</label>
+              <label className="text-sm font-medium">Magasin Title</label>
               <div className="flex items-center border-2 border-gray-300 rounded px-3 h-10 bg-gray-50">
                 {item?.HPboutiqueTitle ?? ""}
               </div>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium">Boutique Sub Title</label>
+              <label className="text-sm font-medium">Magasin Sub Title</label>
               <div className="flex items-center border-2 border-gray-300 rounded px-3 h-10 bg-gray-50">
                 {item?.HPboutiqueSubTitle ?? ""}
               </div>

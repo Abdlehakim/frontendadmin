@@ -1,14 +1,14 @@
 /* ------------------------------------------------------------------
-   components/create-order/SelectBoutiques.tsx
-   Sélection d’un magasin de retrait (pickup)
+   components/create-order/SelectPaymentMethod.tsx
+   Sélection d’une méthode de paiement active
 ------------------------------------------------------------------ */
 "use client";
 
 import React, {
-  useEffect,
-  useState,
-  useRef,
   useCallback,
+  useEffect,
+  useRef,
+  useState,
   MouseEvent as ReactMouseEvent,
 } from "react";
 import { AiOutlineDown, AiOutlineUp } from "react-icons/ai";
@@ -18,83 +18,87 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   selectOrderCreation,
-  cacheBoutiques,               // ⇦ nouvelle action (voir slice)
+  cachePaymentMethods,          // ⇦ action ajoutée dans le slice
 } from "@/features/orderCreation/orderCreationSlice";
 
 /* ---------- types ---------- */
-export interface Magasin {
-  _id: string;
+export interface PaymentMethod {
   name: string;
-  phoneNumber?: string;
-  address?: string;
-  city?: string;
+  label: string;
+  help?: string;
 }
 
-interface SelectBoutiquesProps {
+interface SelectPaymentMethodProps {
   value: string | null;
-  onChange(id: string | null, magasin: Magasin | null): void;
+  onChange(methodKey: string | null, method: PaymentMethod | null): void;
 }
 
 /* ---------- helpers ---------- */
-const fmt = (b: Magasin) => `${b.name}${b.city ? " – " + b.city : ""}`;
+const fmt = (m: PaymentMethod) =>
+  m.label || m.name.charAt(0).toUpperCase() + m.name.slice(1);
 
 /* ---------- component ---------- */
-export default function SelectBoutiques({
+export default function SelectPaymentMethod({
   value,
   onChange,
-}: SelectBoutiquesProps) {
-  const dispatch        = useAppDispatch();
-  const cachedBoutiques = useAppSelector(
-    (s) => selectOrderCreation(s).boutiques   // champ ajouté au slice
+}: SelectPaymentMethodProps) {
+  const dispatch          = useAppDispatch();
+  const paymentCache      = useAppSelector(
+    (s) => selectOrderCreation(s).paymentMethods  // champ ajouté au slice
   );
 
-  const [magasins, setMagasins] = useState<Magasin[]>(cachedBoutiques);
-  const [loading, setLoading]   = useState(false);
-  const [open, setOpen]         = useState(false);
-  const dropdownRef             = useRef<HTMLDivElement>(null);
+  const [methods, setMethods] = useState<PaymentMethod[]>(paymentCache);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen]       = useState(false);
+  const dropdownRef           = useRef<HTMLDivElement>(null);
 
-  /* ---------- fetch boutiques (only once if cache vide) ---------- */
-  const fetchBoutiques = useCallback(async () => {
-    if (cachedBoutiques.length) return; // déjà en cache
+  /* ---------- fetch active payment methods ---------- */
+  const fetchMethods = useCallback(async () => {
+    if (paymentCache.length) return;            // déjà en cache
 
     setLoading(true);
     try {
-      const { magasins } = await fetchFromAPI<{ magasins: Magasin[] }>(
-        "/dashboardadmin/stock/magasins/approved"
-      );
-      setMagasins(magasins);
-      dispatch(cacheBoutiques(magasins));     // ⇦ on remplit le cache
+      const { activePaymentMethods } = await fetchFromAPI<{
+        activePaymentMethods: PaymentMethod[];
+      }>("/dashboardadmin/payment/payment-settings/active");
 
-      if (!magasins.find((b) => b._id === value)) onChange(null, null);
+      setMethods(activePaymentMethods);
+      dispatch(cachePaymentMethods(activePaymentMethods)); // ⇦ cache global
+
+      if (!activePaymentMethods.find((m) => m.name === value)) {
+        onChange(null, null);
+      }
     } catch (err) {
-      console.error("Load magasins error:", err);
+      console.error("Load payment methods error:", err);
     } finally {
       setLoading(false);
     }
-  }, [cachedBoutiques.length, value, onChange, dispatch]);
+  }, [paymentCache.length, value, onChange, dispatch]);
 
   /* appel au montage */
   useEffect(() => {
-    fetchBoutiques();
+    fetchMethods();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* fermer dropdown sur clic extérieur */
+  /* close dropdown on outside click */
   useEffect(() => {
-    const close = (e: MouseEvent | ReactMouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
+    const handleClick = (e: MouseEvent | ReactMouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false);
+      }
     };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const selected = value ? magasins.find((b) => b._id === value) ?? null : null;
+  const selected =
+    value ? methods.find((m) => m.name === value) ?? null : null;
 
   /* ---------- UI ---------- */
   return (
     <div className="py-4 bg-white space-y-4 mt-6">
-      <h2 className="font-bold">Magasin de retrait</h2>
+      <h2 className="font-bold">Méthode de paiement</h2>
 
       {/* select */}
       <div className="relative w-full" ref={dropdownRef}>
@@ -116,8 +120,8 @@ export default function SelectBoutiques({
             {selected
               ? fmt(selected)
               : loading
-              ? "Chargement des magasins…"
-              : "-- Choisir un magasin --"}
+              ? "Chargement des méthodes de paiement…"
+              : "-- Choisir une méthode --"}
           </span>
           {open ? (
             <AiOutlineUp className="h-4 w-4 shrink-0 text-gray-500" />
@@ -132,23 +136,20 @@ export default function SelectBoutiques({
                        bg-white py-1 text-sm shadow-lg ring-1 ring-black/5"
           >
             {!loading &&
-              magasins.map((b) => (
+              methods.map((m) => (
                 <li
-                  key={b._id}
+                  key={m.name}
                   onClick={() => {
-                    onChange(b._id, b);
+                    onChange(m.name, m);
                     setOpen(false);
                   }}
                   className={`cursor-pointer select-none px-4 py-2 hover:bg-primary hover:text-white ${
-                    b._id === value ? "bg-primary/5 font-medium" : ""
+                    m.name === value ? "bg-primary/5 font-medium" : ""
                   }`}
                 >
-                  {fmt(b)}
-                  {(b.address || b.phoneNumber) && (
-                    <p className="text-xs text-gray-500">
-                      {b.address ?? ""}{" "}
-                      {b.phoneNumber ? "• " + b.phoneNumber : ""}
-                    </p>
+                  <p>{fmt(m)}</p>
+                  {m.help && (
+                    <p className="text-xs text-gray-500 mt-1">{m.help}</p>
                   )}
                 </li>
               ))}

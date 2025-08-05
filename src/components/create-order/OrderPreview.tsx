@@ -10,7 +10,7 @@ import html2canvas from "html2canvas";
 
 import { Client } from "./selectClient";
 import { DeliveryOption } from "./selectDeliveryOption";
-import { Boutique } from "./SelectBoutiques";
+import { Magasin } from "./SelectBoutiques";
 import { BasketItem } from "./selectProducts";
 import QuoteProforma from "./QuoteProforma";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
@@ -30,9 +30,10 @@ interface OrderPreviewProps {
   onClose(): void;
   client: Client | null;
   addressLabel: string | null;
-  boutique: Boutique | null;
+  magasin: Magasin | null;
   delivery: DeliveryOption | null;
   basket: BasketItem[];
+  paymentMethod?: string | null;
 }
 
 /* ---------- helpers ---------- */
@@ -47,11 +48,12 @@ const today = new Date().toLocaleDateString("fr-FR", {
 const OrderPreview: React.FC<OrderPreviewProps> = ({
   client,
   addressLabel,
-  boutique,
+  magasin,
   delivery,
   basket,
+  paymentMethod,
 }) => {
-  /* ---------- société (logo / coordonnées) ---------- */
+  /* ---------- société ---------- */
   const [company, setCompany] = useState<CompanyInfo | null>(null);
 
   useEffect(() => {
@@ -72,13 +74,12 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
     const el = document.getElementById("quote-to-download");
     if (!el) return;
 
-    // délai pour s'assurer que le rendu hors-écran est terminé
     await new Promise((r) => setTimeout(r, 300));
 
     const canvas = await html2canvas(el, { useCORS: true });
-    const pdf = new jsPDF({ unit: "mm", format: "a4" });
-    const imgW = 210;
-    const imgH = (canvas.height * imgW) / canvas.width;
+    const pdf    = new jsPDF({ unit: "mm", format: "a4" });
+    const imgW   = 210;
+    const imgH   = (canvas.height * imgW) / canvas.width;
 
     pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, imgW, imgH);
     pdf.save(`DEVIS-${today.replace(/\s/g, "-")}.pdf`);
@@ -87,59 +88,54 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
   /* ---------- UI ---------- */
   return (
     <div className="w-full bg-white rounded-lg p-6 space-y-6">
-      {/* ---------- Header aperçu ---------- */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Prévisualisation de la commande</h1>
       </div>
 
-      {/* ---------- Métadonnées ---------- */}
+      {/* Métadonnées */}
       <div className="flex flex-col md:flex-row md:divide-x divide-gray-200 text-center md:text-left">
-        {/* Client */}
         <div className="flex-1 px-4 py-2">
           <p className="text-xs text-gray-400">Client</p>
           <p className="text-sm font-medium">
-            {client
-              ? client.username ?? client.email ?? client.phone ?? client._id
-              : "—"}
+            {client?.username ?? client?.name ?? "—"}
           </p>
         </div>
 
-        {/* Date */}
         <div className="flex-1 px-4 py-2">
           <p className="text-xs text-gray-400">Date</p>
           <p className="text-sm font-medium">{today}</p>
         </div>
 
-        {/* Livraison / Retrait */}
         <div className="flex-1 px-4 py-2">
           <p className="text-xs text-gray-400">
             {delivery?.isPickup ? "Retrait" : "Livraison"}
           </p>
           <p className="text-sm font-medium">
-            {delivery
-              ? `${delivery.name} – ${frFmt(delivery.price)}`
-              : "—"}
+            {delivery ? `${delivery.name} – ${frFmt(delivery.price)}` : "—"}
           </p>
         </div>
 
-        {/* Adresse / Boutique */}
+        <div className="flex-1 px-4 py-2">
+          <p className="text-xs text-gray-400">Paiement</p>
+          <p className="text-sm font-medium">{paymentMethod ?? "—"}</p>
+        </div>
+
         <div className="flex-1 px-4 py-2">
           <p className="text-xs text-gray-400">
-            {delivery?.isPickup ? "Boutique" : "Adresse"}
+            {delivery?.isPickup ? "Magasin" : "Adresse"}
           </p>
           <p className="text-sm font-medium">
             {delivery?.isPickup
-              ? boutique
-                ? `${boutique.name}${
-                    boutique.city ? " – " + boutique.city : ""
-                  }`
+              ? magasin
+                ? `${magasin.name}${magasin.city ? " – " + magasin.city : ""}`
                 : "—"
               : addressLabel ?? "—"}
           </p>
         </div>
       </div>
 
-      {/* ---------- Panier ---------- */}
+      {/* Panier */}
       <div>
         {basket.length > 0 ? (
           <table className="w-full text-sm border border-gray-200">
@@ -162,10 +158,10 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
                 const subtotal = puRemise * item.quantity;
 
                 const attrLine =
-                  item.attributes && item.attributes.length
+                  item.attributes?.length
                     ? item.attributes
                         .map((row) => {
-                          const id = row.attributeSelected._id;
+                          const id  = row.attributeSelected._id;
                           const val = item.chosen[id];
                           return val
                             ? `${row.attributeSelected.name} : ${val}`
@@ -177,17 +173,13 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
 
                 return (
                   <tr key={item._id} className="border-t align-top">
-                    {/* Produit + attributs */}
                     <td className="py-1 px-2">
                       <div>{item.name}</div>
                       {attrLine && (
                         <div className="text-xs text-gray-500">{attrLine}</div>
                       )}
                     </td>
-
                     <td className="py-1 px-2 text-right">{item.quantity}</td>
-
-                    {/* PU remisé + ancien barré */}
                     <td className="py-1 px-2 text-right">
                       {frFmt(puRemise)}
                       {item.discount > 0 && (
@@ -196,13 +188,10 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
                         </span>
                       )}
                     </td>
-
                     <td className="py-1 px-2 text-right">
                       {item.discount > 0 ? `${item.discount}%` : "—"}
                     </td>
                     <td className="py-1 px-2 text-right">{item.tva}%</td>
-
-                    {/* Total ligne remisé */}
                     <td className="py-1 px-2 text-right">{frFmt(subtotal)}</td>
                   </tr>
                 );
@@ -222,17 +211,17 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
         )}
       </div>
 
-      {/* ---------- Bouton téléchargement ---------- */}
+      {/* Bouton téléchargement */}
       <div className="pt-6 flex justify-end">
         <button
           onClick={handleDownloadQuote}
-          className="h-10 px-6 rounded bg-primary text-white hover:opacity-90"
+          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
         >
           Télécharger le devis
         </button>
       </div>
 
-      {/* ---------- Élément caché pour html2canvas ---------- */}
+      {/* Élément caché */}
       {company && basket.length > 0 && (
         <div
           id="quote-to-download"
@@ -241,15 +230,12 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
           <QuoteProforma
             quoteRef={`DEVIS-${Date.now()}`}
             company={company}
-            clientLabel={
-              client
-                ? client.username ?? client.email ?? client.phone ?? client._id
-                : "—"
-            }
-            addressLabel={addressLabel}
-            boutique={boutique}
-            delivery={delivery}
+            clientLabel={client?.username ?? client?.name ?? "—"}
+            addressLabel={addressLabel!}
+            magasin={magasin!}
+            delivery={delivery!}
             basket={basket}
+            paymentMethod={paymentMethod}
             date={today}
           />
         </div>

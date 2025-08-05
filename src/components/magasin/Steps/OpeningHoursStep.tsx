@@ -1,4 +1,4 @@
-// src/components/boutique/Steps/OpeningHoursStep.tsx
+// src/components/magasin/Steps/OpeningHoursStep.tsx
 "use client";
 
 import React from "react";
@@ -6,7 +6,7 @@ import Link from "next/link";
 import { MdAdd, MdDelete } from "react-icons/md";
 import {
   FormState,
-} from "@/app/dashboard/manage-stock/boutiques/update/[boutiqueId]/page";
+} from "@/app/dashboard/manage-stock/magasins/update/[boutiqueId]/page";
 import { days, MAX_RANGES } from "@/lib/openingHours";
 
 /* ---------- types ---------- */
@@ -142,7 +142,7 @@ const OpeningHoursStep: React.FC<Props> = ({
         Back
       </button>
 
-      <Link href="/dashboard/manage-stock/boutiques">
+      <Link href="/dashboard/manage-stock/magasins">
         <button type="button" className="px-6 py-2 bg-quaternary text-white rounded">
           Cancel
         </button>

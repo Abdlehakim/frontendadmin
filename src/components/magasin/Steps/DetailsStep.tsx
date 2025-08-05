@@ -7,7 +7,7 @@ import { MdDelete } from "react-icons/md";
 import { PiImage } from "react-icons/pi";
 import {
   FormState,
-} from "@/app/dashboard/manage-stock/boutiques/update/[boutiqueId]/page";
+} from "@/app/dashboard/manage-stock/magasins/update/[boutiqueId]/page";
 import { textFieldIds } from "@/lib/boutiqueFields";
 
 interface Props {
@@ -123,7 +123,7 @@ const DetailsStep: React.FC<Props> = ({
       {/* navigation                                                       */}
       {/* ---------------------------------------------------------------- */}
       <div className="flex justify-center gap-8 mt-6">
-        <Link href="/dashboard/manage-stock/boutiques">
+        <Link href="/dashboard/manage-stock/magasins">
           <button
             type="button"
             className="px-6 py-2 bg-quaternary text-white rounded"

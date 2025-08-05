@@ -23,10 +23,15 @@ interface Order {
   _id: string;
   ref: string;
   user: { username?: string; email: string } | null;
+  clientName: string;
   DeliveryAddress: Array<{
     Address: string;
     DeliverToAddress: string;
   }>;
+  pickupMagasin?: {
+    Magasin: string;
+    MagasinAddress: string;
+  };
   orderItems: OrderItem[];
   paymentMethod?: string;
   deliveryMethod: string;
@@ -58,15 +63,12 @@ export default function OrderDetailsPage() {
     if (orderId) fetchOrder();
   }, [orderId]);
 
-  if (loading)   return <div className="p-8">Loading…</div>;
-  if (!order)    return <div className="p-8">Order not found.</div>;
+  if (loading) return <div className="p-8">Loading…</div>;
+  if (!order) return <div className="p-8">Order not found.</div>;
 
   /* ---------- totals ---------- */
   const total = order.orderItems.reduce((sum, it) => {
-    const line =
-      (it.price - it.discount) *
-      it.quantity *
-      (1 + it.tva / 100);
+    const line = (it.price - it.discount) * it.quantity * (1 + it.tva / 100);
     return sum + line;
   }, 0);
 
@@ -104,18 +106,26 @@ export default function OrderDetailsPage() {
           </p>
         </div>
 
-        {/* Livraison */}
+        {/* Méthode de livraison */}
         <div className="flex-1 px-4 flex flex-col space-y-1">
           <p className="text-xs text-gray-400">Méthode de livraison</p>
           <p className="text-sm font-medium">
-            {order.deliveryMethod} – {order.deliveryCost?.toFixed(2) ?? "0.00"}
+            {order.deliveryMethod} – {order.deliveryCost?.toFixed(2) ?? "0.00"} TND
           </p>
         </div>
 
-        {/* Paiement */}
+        {/* Moyen de paiement */}
         <div className="flex-1 px-4 flex flex-col space-y-1">
           <p className="text-xs text-gray-400">Moyen de paiement</p>
           <p className="text-sm font-medium">{order.paymentMethod || "—"}</p>
+        </div>
+
+        {/* Retrait en magasin */}
+        <div className="flex-1 px-4 flex flex-col space-y-1">
+          <p className="text-xs text-gray-400">Retrait en magasin</p>
+          <p className="text-sm font-medium">
+            {order.pickupMagasin?.MagasinAddress ?? "—"}
+          </p>
         </div>
 
         {/* Adresse de livraison */}

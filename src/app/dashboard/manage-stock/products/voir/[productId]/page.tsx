@@ -31,7 +31,7 @@ interface FetchedProduct {
   description: string;
   categorie: { _id: string; name: string } | string | null;
   subcategorie: { _id: string; name: string } | string | null;
-  boutique: { _id: string; name: string } | string | null;
+  magasin: { _id: string; name: string } | string | null;
   brand: { _id: string; name: string } | string | null;
   stock: number;
   price: number;
@@ -141,7 +141,7 @@ export default function ProductViewPage() {
           <strong>Subcategory:</strong> {renderName(product.subcategorie)}
         </div>
         <div>
-          <strong>Boutique:</strong> {renderName(product.boutique)}
+          <strong>Magasin:</strong> {renderName(product.magasin)}
         </div>
         <div>
           <strong>Brand:</strong> {renderName(product.brand)}

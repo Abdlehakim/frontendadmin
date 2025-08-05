@@ -13,7 +13,12 @@ import Popup from "@/components/Popup/DeletePopup";
 interface Order {
   _id: string;
   ref: string;
+  clientName: string;
   user: { _id: string; username?: string; email: string } | null;
+  pickupMagasin?: {
+    Magasin: string;
+    MagasinAddress: string;
+  };
   createdAt: string;
   orderStatus: string;
   deliveryMethod: string;
@@ -180,7 +185,7 @@ export default function OrdersPage() {
               <th className="px-4 py-2 text-center">REF</th>
               <th className="px-4 py-2 text-center">Client Name</th>
               <th className="px-4 py-2 text-center">Delivery Address</th>
-              <th className="px-4 py-2 text-center">Date</th>
+              <th className="px-4 py-2 text-center">Retrait en magasin</th>
               <th className="px-4 py-2 text-center">Status</th>
               <th className="px-4 py-2 text-center">Action</th>
             </tr>
@@ -201,15 +206,15 @@ export default function OrdersPage() {
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
                 {displayedOrders.map((o) => (
                   <tr key={o._id} className="even:bg-gray-100 odd:bg-white">
-                    <td className="px-4 text-center truncate font-semibold">{o.ref}</td>
-                    <td className="px-4 text-center">
-                      {o.user?.username ?? o.user?.email ?? "Unknown user"}
+                    <td className="px-4 text-center truncate font-semibold">
+                      {o.ref}
                     </td>
-                    <td className="px-4 text-center line-clamp-2">
-                      {o.DeliveryAddress[0]?.DeliverToAddress || "—"}
+                    <td className="px-4 text-center">{o.clientName}</td>
+                    <td className="px-4 text-center truncate">
+                      {o.DeliveryAddress[0]?.DeliverToAddress ?? "—"}
                     </td>
                     <td className="px-4 text-center">
-                      {new Date(o.createdAt).toLocaleDateString()}
+                      {o.pickupMagasin?.MagasinAddress ?? "—"}
                     </td>
                     <td className="px-4 text-center">
                       <select

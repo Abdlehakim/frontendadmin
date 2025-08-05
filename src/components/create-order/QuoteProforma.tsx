@@ -1,11 +1,15 @@
+/* ------------------------------------------------------------------
+   components/create-order/QuoteProforma.tsx
+   Génération du document PDF (html2canvas → jsPDF)
+------------------------------------------------------------------ */
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { BasketItem } from "./selectProducts";
 import { DeliveryOption } from "./selectDeliveryOption";
-import { Boutique } from "./SelectBoutiques";
+import { Magasin } from "./SelectBoutiques";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import Image from "next/image";
 
 /* ---------- props ---------- */
 interface QuoteProformaProps {
@@ -21,10 +25,11 @@ interface QuoteProformaProps {
   };
   clientLabel: string;
   addressLabel: string | null;
-  boutique: Boutique | null;
+  magasin: Magasin | null;
   delivery: DeliveryOption | null;
   basket: BasketItem[];
-  date: string; // already formatted
+  paymentMethod?: string | null;          // ← NEW
+  date: string;                           // already formatted
 }
 
 /* ---------- helpers ---------- */
@@ -84,33 +89,35 @@ const InlineOrImg: React.FC<{
   );
 };
 
+/* ---------- component ---------- */
 const QuoteProforma: React.FC<QuoteProformaProps> = ({
   quoteRef,
   company,
   clientLabel,
   addressLabel,
-  boutique,
+  magasin,
   delivery,
   basket,
+  paymentMethod,          // ← NEW
   date,
 }) => {
   const { fmt } = useCurrency();
 
   /* ----- per-item + global totals ----- */
   const lines = basket.map((it) => {
-    const unitTTC = it.discount > 0 ? it.price * (1 - it.discount / 100) : it.price;
-    const unitHT = unitTTC / (1 + it.tva / 100);
-    const lineHT = unitHT * it.quantity;
-    const lineTVA = unitTTC * it.quantity - lineHT;
-    const lineTTC = unitTTC * it.quantity;
+    const unitTTC  = it.discount > 0 ? it.price * (1 - it.discount / 100) : it.price;
+    const unitHT   = unitTTC / (1 + it.tva / 100);
+    const lineHT   = unitHT * it.quantity;
+    const lineTVA  = unitTTC * it.quantity - lineHT;
+    const lineTTC  = unitTTC * it.quantity;
     return { ...it, unitHT, lineHT, lineTVA, lineTTC };
   });
 
-  const totalHT = lines.reduce((sum, l) => sum + l.lineHT, 0);
-  const totalTVA = lines.reduce((sum, l) => sum + l.lineTVA, 0);
-  const totalTTC =
-    lines.reduce((sum, l) => sum + l.lineTTC, 0) + (delivery ? delivery.price : 0);
+  const totalHT   = lines.reduce((s, l) => s + l.lineHT, 0);
+  const totalTVA  = lines.reduce((s, l) => s + l.lineTVA, 0);
+  const totalTTC  = lines.reduce((s, l) => s + l.lineTTC, 0) + (delivery ? delivery.price : 0);
 
+  /* ---------- UI ---------- */
   return (
     <div
       style={{
@@ -142,6 +149,7 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
           fontSize: "0.875rem",
         }}
       >
+        {/* Company block */}
         <div>
           <p style={{ margin: 0, textTransform: "uppercase", fontWeight: 600 }}>
             {company.name}
@@ -153,6 +161,8 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
           <p style={{ margin: 0, fontSize: "0.775rem", fontStyle: "italic" }}>
             Téléphone : {company.phone}
           </p>
+
+          {/* Metadata card */}
           <div
             style={{
               backgroundColor: "#f9fafb",
@@ -171,33 +181,42 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
             >
               <span>Date :</span>
               <span style={{ fontWeight: 500 }}>{date}</span>
+
               <span>N° de devis :</span>
               <span style={{ fontWeight: 500 }}>{quoteRef}</span>
+
               <span>Mode :</span>
               <span style={{ fontWeight: 500 }}>{delivery?.name ?? "—"}</span>
+
               <span>Frais liv. :</span>
               <span style={{ fontWeight: 500 }}>
                 {delivery ? fmt(delivery.price) : "—"}
               </span>
+
+              <span>Paiement :</span>
+              <span style={{ fontWeight: 500 }}>{paymentMethod ?? "—"}</span>
             </div>
           </div>
         </div>
 
+        {/* Client / adresse */}
         <div>
           <p style={{ margin: 0, fontWeight: 600 }}>Client</p>
           <p style={{ whiteSpace: "pre-line" }}>{clientLabel}</p>
-          <p style={{ margin: 0, fontWeight: 600, marginTop: "1rem" }}>
-            {delivery?.isPickup ? delivery.name : "Adresse de livraison"}
+
+          <p style={{ margin: "1rem 0 0 0", fontWeight: 600 }}>
+            {delivery?.isPickup ? "Magasin" : "Adresse"}
           </p>
           <p style={{ whiteSpace: "pre-line" }}>
             {delivery?.isPickup
-              ? boutique
-                ? `${boutique.name}\n${boutique.address ?? ""}`
+              ? magasin
+                ? `${magasin.name}\n${magasin.address ?? ""}`
                 : "—"
               : addressLabel ?? "—"}
           </p>
         </div>
       </div>
+
       <div style={{ height: "1px", backgroundColor: "#2dd4bf", margin: "1rem 0" }} />
 
       {/* Products Table */}
@@ -205,12 +224,12 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              {["Product", "Qté", "PU HT", "% TVA", "Remise", "Total TTC"].map((h) => (
+              {["Produit", "Qté", "PU HT", "% TVA", "Remise", "Total TTC"].map((h) => (
                 <th
                   key={h}
                   style={{
                     padding: "0.5rem",
-                    textAlign: h === "Product" ? "left" : "right",
+                    textAlign: h === "Produit" ? "left" : "right",
                     borderBottom: "2px solid #2dd4bf",
                   }}
                 >
@@ -224,40 +243,26 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
               <tr key={l._id} style={{ borderBottom: "1px solid #e5e7eb" }}>
                 <td style={{ padding: "0.5rem", textAlign: "left" }}>
                   {l.name}
-                  {l.attributes && l.attributes.length > 0 && (
-                    <div
-                      style={{
-                        fontSize: "0.75rem",
-                        color: "#6b7280",
-                        marginTop: "0.25rem",
-                      }}
-                    >
+                  {l.attributes?.length ? (
+                    <div style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: "0.25rem" }}>
                       {l.attributes
                         .map((row) => {
                           const id = row.attributeSelected._id;
                           const val = l.chosen[id];
-                          return val ? `${row.attributeSelected.name} : ${val}` : null;
+                          return val ? `${row.attributeSelected.name}: ${val}` : null;
                         })
                         .filter(Boolean)
                         .join(", ")}
                     </div>
-                  )}
+                  ) : null}
                 </td>
-                <td style={{ padding: "0.5rem", textAlign: "right" }}>
-                  {l.quantity}
-                </td>
-                <td style={{ padding: "0.5rem", textAlign: "right" }}>
-                  {fmt(l.unitHT)}
-                </td>
-                <td style={{ padding: "0.5rem", textAlign: "right" }}>
-                  {l.tva}%
-                </td>
+                <td style={{ padding: "0.5rem", textAlign: "right" }}>{l.quantity}</td>
+                <td style={{ padding: "0.5rem", textAlign: "right" }}>{fmt(l.unitHT)}</td>
+                <td style={{ padding: "0.5rem", textAlign: "right" }}>{l.tva}%</td>
                 <td style={{ padding: "0.5rem", textAlign: "right" }}>
                   {l.discount > 0 ? `${l.discount}%` : "—"}
                 </td>
-                <td style={{ padding: "0.5rem", textAlign: "right" }}>
-                  {fmt(l.lineTTC)}
-                </td>
+                <td style={{ padding: "0.5rem", textAlign: "right" }}>{fmt(l.lineTTC)}</td>
               </tr>
             ))}
           </tbody>
@@ -265,22 +270,8 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
       </div>
 
       {/* Totals */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          fontSize: "0.875rem",
-          paddingTop: "1rem",
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "33%",
-            display: "grid",
-            gap: "0.25rem",
-          }}
-        >
+      <div style={{ display: "flex", justifyContent: "flex-end", fontSize: "0.875rem", paddingTop: "1rem" }}>
+        <div style={{ width: "100%", maxWidth: "33%", display: "grid", gap: "0.25rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>Total HT</span>
             <span>{fmt(totalHT)}</span>
@@ -310,7 +301,7 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
         </div>
       </div>
 
-      {/* Date, Signature & Thanks at page bottom-right */}
+      {/* Signature & Thank you */}
       <div
         style={{
           position: "absolute",
@@ -320,20 +311,12 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
           fontSize: "0.875rem",
         }}
       >
-        <p
-          style={{
-            fontSize: "0.475rem",
-             margin: 0,
-            borderTop: "1px solid #000",
-            width: "150px",
-          }}
-        >
-          Signature et cache
+        <p style={{ fontSize: "0.475rem", margin: 0, borderTop: "1px solid #000", width: "150px" }}>
+          Signature et cachet
         </p>
-        <p style={{ margin: 0, fontSize: "0.775rem" }}> Fait le : {date}</p>
-        
+        <p style={{ margin: 0, fontSize: "0.775rem" }}>Fait le : {date}</p>
         <p style={{ marginTop: "0.2rem", fontStyle: "italic" }}>
-          Merci pour votre confiance !
+          Merci pour votre confiance&nbsp;!
         </p>
       </div>
     </div>

@@ -8,14 +8,14 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 // Types for fetched lists
 interface Category { _id: string; name: string; }
 interface SubCategory { _id: string; name: string; }
-interface Boutique { _id: string; name: string; }
+interface Magasin { _id: string; name: string; }
 interface Brand { _id: string; name: string; }
 
 // Simple data fields vs. status selects
 const DATA_FIELDS = [
   "categorie",
   "subcategorie",
-  "boutique",
+  "magasin",
   "brand",
   "stock",
   "price",
@@ -45,7 +45,7 @@ export default function StepData({
   // State: always arrays (never undefined)
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
-  const [boutiques, setBoutiques] = useState<Boutique[]>([]);
+  const [magasins, setBoutiques] = useState<Magasin[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
 
   // Fetch lists on mount, ensuring fallbacks
@@ -62,10 +62,10 @@ export default function StepData({
         );
         setSubcategories(subsRes.subCategories ?? []);
 
-        const boutsRes = await fetchFromAPI<{ boutiques?: Boutique[] }>(
-          "/dashboardadmin/stock/boutiques"
+        const boutsRes = await fetchFromAPI<{ magasins?: Magasin[] }>(
+          "/dashboardadmin/stock/magasins"
         );
-        setBoutiques(boutsRes.boutiques ?? []);
+        setBoutiques(boutsRes.magasins ?? []);
 
         const brandsRes = await fetchFromAPI<{ brands?: Brand[] }>(
           "/dashboardadmin/stock/brands"
@@ -120,18 +120,18 @@ export default function StepData({
             </label>
           );
         }
-        if (field === "boutique") {
+        if (field === "magasin") {
           return (
             <label key={field} className="flex flex-col gap-1">
-              <span className="text-sm font-medium capitalize">Boutique</span>
+              <span className="text-sm font-medium capitalize">Magasin</span>
               <select
                 name={field}
                 value={form[field] ?? ""}
                 onChange={onFixed}
                 className="border border-gray-300 bg-inputcolor rounded px-3 py-2"
               >
-                <option value="">Select boutique</option>
-                {boutiques.map((b) => (
+                <option value="">Select magasin</option>
+                {magasins.map((b) => (
                   <option key={b._id} value={b._id}>
                     {b.name}
                   </option>

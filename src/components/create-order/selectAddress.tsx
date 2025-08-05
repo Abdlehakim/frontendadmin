@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
    components/create-order/SelectAddress.tsx
+   Sélection d’une adresse de livraison
 ------------------------------------------------------------------ */
 "use client";
 
@@ -22,6 +23,13 @@ import AddAddress from "@/components/create-order/AddAddress";
 import ManageAddresses from "@/components/create-order/ManageAddresses";
 import type { Client } from "@/components/create-order/selectClient";
 
+/* ---------- redux ---------- */
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  cacheAddresses,            // ⇦ nouvelle action (voir slice)
+  selectOrderCreation,
+} from "@/features/orderCreation/orderCreationSlice";
+
 /* ---------- types ---------- */
 export interface Address {
   _id: string;
@@ -42,7 +50,7 @@ interface SelectAddressProps {
 
 /* ---------- helpers ---------- */
 const fmt = (a: Address) =>
-  `${a.Name},${a.StreetAddress}, ${a.City} ${a.PostalCode}, ${a.Country}`;
+  `${a.Name}, ${a.StreetAddress}, ${a.City} ${a.PostalCode}, ${a.Country}`;
 
 /* ---------- component ---------- */
 export default function SelectAddress({
@@ -50,36 +58,53 @@ export default function SelectAddress({
   value,
   onChange,
 }: SelectAddressProps) {
-  /* ---------- state ---------- */
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [fetched, setFetched] = useState(false);
-  const [open, setOpen] = useState(false);
+  const dispatch = useAppDispatch();
+
+  /* ---------- cache global ---------- */
+  const addressesCache = useAppSelector(
+    (s) => selectOrderCreation(s).addressesCache // { [clientId]: Address[] }
+  );
+
+  /* ---------- state local ---------- */
+  const [addresses, setAddresses] = useState<Address[]>(
+    client ? addressesCache[client._id] ?? [] : []
+  );
+  const [loading, setLoading]   = useState(false);
+  const [fetched, setFetched]   = useState(false);
+  const [open, setOpen]         = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
-  const [showManage, setShowManage] = useState(false);
+  const [showManage, setShowManage]       = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /* ---------- fetch addresses ---------- */
-const fetchAddresses = useCallback(async () => {
-  setAddresses([]);
-  if (!client) return;
+  /* ---------- fetch addresses (client-dépendant) ---------- */
+  const fetchAddresses = useCallback(async () => {
+    if (!client) return;
 
-  setLoading(true);
-  setFetched(false);
-  try {
-    const { addresses }: { addresses: Address[] } = await fetchFromAPI(
-      `/dashboardadmin/clientAddress/${client._id}`
-    );
-    setAddresses(addresses);
-  } catch (err) {
-    console.error("Load addresses error:", err);
-  } finally {
-    setLoading(false);
-    setFetched(true);
-  }
-}, [client]); 
+    /* si déjà en cache, éviter un nouveau fetch */
+    const cached = addressesCache[client._id];
+    if (cached && cached.length) {
+      setAddresses(cached);
+      setFetched(true);
+      return;
+    }
+
+    setLoading(true);
+    setFetched(false);
+    try {
+      const { addresses }: { addresses: Address[] } = await fetchFromAPI(
+        `/dashboardadmin/clientAddress/${client._id}`
+      );
+      setAddresses(addresses);
+      dispatch(cacheAddresses({ clientId: client._id, addresses })); // ⇦ cache
+    } catch (err) {
+      console.error("Load addresses error:", err);
+    } finally {
+      setLoading(false);
+      setFetched(true);
+    }
+  }, [client, addressesCache, dispatch]);
 
   /* fetch on mount / client change */
   useEffect(() => {
@@ -103,30 +128,23 @@ const fetchAddresses = useCallback(async () => {
   if (!client) return null;
 
   /* ---------- selected address ---------- */
-  const selected = value ? addresses.find((a) => a._id === value) || null : null;
+  const selected =
+    value ? addresses.find((a) => a._id === value) || null : null;
 
   /* ---------- modal helpers ---------- */
-  const openAddForm = () => {
-    setAddressToEdit(null);
-    setShowForm(true);
-  };
-  const openEditForm = () => {
-    if (selected) {
-      setAddressToEdit(selected);
-      setShowForm(true);
-    }
-  };
-  const closeForm = () => setShowForm(false);
+  const openAddForm  = () => { setAddressToEdit(null); setShowForm(true); };
+  const openEditForm = () => { if (selected) { setAddressToEdit(selected); setShowForm(true); } };
+  const closeForm    = () => setShowForm(false);
 
-  const openManage = () => setShowManage(true);
-  const closeManage = () => setShowManage(false);
+  const openManage   = () => setShowManage(true);
+  const closeManage  = () => setShowManage(false);
 
   /* ---------- UI ---------- */
   return (
     <>
       {/* Dropdown select */}
       <div className="relative w-full py-4 bg-white space-y-4 mt-6">
-        <h2 className="font-bold">Addresse de livraison</h2>
+        <h2 className="font-bold">Adresse de livraison</h2>
         <div className="relative w-full" ref={dropdownRef}>
           <button
             type="button"
@@ -177,12 +195,12 @@ const fetchAddresses = useCallback(async () => {
       </div>
 
       {/* Action buttons */}
-      <div className="my-3 flex justify-end gap-3 p-4">
+      <div className="flex justify-end gap-3">
         {/* Add */}
         <button
           type="button"
           onClick={openAddForm}
-          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
+          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
         >
           <AiOutlinePlus className="h-4 w-4" />
           Ajouter une nouvelle adresse
@@ -193,7 +211,7 @@ const fetchAddresses = useCallback(async () => {
           type="button"
           onClick={openEditForm}
           disabled={!selected}
-          className={`w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 ${
+          className={`w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 cursor-pointer ${
             selected
               ? "hover:bg-primary hover:text-white"
               : "opacity-50 cursor-not-allowed"
@@ -207,7 +225,7 @@ const fetchAddresses = useCallback(async () => {
         <button
           type="button"
           onClick={openManage}
-          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
+          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
         >
           <AiOutlineSetting className="h-4 w-4" />
           Gérer / supprimer

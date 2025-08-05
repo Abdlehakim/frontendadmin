@@ -247,10 +247,10 @@ export default function CreateHomePageData() {
           </div>
         </div>
 
-        {/* Boutique */}
+        {/* Magasin */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPboutiqueTitle" className="text-sm font-medium">Boutique Title*</label>
+            <label htmlFor="HPboutiqueTitle" className="text-sm font-medium">Magasin Title*</label>
             <input
               id="HPboutiqueTitle"
               name="HPboutiqueTitle"
@@ -262,7 +262,7 @@ export default function CreateHomePageData() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPboutiqueSubTitle" className="text-sm font-medium">Boutique Sub Title*</label>
+            <label htmlFor="HPboutiqueSubTitle" className="text-sm font-medium">Magasin Sub Title*</label>
             <input
               id="HPboutiqueSubTitle"
               name="HPboutiqueSubTitle"

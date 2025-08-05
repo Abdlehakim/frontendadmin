@@ -1,6 +1,6 @@
 // ------------------------------------------------------------------
 // src/app/dashboard/manage-client/clients-shop/create/page.tsx
-// Page ‑ Création d’un « ClientShop » (client boutique)
+// Page ‑ Création d’un « ClientShop » (client magasin)
 // ------------------------------------------------------------------
 "use client";
 
@@ -55,7 +55,7 @@ export default function CreateClientShopPage() {
   /* ---------- UI ---------- */
   return (
     <div className="w-[80%] flex flex-col gap-y-4 p-4" >
-      <h1 className="text-3xl font-bold">Create Client Boutique</h1>
+      <h1 className="text-3xl font-bold">Create Client Magasin</h1>
 
       <nav className="text-sm underline-offset-1 underline flex items-center gap-2">
         <Link

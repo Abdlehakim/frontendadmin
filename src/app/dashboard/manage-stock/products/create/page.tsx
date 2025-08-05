@@ -77,7 +77,7 @@ export interface ProductForm {
   description: string;
   categorie: string;
   subcategorie: string;
-  boutique: string;
+  magasin: string;
   brand: string;
   stock: string;
   price: string;
@@ -94,7 +94,7 @@ const blankForm: ProductForm = {
   description: "",
   categorie: "",
   subcategorie: "",
-  boutique: "",
+  magasin: "",
   brand: "",
   stock: "0",
   price: "0",

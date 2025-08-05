@@ -67,7 +67,7 @@ interface ProductForm {
   description: string;
   categorie: string;
   subcategorie: string;
-  boutique: string;
+  magasin: string;
   brand: string;
   stock: string;
   price: string;
@@ -84,7 +84,7 @@ interface FetchedProduct {
   description: string;
   categorie: string;
   subcategorie?: string | null;
-  boutique?: string | null;
+  magasin?: string | null;
   brand?: string | null;
   stock: number;
   price: number;
@@ -144,7 +144,7 @@ export default function UpdateProductPage() {
     description: "",
     categorie: "",
     subcategorie: "",
-    boutique: "",
+    magasin: "",
     brand: "",
     stock: "0",
     price: "0",
@@ -200,7 +200,7 @@ export default function UpdateProductPage() {
           description: data.description,
           categorie: data.categorie,
           subcategorie: data.subcategorie ?? "",
-          boutique: data.boutique ?? "",
+          magasin: data.magasin ?? "",
           brand: data.brand ?? "",
           stock: String(data.stock),
           price: String(data.price),

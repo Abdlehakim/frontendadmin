@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   src/app/manage-stock/boutiques/page.tsx
+   src/app/manage-stock/magasins/page.tsx
 ------------------------------------------------------------------ */
 "use client";
 
@@ -12,7 +12,7 @@ import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 
 /* ───────── types ───────── */
-interface Boutique {
+interface Magasin {
   _id: string;
   reference: string;
   name: string;
@@ -31,7 +31,7 @@ const statusOptions = ["approve", "not-approve"] as const;
 
 export default function BoutiquesClientPage() {
   /* data */
-  const [boutiques, setBoutiques] = useState<Boutique[]>([]);
+  const [magasins, setBoutiques] = useState<Magasin[]>([]);
   const [loading, setLoading] = useState(true);
 
   /* UI */
@@ -48,10 +48,10 @@ export default function BoutiquesClientPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { boutiques } = await fetchFromAPI<{ boutiques: Boutique[] }>(
-        "/dashboardadmin/stock/boutiques",
+      const { magasins } = await fetchFromAPI<{ magasins: Magasin[] }>(
+        "/dashboardadmin/stock/magasins",
       );
-      setBoutiques(boutiques);
+      setBoutiques(magasins);
       setLoading(false);
     })();
   }, []);
@@ -59,10 +59,10 @@ export default function BoutiquesClientPage() {
   /* filter + paging */
   const filtered = useMemo(
     () =>
-      boutiques.filter((b) =>
+      magasins.filter((b) =>
         b.name.toLowerCase().includes(searchTerm.toLowerCase()),
       ),
-    [boutiques, searchTerm],
+    [magasins, searchTerm],
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const displayed = useMemo(
@@ -73,7 +73,7 @@ export default function BoutiquesClientPage() {
 
   /* API actions */
   const deleteBoutique = async (id: string) => {
-    await fetchFromAPI(`/dashboardadmin/stock/boutiques/delete/${id}`, {
+    await fetchFromAPI(`/dashboardadmin/stock/magasins/delete/${id}`, {
       method: "DELETE",
     });
     setBoutiques((prev) => prev.filter((b) => b._id !== id));
@@ -87,7 +87,7 @@ export default function BoutiquesClientPage() {
       prev.map((b) => (b._id === id ? { ...b, vadmin: newStatus } : b)),
     );
     try {
-      await fetchFromAPI(`/dashboardadmin/stock/boutiques/update/${id}`, {
+      await fetchFromAPI(`/dashboardadmin/stock/magasins/update/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vadmin: newStatus }),
@@ -123,10 +123,10 @@ export default function BoutiquesClientPage() {
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       {/* Header */}
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Boutiques</h1>
-        <Link href="/dashboard/manage-stock/boutiques/create">
+        <h1 className="text-3xl font-bold uppercase">Magasins</h1>
+        <Link href="/dashboard/manage-stock/magasins/create">
           <button className="w-[180px] h-[40px] bg-tertiary text-white rounded hover:opacity-90">
-            Add New Boutique
+            Add New Magasin
           </button>
         </Link>
       </div>
@@ -215,14 +215,14 @@ export default function BoutiquesClientPage() {
                         ))}
                       </select>
                       <Link
-                        href={`/dashboard/manage-stock/boutiques/update/${b._id}`}
+                        href={`/dashboard/manage-stock/magasins/update/${b._id}`}
                       >
                         <button className="ButtonSquare">
                           <FaRegEdit size={14} />
                         </button>
                       </Link>
                       <Link
-                        href={`/dashboard/manage-stock/boutiques/voir/${b._id}`}
+                        href={`/dashboard/manage-stock/magasins/voir/${b._id}`}
                       >
                         <button className="ButtonSquare">
                           <FaRegEye size={14} />

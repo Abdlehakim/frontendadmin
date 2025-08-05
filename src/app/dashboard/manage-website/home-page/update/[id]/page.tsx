@@ -308,11 +308,11 @@ export default function UpdateHomePageData() {
           </div>
         </div>
 
-        {/* Boutique Title & Subtitle */}
+        {/* Magasin Title & Subtitle */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="HPboutiqueTitle" className="text-sm font-medium">
-              Boutique Title*
+              Magasin Title*
             </label>
             <input
               id="HPboutiqueTitle"
@@ -326,7 +326,7 @@ export default function UpdateHomePageData() {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="HPboutiqueSubTitle" className="text-sm font-medium">
-              Boutique Subtitle*
+              Magasin Subtitle*
             </label>
             <input
               id="HPboutiqueSubTitle"

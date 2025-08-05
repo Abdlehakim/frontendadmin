@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FormState } from "@/app/dashboard/manage-stock/boutiques/update/[boutiqueId]/page"; // ← adjust if path differs
+import { FormState } from "@/app/dashboard/manage-stock/magasins/update/[boutiqueId]/page"; // ← adjust if path differs
 import { days } from "@/lib/openingHours";
 
 interface Props {
@@ -87,7 +87,7 @@ const ReviewStep: React.FC<Props> = ({
         >
           Back
         </button>
-        <Link href="/dashboard/manage-stock/boutiques">
+        <Link href="/dashboard/manage-stock/magasins">
           <button
             type="button"
             className="px-6 py-2 bg-quaternary text-white rounded"
@@ -100,7 +100,7 @@ const ReviewStep: React.FC<Props> = ({
           disabled={submitting}
           className="px-6 py-2 bg-tertiary text-white rounded"
         >
-          {submitting ? "Updating..." : "Update Boutique"}
+          {submitting ? "Updating..." : "Update Magasin"}
         </button>
       </div>
     </>

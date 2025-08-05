@@ -1,4 +1,4 @@
-// src/app/manage-stock/boutiques/voir/[boutiqueId]/page.tsx
+// src/app/manage-stock/magasins/voir/[boutiqueId]/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ interface TimeRange {
   close: string;
 }
 
-interface Boutique {
+interface Magasin {
   _id: string;
   reference?: string;
   name: string;
@@ -30,20 +30,20 @@ interface Boutique {
 export default function BoutiqueViewPage() {
   const { boutiqueId } = useParams();
   const router = useRouter();
-  const [boutique, setBoutique] = useState<Boutique | null>(null);
+  const [magasin, setBoutique] = useState<Magasin | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!boutiqueId) return;
     setLoading(true);
-    fetchFromAPI<Boutique>(`/dashboardadmin/stock/boutiques/${boutiqueId}`)
+    fetchFromAPI<Magasin>(`/dashboardadmin/stock/magasins/${boutiqueId}`)
       .then(data => {
         setBoutique(data);
         setError(null);
       })
       .catch(err => {
-        setError(err instanceof Error ? err.message : "Failed to load boutique");
+        setError(err instanceof Error ? err.message : "Failed to load magasin");
       })
       .finally(() => setLoading(false));
   }, [boutiqueId]);
@@ -68,8 +68,8 @@ export default function BoutiqueViewPage() {
       </div>
     );
   }
-  if (!boutique) {
-    return <p className="p-4">Boutique not found.</p>;
+  if (!magasin) {
+    return <p className="p-4">Magasin not found.</p>;
   }
 
   return (
@@ -81,42 +81,42 @@ export default function BoutiqueViewPage() {
         >
           Back to list
         </button>
-        <h1 className="text-3xl font-bold">Boutique Details</h1>
+        <h1 className="text-3xl font-bold">Magasin Details</h1>
       </div>
 
       <div className="bg-white shadow rounded p-6 flex gap-8">
-        {boutique.image && (
+        {magasin.image && (
           <Image
-            src={boutique.image}
-            alt={boutique.name}
+            src={magasin.image}
+            alt={magasin.name}
             width={150}
             height={150}
             className="object-cover rounded"
           />
         )}
         <div className="space-y-2">
-          <div><strong>Reference:</strong> {boutique.reference || "—"}</div>
-          <div><strong>Name:</strong> {boutique.name}</div>
-          <div><strong>Phone:</strong> {boutique.phoneNumber || "—"}</div>
-          <div><strong>Localisation:</strong> {boutique.localisation || "—"}</div>
+          <div><strong>Reference:</strong> {magasin.reference || "—"}</div>
+          <div><strong>Name:</strong> {magasin.name}</div>
+          <div><strong>Phone:</strong> {magasin.phoneNumber || "—"}</div>
+          <div><strong>Localisation:</strong> {magasin.localisation || "—"}</div>
           <div>
             <strong>Admin Status:</strong>{" "}
-            <span className={boutique.vadmin === "approve" ? "text-green-600" : "text-red-600"}>
-              {boutique.vadmin}
+            <span className={magasin.vadmin === "approve" ? "text-green-600" : "text-red-600"}>
+              {magasin.vadmin}
             </span>
           </div>
-          <div><strong>Created By:</strong> {boutique.createdBy?.username || "—"}</div>
-          <div><strong>Created At:</strong> {new Date(boutique.createdAt).toLocaleString()}</div>
-          <div><strong>Updated By:</strong> {boutique.updatedBy?.username || "—"}</div>
-          <div><strong>Updated At:</strong> {new Date(boutique.updatedAt).toLocaleString()}</div>
+          <div><strong>Created By:</strong> {magasin.createdBy?.username || "—"}</div>
+          <div><strong>Created At:</strong> {new Date(magasin.createdAt).toLocaleString()}</div>
+          <div><strong>Updated By:</strong> {magasin.updatedBy?.username || "—"}</div>
+          <div><strong>Updated At:</strong> {new Date(magasin.updatedAt).toLocaleString()}</div>
         </div>
       </div>
 
-      {boutique.openingHours && (
+      {magasin.openingHours && (
         <div className="bg-white shadow rounded p-6">
           <h2 className="text-2xl font-semibold mb-4">Opening Hours</h2>
           <ul className="list-disc ml-6 space-y-1">
-            {Object.entries(boutique.openingHours).map(([day, ranges]) => (
+            {Object.entries(magasin.openingHours).map(([day, ranges]) => (
               <li key={day}>
                 <strong>{day}:</strong> {ranges.map(r => `${r.open}-${r.close}`).join(", ")}
               </li>

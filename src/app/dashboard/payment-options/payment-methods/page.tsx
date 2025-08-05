@@ -1,6 +1,3 @@
-/* ------------------------------------------------------------------
-   src/app/dashboard/payment-options/payment-methods/page.tsx
------------------------------------------------------------------- */
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -9,72 +6,78 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
 /* ---------- types ---------- */
 interface MethodCfg {
+  _id: string;
+  name: string;
   enabled: boolean;
   label: string;
   help: string;
 }
-interface PaymentSettings {
-  paypal: MethodCfg;
-  stripe: MethodCfg;
-  cashOnDelivery: MethodCfg;
-  updatedAt: string;
+
+interface PaymentMethodsResponse {
+  paymentMethods: MethodCfg[]; // ✅ Matches updated backend key
 }
 
-const methodKeys = ["paypal", "stripe", "cashOnDelivery"] as const;
-type MethodKey = (typeof methodKeys)[number];
+export default function PaymentSettingsPage() {
+  const [methods, setMethods] = useState<Record<string, MethodCfg> | null>(null);
+  const [methodIds, setMethodIds] = useState<string[]>([]);
+  const [updatedAt, setUpdatedAt] = useState<string>("");
+  const [loading, setLoading] = useState(true);
 
-export default function PaymentMethodsPage() {
-  /* data */
-  const [settings, setSettings] = useState<PaymentSettings | null>(null);
-  const [loading,  setLoading]  = useState(true);
-
-  /* edit state */
-  const [editRow, setEditRow] = useState<MethodKey | null>(null);
-  const [draft,   setDraft]   = useState<{ label: string; help: string }>({
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ label: string; help: string }>({
     label: "",
-    help : "",
+    help: "",
   });
 
-  /* ───── fetch once ───── */
   useEffect(() => {
     (async () => {
       try {
-        const { paymentSettings } =
-          await fetchFromAPI<{ paymentSettings: PaymentSettings }>(
-            "/dashboardadmin/payment/payment-settings"
-          );
-        setSettings(paymentSettings);
+        const res = await fetchFromAPI<PaymentMethodsResponse>(
+          "/dashboardadmin/payment/payment-settings"
+        );
+
+        if (!res || !Array.isArray(res.paymentMethods)) {
+          throw new Error("Invalid response format");
+        }
+
+        const mapped = Object.fromEntries(res.paymentMethods.map((m) => [m._id, m]));
+        const ids = res.paymentMethods.map((m) => m._id);
+
+        setMethods(mapped);
+        setMethodIds(ids);
+        setUpdatedAt(new Date().toISOString());
       } catch (err) {
-        console.error("Fetch payment settings failed:", err);
+        console.error("Fetch payment methods failed:", err);
+        setMethods(null);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  /* ───── optimistic patch helper ───── */
-  const patchMethod = async (key: MethodKey, patch: Partial<MethodCfg>) => {
-    if (!settings) return;
+  const patchMethod = async (id: string, patch: Partial<MethodCfg>) => {
+    if (!methods) return;
+    const prevMethods = methods;
+    const prevUpdatedAt = updatedAt;
 
-    /* keep a copy so we can roll back on failure */
-    const prev = settings;
-    const next = { ...settings, [key]: { ...settings[key], ...patch } };
-    setSettings(next); // optimistic UI
+    const next = { ...methods, [id]: { ...methods[id], ...patch } };
+    setMethods(next);
 
     try {
-      await fetchFromAPI("/dashboardadmin/payment/payment-settings/update", {
-        method : "PUT",
+      await fetchFromAPI(`/dashboardadmin/payment/payment-settings/update`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body   : JSON.stringify({ [key]: next[key] }),
+        body: JSON.stringify({ [methods[id].name]: patch }),
       });
+      setUpdatedAt(new Date().toISOString());
     } catch (err) {
       console.error(err);
-      setSettings(prev);      // revert UI
+      setMethods(prevMethods);
+      setUpdatedAt(prevUpdatedAt);
       alert("Failed to update payment settings.");
     }
   };
 
-  /* ───── render ───── */
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -82,13 +85,21 @@ export default function PaymentMethodsPage() {
       </div>
     );
   }
-  if (!settings) {
+
+  if (!methods) {
     return (
       <div className="flex h-full items-center justify-center text-gray-500">
-        Unable to load payment settings.
+        Unable to load payment methods.
       </div>
     );
   }
+
+  const getMethodName = (key: string) => {
+    const name = methods[key].name;
+    if (name === "cashOnDelivery") return "Cash on Delivery";
+    if (name === "payInMagasin") return "Pay in Magasin";
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
 
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-6 h-full">
@@ -98,97 +109,67 @@ export default function PaymentMethodsPage() {
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white">
             <tr>
-              <th className="w-[20%] py-2 pl-4 text-left text-sm font-medium">
-                Method
-              </th>
-              <th className="w-[10%] py-2 text-sm font-medium text-center">
-                Active
-              </th>
-              <th className="w-[22%] py-2 text-sm font-medium text-center">
-                Label
-              </th>
-              <th className="w-[22%] py-2 text-sm font-medium text-center">
-                Help
-              </th>
-              <th className="w-[16%] py-2 text-sm font-medium text-center">
-                Edit
-              </th>
-              <th className="w-[10%] py-2 text-sm font-medium text-center">
-                Toggle
-              </th>
+              <th className="w-[20%] py-2 pl-4 text-left text-sm font-medium">Method</th>
+              <th className="w-[10%] py-2 text-sm font-medium text-center">Active</th>
+              <th className="w-[22%] py-2 text-sm font-medium text-center">Label</th>
+              <th className="w-[22%] py-2 text-sm font-medium text-center">Help</th>
+              <th className="w-[16%] py-2 text-sm font-medium text-center">Edit</th>
+              <th className="w-[10%] py-2 text-sm font-medium text-center">Toggle</th>
             </tr>
           </thead>
-
           <tbody className="divide-y divide-gray-200">
-            {methodKeys.map((key) => {
-              const cfg       = settings[key];
-              const isEditing = editRow === key;
+            {methodIds.map((id) => {
+              const cfg = methods[id];
+              const isEditing = editId === id;
 
               return (
-                <tr key={key}>
-                  {/* method name */}
-                  <td className="py-3 pl-4 font-medium capitalize">
-                    {key === "cashOnDelivery" ? "Cash on Delivery" : key}
-                  </td>
-
-                  {/* active icon */}
-                  <td className="py-3 text-center">
-                    {cfg.enabled ? "✅" : "❌"}
-                  </td>
-
-                  {/* label cell */}
+                <tr key={id}>
+                  <td className="py-3 pl-4 font-medium">{getMethodName(id)}</td>
+                  <td className="py-3 text-center">{cfg.enabled ? "✅" : "❌"}</td>
                   <td className="py-2 text-center">
                     {isEditing ? (
                       <input
                         className="w-11/12 border rounded px-2 py-1 text-sm text-center"
-                        value={draft.label ?? ""}
+                        value={draft.label}
                         onChange={(e) =>
                           setDraft((d) => ({ ...d, label: e.target.value }))
                         }
                       />
                     ) : (
                       <span>
-                        {cfg.label || (
-                          <em className="text-gray-400">(blank)</em>
-                        )}
+                        {cfg.label || <em className="text-gray-400">(blank)</em>}
                       </span>
                     )}
                   </td>
-
-                  {/* help cell */}
                   <td className="py-2 text-center">
                     {isEditing ? (
                       <input
                         className="w-11/12 border rounded px-2 py-1 text-sm text-center"
-                        value={draft.help ?? ""}
+                        value={draft.help}
                         onChange={(e) =>
                           setDraft((d) => ({ ...d, help: e.target.value }))
                         }
                       />
                     ) : (
                       <span>
-                        {cfg.help || (
-                          <em className="text-gray-400">(blank)</em>
-                        )}
+                        {cfg.help || <em className="text-gray-400">(blank)</em>}
                       </span>
                     )}
                   </td>
-
-                  {/* edit / save / cancel */}
                   <td className="py-3 text-center space-x-1">
                     {isEditing ? (
                       <>
                         <button
                           onClick={() => {
-                            patchMethod(key, draft);
-                            setEditRow(null);
+                            patchMethod(id, draft);
+                            setEditId(null);
                           }}
                           className="border rounded px-3 py-1 bg-tertiary text-white hover:opacity-90"
                         >
                           Save
                         </button>
                         <button
-                          onClick={() => setEditRow(null)}
+                          onClick={() => setEditId(null)}
                           className="border rounded px-3 py-1 hover:bg-gray-100"
                         >
                           Cancel
@@ -197,12 +178,8 @@ export default function PaymentMethodsPage() {
                     ) : (
                       <button
                         onClick={() => {
-                          setEditRow(key);
-                          /* fallback to "" so inputs are always controlled */
-                          setDraft({
-                            label: cfg.label ?? "",
-                            help : cfg.help  ?? "",
-                          });
+                          setEditId(id);
+                          setDraft({ label: cfg.label, help: cfg.help });
                         }}
                         className="border rounded px-3 py-1 hover:bg-gray-100"
                       >
@@ -210,13 +187,9 @@ export default function PaymentMethodsPage() {
                       </button>
                     )}
                   </td>
-
-                  {/* toggle column alone */}
                   <td className="py-3 text-center">
                     <button
-                      onClick={() =>
-                        patchMethod(key, { enabled: !cfg.enabled })
-                      }
+                      onClick={() => patchMethod(id, { enabled: !cfg.enabled })}
                       className="border rounded px-3 py-1 hover:bg-gray-100"
                     >
                       {cfg.enabled ? "Deactivate" : "Activate"}
@@ -229,8 +202,7 @@ export default function PaymentMethodsPage() {
         </table>
 
         <p className="mt-4 text-sm text-gray-500">
-          Last updated:{" "}
-          {new Date(settings.updatedAt).toLocaleString()}
+          Last updated: {new Date(updatedAt).toLocaleString()}
         </p>
       </div>
     </div>

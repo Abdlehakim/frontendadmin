@@ -1,4 +1,4 @@
-// src/app/dashboard/manage-stock/boutiques/create/page.tsx
+// src/app/dashboard/manage-stock/magasins/create/page.tsx
 "use client";
 
 import React, {
@@ -55,9 +55,9 @@ const days = [
 const MAX_RANGES = 3;
 
 /* ---------- steps components ---------- */
-import DetailsStep from "@/components/boutique/Steps/DetailsStep";
-import OpeningHoursStep from "@/components/boutique/Steps/OpeningHoursStep";
-import ReviewStep from "@/components/boutique/Steps/ReviewStep";
+import DetailsStep from "@/components/magasin/Steps/DetailsStep";
+import OpeningHoursStep from "@/components/magasin/Steps/OpeningHoursStep";
+import ReviewStep from "@/components/magasin/Steps/ReviewStep";
 
 export default function CreateBoutiquePage() {
   const router = useRouter();
@@ -150,18 +150,18 @@ export default function CreateBoutiquePage() {
       }
       fd.append("openingHours", JSON.stringify(oh));
 
-      await fetchFromAPI("/dashboardadmin/stock/boutiques/create", {
+      await fetchFromAPI("/dashboardadmin/stock/magasins/create", {
         method: "POST",
         body: fd,
       });
 
       setShowSuccess(true);
-      setTimeout(() => router.push("/dashboard/manage-stock/boutiques"), 2000);
+      setTimeout(() => router.push("/dashboard/manage-stock/magasins"), 2000);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to create boutique. Please try again."
+          : "Failed to create magasin. Please try again."
       );
       setSubmitting(false);
     }
@@ -172,16 +172,16 @@ export default function CreateBoutiquePage() {
     <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 relative h-full">
       {/* header */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Create Boutique</h1>
+        <h1 className="text-3xl font-bold">Create Magasin</h1>
         <nav className="text-sm underline flex items-center gap-2">
           <Link
-            href="/dashboard/manage-stock/boutiques"
+            href="/dashboard/manage-stock/magasins"
             className="text-gray-500 hover:underline"
           >
-            All Boutiques
+            All Magasins
           </Link>
           <MdArrowForwardIos className="text-gray-400" size={14} />
-          <span className="text-gray-700 font-medium">Create Boutique</span>
+          <span className="text-gray-700 font-medium">Create Magasin</span>
         </nav>
       </div>
 
@@ -235,7 +235,7 @@ export default function CreateBoutiquePage() {
       {/* overlays & errors */}
       <Overlay
         show={submitting || showSuccess}
-        message={showSuccess ? "Boutique created successfully" : undefined}
+        message={showSuccess ? "Magasin created successfully" : undefined}
       />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>

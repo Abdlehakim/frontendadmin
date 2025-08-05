@@ -97,7 +97,7 @@ export default function ClientsShopPage() {
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       {/* Header */}
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">All Clients Boutique</h1>
+        <h1 className="text-3xl font-bold uppercase">All Clients Magasin</h1>
         <Link href="/dashboard/manage-client/clients-shop/create">
           <button className="w-[250px] h-[40px] bg-tertiary text-white rounded hover:opacity-90">
             Create New Client

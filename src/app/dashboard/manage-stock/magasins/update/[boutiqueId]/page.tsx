@@ -1,4 +1,4 @@
-// src/app/dashboard/manage-stock/boutiques/update/[boutiqueId]/page.tsx
+// src/app/dashboard/manage-stock/magasins/update/[boutiqueId]/page.tsx
 "use client";
 
 import React, {
@@ -54,9 +54,9 @@ const days = [
 const MAX_RANGES = 3;
 
 /* ---------- steps ---------- */
-import DetailsStep from "@/components/boutique/Steps/DetailsStep";
-import OpeningHoursStep from "@/components/boutique/Steps/OpeningHoursStep";
-import ReviewStep from "@/components/boutique/Steps/ReviewStep";
+import DetailsStep from "@/components/magasin/Steps/DetailsStep";
+import OpeningHoursStep from "@/components/magasin/Steps/OpeningHoursStep";
+import ReviewStep from "@/components/magasin/Steps/ReviewStep";
 
 export default function UpdateBoutiquePage() {
   const router = useRouter();
@@ -88,7 +88,7 @@ export default function UpdateBoutiquePage() {
     ) as Record<string, DayState>,
   });
 
-  /* ---------- load boutique ---------- */
+  /* ---------- load magasin ---------- */
   useEffect(() => {
     async function load() {
       try {
@@ -100,7 +100,7 @@ export default function UpdateBoutiquePage() {
           localisation?: string;
           image: string;
           openingHours: Record<string, TimeRange[]>;
-        }>(`/dashboardadmin/stock/boutiques/${boutiqueId}`);
+        }>(`/dashboardadmin/stock/magasins/${boutiqueId}`);
 
         setInitialImageUrl(b.image);
 
@@ -128,7 +128,7 @@ export default function UpdateBoutiquePage() {
         }));
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to load boutique."
+          err instanceof Error ? err.message : "Failed to load magasin."
         );
       } finally {
         setLoading(false);
@@ -199,17 +199,17 @@ export default function UpdateBoutiquePage() {
       }
       fd.append("openingHours", JSON.stringify(oh));
 
-      await fetchFromAPI(`/dashboardadmin/stock/boutiques/update/${boutiqueId}`, {
+      await fetchFromAPI(`/dashboardadmin/stock/magasins/update/${boutiqueId}`, {
         method: "PUT",
         body: fd,
       });
 
       setShowSuccess(true);
       setSubmitting(false);
-      setTimeout(() => router.push("/dashboard/manage-stock/boutiques"), 2000);
+      setTimeout(() => router.push("/dashboard/manage-stock/magasins"), 2000);
     } catch (err) {
       setSubmitting(false);
-      setError(err instanceof Error ? err.message : "Failed to update boutique.");
+      setError(err instanceof Error ? err.message : "Failed to update magasin.");
     }
   };
 
@@ -218,13 +218,13 @@ export default function UpdateBoutiquePage() {
   return (
     <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 relative h-full">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Update Boutique</h1>
+        <h1 className="text-3xl font-bold">Update Magasin</h1>
         <nav className="text-sm underline flex items-center gap-2">
           <Link
-            href="/dashboard/manage-stock/boutiques"
+            href="/dashboard/manage-stock/magasins"
             className="text-gray-500 hover:underline"
           >
-            All Boutiques
+            All Magasins
           </Link>
           <span className="text-gray-700 font-medium">/ Update</span>
         </nav>
@@ -280,7 +280,7 @@ export default function UpdateBoutiquePage() {
       {/* ---------- overlays & errors ---------- */}
       <Overlay
         show={submitting || showSuccess}
-        message={showSuccess ? "Boutique updated successfully" : undefined}
+        message={showSuccess ? "Magasin updated successfully" : undefined}
         spinnerSize={60}
       />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
