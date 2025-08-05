@@ -131,7 +131,7 @@ export default function OrdersPage() {
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Commandes</h1>
         <Link href="/dashboard/manage-client/orders/create">
-          <button className="w-[200px] h-[40px] bg-tertiary text-white rounded hover:opacity-90">
+          <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
             Create Commande
           </button>
         </Link>
