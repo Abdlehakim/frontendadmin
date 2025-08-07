@@ -5,10 +5,9 @@
 "use client";
 
 import React, {
-  useCallback,
-  useEffect,
   useRef,
   useState,
+  useEffect,
   MouseEvent as ReactMouseEvent,
 } from "react";
 import {
@@ -18,17 +17,9 @@ import {
   AiOutlineEdit,
   AiOutlineSetting,
 } from "react-icons/ai";
-import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import AddAddress from "@/components/create-order/AddAddress";
 import ManageAddresses from "@/components/create-order/ManageAddresses";
 import type { Client } from "@/components/create-order/selectClient";
-
-/* ---------- redux ---------- */
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import {
-  cacheAddresses,            // ⇦ nouvelle action (voir slice)
-  selectOrderCreation,
-} from "@/features/orderCreation/orderCreationSlice";
 
 /* ---------- types ---------- */
 export interface Address {
@@ -43,81 +34,39 @@ export interface Address {
 }
 
 interface SelectAddressProps {
-  client: Client | null;
-  value: string | null;
-  onChange(id: string | null, addr: Address | null): void;
+  client:    Client | null;
+  addresses: Address[];                       // ⟵ NEW
+  value:     string | null;
+  onChange(id: string | null, label: string | null): void;
+  loading?:  boolean;
 }
 
 /* ---------- helpers ---------- */
 const fmt = (a: Address) =>
-  `${a.Name}, ${a.StreetAddress}, ${a.City} ${a.PostalCode}, ${a.Country}`;
+  [a.Name, a.StreetAddress, `${a.City} ${a.PostalCode}`.trim(), a.Country]
+    .filter(Boolean)
+    .join(", ");
 
 /* ---------- component ---------- */
 export default function SelectAddress({
   client,
+  addresses,
   value,
   onChange,
+  loading = false,
 }: SelectAddressProps) {
-  const dispatch = useAppDispatch();
-
-  /* ---------- cache global ---------- */
-  const addressesCache = useAppSelector(
-    (s) => selectOrderCreation(s).addressesCache // { [clientId]: Address[] }
-  );
-
   /* ---------- state local ---------- */
-  const [addresses, setAddresses] = useState<Address[]>(
-    client ? addressesCache[client._id] ?? [] : []
-  );
-  const [loading, setLoading]   = useState(false);
-  const [fetched, setFetched]   = useState(false);
-  const [open, setOpen]         = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [open,          setOpen]         = useState(false);
+  const [showForm,      setShowForm]     = useState(false);
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
-  const [showManage, setShowManage]       = useState(false);
+  const [showManage,    setShowManage]   = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /* ---------- fetch addresses (client-dépendant) ---------- */
-  const fetchAddresses = useCallback(async () => {
-    if (!client) return;
-
-    /* si déjà en cache, éviter un nouveau fetch */
-    const cached = addressesCache[client._id];
-    if (cached && cached.length) {
-      setAddresses(cached);
-      setFetched(true);
-      return;
-    }
-
-    setLoading(true);
-    setFetched(false);
-    try {
-      const { addresses }: { addresses: Address[] } = await fetchFromAPI(
-        `/dashboardadmin/clientAddress/${client._id}`
-      );
-      setAddresses(addresses);
-      dispatch(cacheAddresses({ clientId: client._id, addresses })); // ⇦ cache
-    } catch (err) {
-      console.error("Load addresses error:", err);
-    } finally {
-      setLoading(false);
-      setFetched(true);
-    }
-  }, [client, addressesCache, dispatch]);
-
-  /* fetch on mount / client change */
-  useEffect(() => {
-    fetchAddresses();
-  }, [fetchAddresses]);
-
-  /* close dropdown on outside click */
+  /* fermer dropdown sur clic extérieur */
   useEffect(() => {
     const close = (e: MouseEvent | ReactMouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      )
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
         setOpen(false);
     };
     document.addEventListener("mousedown", close);
@@ -149,7 +98,9 @@ export default function SelectAddress({
           <button
             type="button"
             onClick={() => setOpen((p) => !p)}
-            className="flex h-12 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-4 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 max-lg:text-xs disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-between rounded-md border
+                       border-gray-300 bg-white px-4 text-sm shadow-sm focus:outline-none
+                       focus:ring-2 focus:ring-primary/50 max-lg:text-xs disabled:opacity-50"
             disabled={loading}
           >
             <span
@@ -163,6 +114,8 @@ export default function SelectAddress({
                 ? fmt(selected)
                 : loading
                 ? "Chargement des adresses…"
+                : addresses.length === 0
+                ? "Aucune adresse enregistrée pour ce client."
                 : "-- Choisir une adresse --"}
             </span>
             {open ? (
@@ -173,22 +126,38 @@ export default function SelectAddress({
           </button>
 
           {open && (
-            <ul className="absolute left-0 right-0 z-20 mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+            <ul
+              className="absolute left-0 right-0 z-20 mt-1 max-h-60 overflow-auto rounded-md
+                         bg-white py-1 text-sm shadow-lg ring-1 ring-black/5"
+            >
               {!loading &&
-                addresses.map((addr) => (
+                addresses.map((a) => (
                   <li
-                    key={addr._id}
+                    key={a._id}
                     onClick={() => {
-                      onChange(addr._id, addr);
+                      onChange(a._id, fmt(a));
                       setOpen(false);
                     }}
                     className={`cursor-pointer select-none px-4 py-2 hover:bg-primary hover:text-white ${
-                      addr._id === value ? "bg-primary/5 font-medium" : ""
+                      a._id === value ? "bg-primary/5 font-medium" : ""
                     }`}
                   >
-                    {fmt(addr)}
+                    {fmt(a)}
+                    {(a.StreetAddress || a.Phone) && (
+                      <p className="text-xs text-gray-500">
+                        {a.StreetAddress ?? ""}{" "}
+                        {a.Phone ? "• " + a.Phone : ""}
+                      </p>
+                    )}
                   </li>
                 ))}
+
+              {/* Message quand aucune adresse n’est disponible */}
+              {!loading && addresses.length === 0 && (
+                <li className="px-4 py-2 text-gray-500 italic select-none cursor-default">
+                  Aucune adresse enregistrée pour ce client.
+                </li>
+              )}
             </ul>
           )}
         </div>
@@ -200,7 +169,8 @@ export default function SelectAddress({
         <button
           type="button"
           onClick={openAddForm}
-          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm
+                     flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
         >
           <AiOutlinePlus className="h-4 w-4" />
           Ajouter une nouvelle adresse
@@ -211,11 +181,12 @@ export default function SelectAddress({
           type="button"
           onClick={openEditForm}
           disabled={!selected}
-          className={`w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 cursor-pointer ${
-            selected
-              ? "hover:bg-primary hover:text-white"
-              : "opacity-50 cursor-not-allowed"
-          }`}
+          className={`w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm
+                      flex items-center gap-4 cursor-pointer ${
+                        selected
+                          ? "hover:bg-primary hover:text-white"
+                          : "opacity-50 cursor-not-allowed"
+                      }`}
         >
           <AiOutlineEdit className="h-4 w-4" />
           Modifier l’adresse sélectionnée
@@ -225,7 +196,8 @@ export default function SelectAddress({
         <button
           type="button"
           onClick={openManage}
-          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm
+                     flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
         >
           <AiOutlineSetting className="h-4 w-4" />
           Gérer / supprimer
@@ -235,7 +207,7 @@ export default function SelectAddress({
       {/* Modal Add / Edit */}
       <AddAddress
         isFormVisible={showForm}
-        getAddress={fetchAddresses}
+        getAddress={() => {}}
         toggleForminVisibility={closeForm}
         clientId={client._id}
         editAddress={addressToEdit || undefined}
@@ -245,9 +217,9 @@ export default function SelectAddress({
       <ManageAddresses
         isVisible={showManage}
         addresses={addresses}
-        fetched={fetched}
+        fetched={true}
         onClose={closeManage}
-        refresh={fetchAddresses}
+        refresh={() => {}}
       />
     </>
   );

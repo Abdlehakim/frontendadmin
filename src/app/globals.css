@@ -37,23 +37,22 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  background-color: var(--primary);
-  color: #ffffff;
-  border: none;
+  color: var(--primary);
+  border: 1px solid #D1D5DB; /* gray-300 */
   border-radius: 5px;
 
   width: 32px;
   height: 32px;
 
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .ButtonSquare:hover {
-  background-color: var(--hoverButton);
+  background-color: var(--primary);
+  border-color: #D1D5DB;
+  color: #ffffff;
 }
-
 
 .ButtonRectangle {
   background-color: var(--secondary);

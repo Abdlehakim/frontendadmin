@@ -4,7 +4,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { FaSearch, FaSpinner } from "react-icons/fa";
 import type { Client } from "./selectClient";
 
@@ -21,7 +20,7 @@ interface AttributeRow {
 }
 
 /** subset returned by /stock/products/find */
-interface ProductLite {
+export interface ProductLite {
   _id: string;
   name: string;
   reference: string;
@@ -42,6 +41,8 @@ interface SelectProductsProps {
   client: Client | null;
   basket: BasketItem[];
   setBasket: React.Dispatch<React.SetStateAction<BasketItem[]>>;
+  /** fonction de recherche injectée par la page parente */
+  searchProducts: (query: string) => Promise<ProductLite[]>;
 }
 
 /* ---------- helpers ---------- */
@@ -53,6 +54,7 @@ export default function SelectProducts({
   client,
   basket,
   setBasket,
+  searchProducts,
 }: SelectProductsProps) {
   const [query, setQuery]       = useState("");
   const [results, setResults]   = useState<ProductLite[]>([]);
@@ -72,11 +74,7 @@ export default function SelectProducts({
       setLoading(true);
       setError("");
       try {
-        const { products } = await fetchFromAPI<{ products: ProductLite[] }>(
-          `/dashboardadmin/stock/products/find?q=${encodeURIComponent(
-            query.trim()
-          )}`
-        );
+        const products = await searchProducts(query.trim());
         setResults(products);
         if (products.length === 0) setError("Aucun résultat.");
       } catch {
@@ -86,7 +84,7 @@ export default function SelectProducts({
       }
     }, DEBOUNCE);
     return () => clearTimeout(id);
-  }, [query, client]);
+  }, [query, client, searchProducts]);
 
   /* ───────── close dropdown on outside click ───────── */
   useEffect(() => {
@@ -102,15 +100,15 @@ export default function SelectProducts({
   const decrement = (index: number) =>
     setBasket((prev) =>
       prev.map((it, i) =>
-        i === index ? { ...it, quantity: Math.max(1, it.quantity - 1) } : it
-      )
+        i === index ? { ...it, quantity: Math.max(1, it.quantity - 1) } : it,
+      ),
     );
 
   const increment = (index: number) =>
     setBasket((prev) =>
       prev.map((it, i) =>
-        i === index ? { ...it, quantity: it.quantity + 1 } : it
-      )
+        i === index ? { ...it, quantity: it.quantity + 1 } : it,
+      ),
     );
 
   const addProduct = (p: ProductLite) => {
@@ -134,7 +132,7 @@ export default function SelectProducts({
   /* ---------- attribute selector ---------- */
   const renderAttrSelector = (
     itemIdx: number,
-    attrRow: NonNullable<ProductLite["attributes"]>[number]
+    attrRow: NonNullable<ProductLite["attributes"]>[number],
   ) => {
     const id            = attrRow.attributeSelected._id;
     const attributeName = attrRow.attributeSelected.name;
@@ -155,8 +153,8 @@ export default function SelectProducts({
             const val = e.target.value;
             setBasket((prev) =>
               prev.map((it, i) =>
-                i === itemIdx ? { ...it, chosen: { ...it.chosen, [id]: val } } : it
-              )
+                i === itemIdx ? { ...it, chosen: { ...it.chosen, [id]: val } } : it,
+              ),
             );
           }}
         >
@@ -174,7 +172,7 @@ export default function SelectProducts({
       {/* ---------- Product picker ---------- */}
       {client && (
         <div ref={boxRef} className="relative">
-          <label className="font-semibold">Ajouter un produit :</label>
+          <label className="font-semibold">Ajouter un produit :</label>
           <div className="flex gap-2 mt-1">
             <input
               value={query}
@@ -248,7 +246,7 @@ export default function SelectProducts({
               {/* quantity & pricing */}
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">Qté :</span>
+                  <span className="text-sm">Qté :</span>
 
                   <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                     <button
@@ -275,7 +273,7 @@ export default function SelectProducts({
                 </div>
 
                 <div className="text-sm">
-                  Prix TTC : <strong>{unitPrice(item).toFixed(2)}</strong>
+                  Prix TTC : <strong>{unitPrice(item).toFixed(2)}</strong>
                   {item.discount > 0 && (
                     <span className="ml-2 line-through text-xs text-gray-500">
                       {item.price.toFixed(2)}
@@ -284,7 +282,7 @@ export default function SelectProducts({
                 </div>
 
                 <div className="text-sm">
-                  TVA : <strong>{item.tva}%</strong>
+                  TVA : <strong>{item.tva}%</strong>
                 </div>
               </div>
 

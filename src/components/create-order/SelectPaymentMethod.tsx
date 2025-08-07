@@ -1,25 +1,15 @@
 /* ------------------------------------------------------------------
    components/create-order/SelectPaymentMethod.tsx
-   Sélection d’une méthode de paiement active
 ------------------------------------------------------------------ */
 "use client";
 
 import React, {
-  useCallback,
   useEffect,
   useRef,
   useState,
   MouseEvent as ReactMouseEvent,
 } from "react";
 import { AiOutlineDown, AiOutlineUp } from "react-icons/ai";
-import { fetchFromAPI } from "@/lib/fetchFromAPI";
-
-/* ---------- redux ---------- */
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import {
-  selectOrderCreation,
-  cachePaymentMethods,          // ⇦ action ajoutée dans le slice
-} from "@/features/orderCreation/orderCreationSlice";
 
 /* ---------- types ---------- */
 export interface PaymentMethod {
@@ -30,6 +20,8 @@ export interface PaymentMethod {
 
 interface SelectPaymentMethodProps {
   value: string | null;
+  methods: PaymentMethod[];
+  loading: boolean;
   onChange(methodKey: string | null, method: PaymentMethod | null): void;
 }
 
@@ -40,46 +32,12 @@ const fmt = (m: PaymentMethod) =>
 /* ---------- component ---------- */
 export default function SelectPaymentMethod({
   value,
+  methods,
+  loading,
   onChange,
 }: SelectPaymentMethodProps) {
-  const dispatch          = useAppDispatch();
-  const paymentCache      = useAppSelector(
-    (s) => selectOrderCreation(s).paymentMethods  // champ ajouté au slice
-  );
-
-  const [methods, setMethods] = useState<PaymentMethod[]>(paymentCache);
-  const [loading, setLoading] = useState(false);
   const [open, setOpen]       = useState(false);
   const dropdownRef           = useRef<HTMLDivElement>(null);
-
-  /* ---------- fetch active payment methods ---------- */
-  const fetchMethods = useCallback(async () => {
-    if (paymentCache.length) return;            // déjà en cache
-
-    setLoading(true);
-    try {
-      const { activePaymentMethods } = await fetchFromAPI<{
-        activePaymentMethods: PaymentMethod[];
-      }>("/dashboardadmin/payment/payment-settings/active");
-
-      setMethods(activePaymentMethods);
-      dispatch(cachePaymentMethods(activePaymentMethods)); // ⇦ cache global
-
-      if (!activePaymentMethods.find((m) => m.name === value)) {
-        onChange(null, null);
-      }
-    } catch (err) {
-      console.error("Load payment methods error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [paymentCache.length, value, onChange, dispatch]);
-
-  /* appel au montage */
-  useEffect(() => {
-    fetchMethods();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   /* close dropdown on outside click */
   useEffect(() => {
@@ -95,12 +53,10 @@ export default function SelectPaymentMethod({
   const selected =
     value ? methods.find((m) => m.name === value) ?? null : null;
 
-  /* ---------- UI ---------- */
   return (
     <div className="py-4 bg-white space-y-4 mt-6">
       <h2 className="font-bold">Méthode de paiement</h2>
 
-      {/* select */}
       <div className="relative w-full" ref={dropdownRef}>
         <button
           type="button"

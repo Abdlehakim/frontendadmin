@@ -8,18 +8,13 @@ import React, {
   useEffect,
   useState,
   useRef,
-  useCallback,
   MouseEvent as ReactMouseEvent,
 } from "react";
 import { AiOutlineDown, AiOutlineUp } from "react-icons/ai";
-import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
 /* ---------- redux ---------- */
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import {
-  selectOrderCreation,
-  cacheBoutiques,               // ⇦ nouvelle action (voir slice)
-} from "@/features/orderCreation/orderCreationSlice";
+import { useAppSelector } from "@/store/hooks";
+import { selectOrderCreation } from "@/features/orderCreation/orderCreationSlice";
 
 /* ---------- types ---------- */
 export interface Magasin {
@@ -43,41 +38,15 @@ export default function SelectBoutiques({
   value,
   onChange,
 }: SelectBoutiquesProps) {
-  const dispatch        = useAppDispatch();
   const cachedBoutiques = useAppSelector(
-    (s) => selectOrderCreation(s).boutiques   // champ ajouté au slice
+    (s) => selectOrderCreation(s).boutiques,
   );
 
-  const [magasins, setMagasins] = useState<Magasin[]>(cachedBoutiques);
-  const [loading, setLoading]   = useState(false);
-  const [open, setOpen]         = useState(false);
-  const dropdownRef             = useRef<HTMLDivElement>(null);
+  const loading  = cachedBoutiques.length === 0;
+  const magasins = cachedBoutiques;
 
-  /* ---------- fetch boutiques (only once if cache vide) ---------- */
-  const fetchBoutiques = useCallback(async () => {
-    if (cachedBoutiques.length) return; // déjà en cache
-
-    setLoading(true);
-    try {
-      const { magasins } = await fetchFromAPI<{ magasins: Magasin[] }>(
-        "/dashboardadmin/stock/magasins/approved"
-      );
-      setMagasins(magasins);
-      dispatch(cacheBoutiques(magasins));     // ⇦ on remplit le cache
-
-      if (!magasins.find((b) => b._id === value)) onChange(null, null);
-    } catch (err) {
-      console.error("Load magasins error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [cachedBoutiques.length, value, onChange, dispatch]);
-
-  /* appel au montage */
-  useEffect(() => {
-    fetchBoutiques();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [open, setOpen] = useState(false);
+  const dropdownRef     = useRef<HTMLDivElement>(null);
 
   /* fermer dropdown sur clic extérieur */
   useEffect(() => {
@@ -89,7 +58,8 @@ export default function SelectBoutiques({
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const selected = value ? magasins.find((b) => b._id === value) ?? null : null;
+  const selected =
+    value ? magasins.find((b) => b._id === value) ?? null : null;
 
   /* ---------- UI ---------- */
   return (

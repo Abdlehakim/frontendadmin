@@ -1,11 +1,10 @@
 /* ------------------------------------------------------------------
-   Sélection d’un client : Account (“account”), ClientShop (“shop”)
+   Sélection d’un client : Account (“account”), ClientShop (“shop”)
    ou ClientCompany (“company”)
 ------------------------------------------------------------------ */
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { FaSearch, FaSpinner } from "react-icons/fa";
 
 /* ---------- constants ---------- */
@@ -24,6 +23,7 @@ export interface Client {
 
 interface SelectClientProps {
   client: Client | null;
+  searchClients(query: string): Promise<Client[]>;
   onSelect(client: Client): void;
   onClear(): void;
 }
@@ -44,6 +44,7 @@ const badgeColor = (o: Client["origin"]) => {
 /* ---------- component ---------- */
 export default function SelectClient({
   client,
+  searchClients,
   onSelect,
   onClear,
 }: SelectClientProps) {
@@ -53,7 +54,7 @@ export default function SelectClient({
   const [error, setError] = useState("");
   const boxRef = useRef<HTMLDivElement>(null);
 
-  /* ───────── fetch suggestions ───────── */
+  /* ───────── fetch suggestions (delegated) ───────── */
   useEffect(() => {
     if (query.trim().length < MIN_CHARS) {
       setResults([]);
@@ -65,9 +66,7 @@ export default function SelectClient({
       setLoading(true);
       setError("");
       try {
-        const { clients }: { clients: Client[] } = await fetchFromAPI(
-          `/dashboardadmin/client/find?q=${encodeURIComponent(query.trim())}`,
-        );
+        const clients = await searchClients(query.trim());
         setResults(clients);
         if (clients.length === 0) setError("Aucun résultat.");
       } catch {
@@ -78,7 +77,7 @@ export default function SelectClient({
     }, DEBOUNCE);
 
     return () => clearTimeout(id);
-  }, [query]);
+  }, [query, searchClients]);
 
   /* ───────── close dropdown on outside click ───────── */
   useEffect(() => {
@@ -97,21 +96,22 @@ export default function SelectClient({
         <div className="flex justify-between items-start">
           <h2 className="font-bold">Client sélectionné</h2>
           <button
-            onClick={onClear}
-            className="text-red-600 text-sm hover:underline"
-          >
-           Retirer
-          </button>
+  type="button"           
+  onClick={onClear}
+  className="text-red-600 text-sm hover:underline"
+>
+  Retirer
+</button>
         </div>
 
         <p>
-          <strong>Nom :</strong> {displayName(client)}
+          <strong>Nom :</strong> {displayName(client)}
         </p>
         <p>
-          <strong>Email :</strong> {client.email || "—"}
+          <strong>Email :</strong> {client.email || "—"}
         </p>
         <p>
-          <strong>Téléphone :</strong> {client.phone || "—"}
+          <strong>Téléphone :</strong> {client.phone || "—"}
         </p>
         <span
           className={`${badgeColor(
@@ -126,7 +126,7 @@ export default function SelectClient({
 
   return (
     <div ref={boxRef} className="relative">
-      <label className="font-semibold">Client :</label>
+      <label className="font-semibold">Client :</label>
       <div className="flex gap-2 mt-1">
         <input
           value={query}

@@ -1,13 +1,27 @@
+// ------------------------------------------------------------------
 // src/app/dashboard/manage-client/orders/page.tsx
+// Liste des commandes (table + filtres + pagination)
+// MAJ (Août 2025) : pickupMagasin est désormais un ARRAY
+//                   + ajout de la colonne « Date » avant la REF
+// ------------------------------------------------------------------
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
-import { FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FaRegEye, FaTrashAlt, FaRegEdit } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
+import DateFilter, { DateRange } from "@/components/DateFilter";
+
+/* ───────── helpers ───────── */
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("fr-FR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 
 /* ───────── types ───────── */
 interface Order {
@@ -15,10 +29,10 @@ interface Order {
   ref: string;
   clientName: string;
   user: { _id: string; username?: string; email: string } | null;
-  pickupMagasin?: {
+  pickupMagasin: Array<{
     Magasin: string;
     MagasinAddress: string;
-  };
+  }>;
   createdAt: string;
   orderStatus: string;
   deliveryMethod: string;
@@ -42,6 +56,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filterStatus, setFilterStatus] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
@@ -56,10 +71,13 @@ export default function OrdersPage() {
     () =>
       orders
         .filter((o) => !filterStatus || o.orderStatus === filterStatus)
-        .filter((o) =>
-          o.ref.toLowerCase().includes(searchTerm.toLowerCase())
-        ),
-    [orders, filterStatus, searchTerm]
+        .filter((o) => o.ref.toLowerCase().includes(searchTerm.toLowerCase()))
+        .filter((o) => {
+          if (!dateRange) return true;
+          const d = new Date(o.createdAt);
+          return d >= dateRange.start && d <= dateRange.end;
+        }),
+    [orders, filterStatus, searchTerm, dateRange]
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
@@ -95,14 +113,19 @@ export default function OrdersPage() {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await fetchFromAPI(`/dashboardadmin/orders/${id}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderStatus: status }),
-    });
-    setOrders((prev) =>
-      prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o))
-    );
+    try {
+      await fetchFromAPI(`/dashboardadmin/orders/updateStatus/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderStatus: status }),
+      });
+      setOrders((prev) =>
+        prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o))
+      );
+    } catch (err) {
+      console.error("Update status error ▶", err);
+      alert("Échec de la mise à jour du statut.");
+    }
   };
 
   /* ───────── popup helpers ───────── */
@@ -138,7 +161,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex justify-between items-end gap-6 h-[70px]">
+      <div className="flex flex-wrap justify-between items-end gap-6">
         <div className="flex items-center gap-2">
           <label htmlFor="searchOrder" className="font-medium">
             Search by Ref:
@@ -154,9 +177,19 @@ export default function OrdersPage() {
             }}
           />
         </div>
+        <div className='flex gap-4'>
+        <div className="flex items-center gap-2">
+          <label className="font-medium">F.Date:</label>
+          <DateFilter
+            onChange={(range) => {
+              setDateRange(range);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
         <div className="flex items-center gap-2">
           <label htmlFor="statusFilter" className="font-medium">
-            Filter by Status:
+            F.Status:
           </label>
           <select
             id="statusFilter"
@@ -174,7 +207,8 @@ export default function OrdersPage() {
               </option>
             ))}
           </select>
-        </div>
+        </div></div>
+        
       </div>
 
       {/* Table */}
@@ -182,6 +216,7 @@ export default function OrdersPage() {
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr className="text-sm">
+              <th className="px-4 py-2 text-center">Date</th>
               <th className="px-4 py-2 text-center">REF</th>
               <th className="px-4 py-2 text-center">Client Name</th>
               <th className="px-4 py-2 text-center">Delivery Address</th>
@@ -197,7 +232,7 @@ export default function OrdersPage() {
             {displayedOrders.length === 0 && !loading ? (
               <tbody>
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-gray-600">
+                  <td colSpan={7} className="py-6 text-center text-gray-600">
                     No orders found.
                   </td>
                 </tr>
@@ -206,6 +241,7 @@ export default function OrdersPage() {
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
                 {displayedOrders.map((o) => (
                   <tr key={o._id} className="even:bg-gray-100 odd:bg-white">
+                    <td className="px-4 text-center">{fmtDate(o.createdAt)}</td>
                     <td className="px-4 text-center truncate font-semibold">
                       {o.ref}
                     </td>
@@ -214,18 +250,18 @@ export default function OrdersPage() {
                       {o.DeliveryAddress[0]?.DeliverToAddress ?? "—"}
                     </td>
                     <td className="px-4 text-center">
-                      {o.pickupMagasin?.MagasinAddress ?? "—"}
+                      {o.pickupMagasin.length > 0
+                        ? o.pickupMagasin[0].MagasinAddress
+                        : "—"}
                     </td>
                     <td className="px-4 text-center">
                       <select
                         value={o.orderStatus}
-                        onChange={(e) =>
-                          updateStatus(o._id, e.target.value)
-                        }
-                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        onChange={(e) => updateStatus(o._id, e.target.value)}
+                        className="border border-gray-300 rounded px-2 py-1 text-sm cursor-pointer"
                       >
                         {statusOptions.map((s) => (
-                          <option key={s} value={s}>
+                          <option className="cursor-pointer" key={s} value={s}>
                             {s}
                           </option>
                         ))}
@@ -234,8 +270,13 @@ export default function OrdersPage() {
                     <td className="px-4 text-center">
                       <div className="flex justify-center items-center gap-2">
                         <Link
-                          href={`/dashboard/manage-client/orders/voir/${o._id}`}
+                          href={`/dashboard/manage-client/orders/update/${o._id}`}
                         >
+                          <button className="ButtonSquare">
+                            <FaRegEdit size={14} />
+                          </button>
+                        </Link>
+                        <Link href={`/dashboard/manage-client/orders/voir/${o._id}`}>
                           <button className="ButtonSquare">
                             <FaRegEye size={14} />
                           </button>

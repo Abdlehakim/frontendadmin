@@ -175,6 +175,9 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
                   <tr key={item._id} className="border-t align-top">
                     <td className="py-1 px-2">
                       <div>{item.name}</div>
+                      <div className="text-xs text-gray-500">
+                      {item.reference}
+                    </div>
                       {attrLine && (
                         <div className="text-xs text-gray-500">{attrLine}</div>
                       )}

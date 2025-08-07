@@ -1,10 +1,13 @@
 /* ------------------------------------------------------------------
    src/app/dashboard/manage-client/orders/voir/[orderId]/page.tsx
+   Détails de commande : section méta + tableau harmonisés
+   MAJ (Août 2025) : pickupMagasin est maintenant un ARRAY
 ------------------------------------------------------------------ */
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
 /* ---------- types ---------- */
@@ -12,7 +15,6 @@ interface OrderItem {
   product: string;
   reference: string;
   name: string;
-  mainImageUrl: string;
   quantity: number;
   price: number;
   tva: number;
@@ -22,166 +24,183 @@ interface OrderItem {
 interface Order {
   _id: string;
   ref: string;
-  user: { username?: string; email: string } | null;
   clientName: string;
-  DeliveryAddress: Array<{
-    Address: string;
-    DeliverToAddress: string;
-  }>;
-  pickupMagasin?: {
-    Magasin: string;
-    MagasinAddress: string;
-  };
+  DeliveryAddress: Array<{ DeliverToAddress: string }>;
+  pickupMagasin: Array<{ MagasinAddress: string }>; // ← array now
   orderItems: OrderItem[];
   paymentMethod?: string;
   deliveryMethod: string;
   deliveryCost?: number;
-  orderStatus: string;
   createdAt: string;
 }
 
+/* ---------- helpers ---------- */
+const frFmt = (n: number) => n.toFixed(2).replace(".", ",") + " TND";
+
 export default function OrderDetailsPage() {
   const { orderId } = useParams() as { orderId: string };
-  const router = useRouter();
-  const [order, setOrder] = useState<Order | null>(null);
+
+  const [order,   setOrder]   = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
-  /* ---------- fetch order ---------- */
+  /* fetch order */
   useEffect(() => {
-    async function fetchOrder() {
+    (async () => {
       try {
         const { order } = await fetchFromAPI<{ order: Order }>(
-          `/dashboardadmin/orders/${orderId}`
+          `/dashboardadmin/orders/${orderId}`,
         );
         setOrder(order);
-      } catch (err) {
-        console.error(err);
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
-    }
-    if (orderId) fetchOrder();
+    })();
   }, [orderId]);
 
-  if (loading) return <div className="p-8">Loading…</div>;
-  if (!order) return <div className="p-8">Order not found.</div>;
+  if (loading)  return <div className="p-8">Loading…</div>;
+  if (!order)   return <div className="p-8">Order not found.</div>;
 
-  /* ---------- totals ---------- */
-  const total = order.orderItems.reduce((sum, it) => {
-    const line = (it.price - it.discount) * it.quantity * (1 + it.tva / 100);
-    return sum + line;
-  }, 0);
+  /* totals */
+  const totalTTC =
+    order.orderItems.reduce((s, it) => {
+      const puRemise = it.price * (1 - it.discount / 100);
+      return s + puRemise * it.quantity;
+    }, 0) + (order.deliveryCost ?? 0);
+
+  /* pickup / livraison */
+  const pickupList   = order.pickupMagasin ?? [];
+  const isPickup     = pickupList.length > 0;
+  const addressLabel = order.DeliveryAddress
+    .map((a) => a.DeliverToAddress)
+    .join("\n");
+  const magasinLabel = pickupList
+    .map((m) => m.MagasinAddress)
+    .join("\n") || "—";
 
   /* ---------- render ---------- */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-6">
       {/* header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Order {order.ref}</h1>
-        <button
-          onClick={() => router.back()}
-          className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+        <h1 className="text-3xl font-bold">Commande {order.ref}</h1>
+
+        {/* ← Retour vers la liste des commandes */}
+        <Link
+          href="/dashboard/manage-client/orders"
+          className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
         >
-          ← Back
-        </button>
+          ← Retour
+        </Link>
       </div>
 
-      {/* summary row */}
-      <div className="flex flex-col md:flex-row md:divide-x divide-gray-200 text-center md:text-left py-4">
-        {/* N° commande */}
-        <div className="flex-1 px-4 flex flex-col space-y-1">
-          <p className="text-xs text-gray-400">N° de commande</p>
-          <p className="text-sm font-medium">{order.ref}</p>
+      {/* ─── section méta ─── */}
+      <div className="flex flex-col md:flex-row md:divide-x divide-gray-200 text-center md:text-left">
+        {/* Client */}
+        <div className="flex-1 px-4 py-2">
+          <p className="text-xs text-gray-400">Client</p>
+          <p className="text-sm font-medium">{order.clientName}</p>
         </div>
 
         {/* Date */}
-        <div className="flex-1 px-4 flex flex-col space-y-1">
-          <p className="text-xs text-gray-400">Date de commande</p>
+        <div className="flex-1 px-4 py-2">
+          <p className="text-xs text-gray-400">Date</p>
           <p className="text-sm font-medium">
             {new Date(order.createdAt).toLocaleDateString("fr-FR", {
               day: "numeric",
-              month: "short",
+              month: "long",
               year: "numeric",
             })}
           </p>
         </div>
 
-        {/* Méthode de livraison */}
-        <div className="flex-1 px-4 flex flex-col space-y-1">
-          <p className="text-xs text-gray-400">Méthode de livraison</p>
+        {/* Livraison / Retrait */}
+        <div className="flex-1 px-4 py-2">
+          <p className="text-xs text-gray-400">
+            {isPickup ? "Retrait" : "Livraison"}
+          </p>
           <p className="text-sm font-medium">
-            {order.deliveryMethod} – {order.deliveryCost?.toFixed(2) ?? "0.00"} TND
+            {order.deliveryMethod} – {frFmt(order.deliveryCost ?? 0)}
           </p>
         </div>
 
-        {/* Moyen de paiement */}
-        <div className="flex-1 px-4 flex flex-col space-y-1">
-          <p className="text-xs text-gray-400">Moyen de paiement</p>
-          <p className="text-sm font-medium">{order.paymentMethod || "—"}</p>
-        </div>
-
-        {/* Retrait en magasin */}
-        <div className="flex-1 px-4 flex flex-col space-y-1">
-          <p className="text-xs text-gray-400">Retrait en magasin</p>
+        {/* Paiement */}
+        <div className="flex-1 px-4 py-2">
+          <p className="text-xs text-gray-400">Paiement</p>
           <p className="text-sm font-medium">
-            {order.pickupMagasin?.MagasinAddress ?? "—"}
+            {order.paymentMethod ?? "—"}
           </p>
         </div>
 
-        {/* Adresse de livraison */}
-        <div className="flex-1 px-4 flex flex-col space-y-1">
-          <p className="text-xs text-gray-400">Lieu de livraison</p>
-          <div className="space-y-0.5 text-sm font-medium">
-            {order.DeliveryAddress.map((addr, idx) => (
-              <p key={idx}>{addr.DeliverToAddress}</p>
-            ))}
-          </div>
+        {/* Adresse / Magasin */}
+        <div className="flex-1 px-4 py-2">
+          <p className="text-xs text-gray-400">
+            {isPickup ? "Magasin" : "Adresse"}
+          </p>
+          <p className="text-sm font-medium whitespace-pre-line">
+            {isPickup ? magasinLabel : addressLabel || "—"}
+          </p>
         </div>
       </div>
 
-      {/* table des items */}
+      {/* ─── table articles ─── */}
       <div>
         <table className="w-full text-sm border border-gray-200">
           <thead className="bg-gray-100">
             <tr>
               <th className="py-1 px-2 text-left">Produit</th>
               <th className="py-1 px-2 text-right">Qté</th>
-              <th className="py-1 px-2 text-right">Prix</th>
-              <th className="py-1 px-2 text-right">TVA</th>
+              <th className="py-1 px-2 text-right">PU&nbsp;TTC</th>
               <th className="py-1 px-2 text-right">Remise</th>
-              <th className="py-1 px-2 text-right">Sous-total</th>
+              <th className="py-1 px-2 text-right">TVA</th>
+              <th className="py-1 px-2 text-right">Total&nbsp;TTC</th>
             </tr>
           </thead>
+
           <tbody>
             {order.orderItems.map((it) => {
-              const subtotal =
-                (it.price - it.discount) *
-                it.quantity *
-                (1 + it.tva / 100);
+              const puRemise = it.price * (1 - it.discount / 100);
+              const lineTTC  = puRemise * it.quantity;
+
               return (
-                <tr key={it.product} className="border-t">
-                  <td className="py-1 px-2 text-left">{it.name}</td>
+                <tr key={it.product} className="border-t align-top">
+                  <td className="py-1 px-2">
+                    <div>{it.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {it.reference}
+                    </div>
+                  </td>
+
                   <td className="py-1 px-2 text-right">{it.quantity}</td>
+
                   <td className="py-1 px-2 text-right">
-                    {it.price.toFixed(2)}
+                    {frFmt(puRemise)}
+                    {it.discount > 0 && (
+                      <span className="ml-1 line-through text-xs text-gray-500">
+                        {frFmt(it.price)}
+                      </span>
+                    )}
                   </td>
+
+                  <td className="py-1 px-2 text-right">
+                    {it.discount > 0 ? `${it.discount}%` : "—"}
+                  </td>
+
                   <td className="py-1 px-2 text-right">{it.tva}%</td>
-                  <td className="py-1 px-2 text-right">
-                    {it.discount.toFixed(2)}
-                  </td>
-                  <td className="py-1 px-2 text-right">
-                    {subtotal.toFixed(2)}
-                  </td>
+
+                  <td className="py-1 px-2 text-right">{frFmt(lineTTC)}</td>
                 </tr>
               );
             })}
           </tbody>
+
           <tfoot>
             <tr className="border-t font-semibold">
               <td colSpan={5} className="py-1 px-2 text-right">
                 Total
               </td>
-              <td className="py-1 px-2 text-right">{total.toFixed(2)}</td>
+              <td className="py-1 px-2 text-right">{frFmt(totalTTC)}</td>
             </tr>
           </tfoot>
         </table>
