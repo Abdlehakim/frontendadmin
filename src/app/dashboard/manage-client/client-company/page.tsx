@@ -1,6 +1,5 @@
 // ───────────────────────────────────────────────────────────────
 // src/app/dashboard/manage-client/client-company/page.tsx
-// Liste & gestion des « ClientCompany » (clients entreprise)
 // ───────────────────────────────────────────────────────────────
 "use client";
 
@@ -12,7 +11,6 @@ import { FaSpinner } from "react-icons/fa6";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
 
-/* ---------- types ---------- */
 interface ClientCompany {
   _id: string;
   companyName: string;
@@ -25,25 +23,22 @@ interface ClientCompany {
 const pageSize = 12;
 
 export default function ClientCompanyPage() {
-  /* ---------- state ---------- */
-  const [companies, setCompanies]     = useState<ClientCompany[]>([]);
-  const [searchTerm, setSearchTerm]   = useState("");
+  const [companies, setCompanies] = useState<ClientCompany[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading]         = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  /* delete‑popup state */
-  const [isDeleteOpen, setIsDeleteOpen]   = useState(false);
-  const [deleteId, setDeleteId]           = useState("");
-  const [deleteName, setDeleteName]       = useState("");
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
+  const [deleteName, setDeleteName] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  /* ---------- filtered data & pagination ---------- */
   const filtered = useMemo(
     () =>
       companies.filter((c) =>
-        c.companyName.toLowerCase().includes(searchTerm.toLowerCase()),
+        c.companyName.toLowerCase().includes(searchTerm.toLowerCase())
       ),
-    [companies, searchTerm],
+    [companies, searchTerm]
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -53,7 +48,6 @@ export default function ClientCompanyPage() {
     return filtered.slice(start, start + pageSize);
   }, [filtered, currentPage]);
 
-  /* ---------- fetch companies ---------- */
   useEffect(() => {
     async function load() {
       try {
@@ -69,7 +63,6 @@ export default function ClientCompanyPage() {
     load();
   }, []);
 
-  /* ---------- server actions ---------- */
   const deleteCompany = async (id: string) => {
     await fetchFromAPI(`/dashboardadmin/client-company/${id}`, {
       method: "DELETE",
@@ -77,7 +70,6 @@ export default function ClientCompanyPage() {
     setCompanies((prev) => prev.filter((c) => c._id !== id));
   };
 
-  /* ---------- popup helpers ---------- */
   const openDelete = (id: string, name: string) => {
     setDeleteId(id);
     setDeleteName(name);
@@ -90,30 +82,29 @@ export default function ClientCompanyPage() {
     try {
       await deleteCompany(id);
     } catch {
-      alert("Deletion failed.");
+      alert("Échec de la suppression.");
     }
     setDeleteLoading(false);
     closeDelete();
   };
 
-  /* ---------- render ---------- */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* Header */}
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">All Client Companies</h1>
+        <h1 className="text-3xl font-bold uppercase">
+          Toutes les entreprises clientes
+        </h1>
         <Link href="/dashboard/manage-client/client-company/create">
-          <button className="w-[250px] h-[40px] bg-tertiary text-white rounded hover:opacity-90">
-            Create New Company
+          <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
+            Créer une nouvelle entreprise
           </button>
         </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex justify-between items-end gap-6 h-[70px]">
+      <div className="flex flex-wrap justify-between items-end gap-6">
         <div className="flex items-center gap-2">
           <label htmlFor="searchCompany" className="font-medium">
-            Search by Name:
+            Rechercher par nom :
           </label>
           <input
             id="searchCompany"
@@ -123,32 +114,30 @@ export default function ClientCompanyPage() {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Enter company name"
+            placeholder="Entrez le nom de l'entreprise"
           />
         </div>
       </div>
 
-      {/* Table header */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr className="text-sm">
-              <th className="px-4 py-2 w-[30%] text-center">Company</th>
-              <th className="px-4 py-2 text-center border-x-4">Phone</th>
-              <th className="px-4 py-2 w-[25%] text-center">Email</th>
+              <th className="px-4 py-2 text-center">Entreprise</th>
+              <th className="px-4 py-2 text-center">Téléphone</th>
+              <th className="px-4 py-2 text-center">Courriel</th>
               <th className="px-4 py-2 text-center">Action</th>
             </tr>
           </thead>
         </table>
 
-        {/* Table body */}
         <div className="relative flex-1 overflow-auto">
           <table className="table-fixed w-full">
             {displayed.length === 0 && !loading ? (
               <tbody>
                 <tr>
                   <td colSpan={4} className="py-6 text-center text-gray-600">
-                    No companies found.
+                    Aucune entreprise trouvée.
                   </td>
                 </tr>
               </tbody>
@@ -156,7 +145,7 @@ export default function ClientCompanyPage() {
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
                 {displayed.map((c) => (
                   <tr key={c._id} className="even:bg-gray-100 odd:bg-white">
-                    <td className="px-4 text-center font-semibold text-gray-800">
+                    <td className="px-4 text-center">
                       {c.companyName}
                     </td>
                     <td className="px-4 text-center">{c.phone}</td>
@@ -173,7 +162,7 @@ export default function ClientCompanyPage() {
                         <button
                           onClick={() => openDelete(c._id, c.companyName)}
                           className="ButtonSquare"
-                          aria-label="Delete company"
+                          aria-label="Supprimer l'entreprise"
                         >
                           <FaTrashAlt size={14} />
                         </button>
@@ -185,7 +174,6 @@ export default function ClientCompanyPage() {
             )}
           </table>
 
-          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -194,7 +182,6 @@ export default function ClientCompanyPage() {
         </div>
       </div>
 
-      {/* Pagination */}
       <div className="flex justify-center mt-4">
         <PaginationAdmin
           currentPage={currentPage}
@@ -203,7 +190,6 @@ export default function ClientCompanyPage() {
         />
       </div>
 
-      {/* Delete Popup */}
       {isDeleteOpen && (
         <Popup
           id={deleteId}

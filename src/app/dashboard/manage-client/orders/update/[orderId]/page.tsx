@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
-
+import OrderStepsNav from "@/components/create-order/OrderStepsNav";
 import SelectClient, { Client } from "@/components/create-order/selectClient";
 import SelectProducts, {
   ProductLite,
@@ -15,7 +15,9 @@ import SelectProducts, {
 import SelectDeliveryOption, {
   DeliveryOption,
 } from "@/components/create-order/selectDeliveryOption";
-import SelectAddress, { Address } from "@/components/create-order/selectAddress";
+import SelectAddress, {
+  Address,
+} from "@/components/create-order/selectAddress";
 import SelectBoutiques, {
   Magasin,
 } from "@/components/create-order/SelectBoutiques";
@@ -61,7 +63,7 @@ export default function UpdateOrderPage() {
   const { orderId } = useParams<{ orderId: string }>();
 
   /* ---------- local caches ---------- */
-  const [boutiques, setBoutiques]         = useState<Magasin[]>([]);
+  const [boutiques, setBoutiques] = useState<Magasin[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   /* ---------- local UI state ---------- */
@@ -76,25 +78,28 @@ export default function UpdateOrderPage() {
   const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
 
-  const [paymentMethodKey, setPaymentMethodKey] =
-    useState<string | null>(null);
-  const [paymentMethodLabel, setPaymentMethodLabel] =
-    useState<string | null>(null);
+  const [paymentMethodKey, setPaymentMethodKey] = useState<string | null>(null);
+  const [paymentMethodLabel, setPaymentMethodLabel] = useState<string | null>(
+    null
+  );
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
 
   /* adresses */
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
-  const [selectedAddressId, setSelectedAddressId] =
-    useState<string | null>(null);
-  const [selectedAddressLbl, setSelectedAddressLbl] =
-    useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null
+  );
+  const [selectedAddressLbl, setSelectedAddressLbl] = useState<string | null>(
+    null
+  );
 
   /* retrait magasin */
-  const [selectedBoutiqueId, setSelectedBoutiqueId] =
-    useState<string | null>(null);
+  const [selectedBoutiqueId, setSelectedBoutiqueId] = useState<string | null>(
+    null
+  );
   const [selectedBoutique, setSelectedBoutique] = useState<Magasin | null>(
-    null,
+    null
   );
 
   /* divers */
@@ -102,14 +107,15 @@ export default function UpdateOrderPage() {
   const [error, setError] = useState("");
 
   /* valeur brute de la méthode de paiement stockée sur la commande */
-  const [orderPaymentMethodRaw, setOrderPaymentMethodRaw] =
-    useState<string | null>(null);
+  const [orderPaymentMethodRaw, setOrderPaymentMethodRaw] = useState<
+    string | null
+  >(null);
 
   /* ---------- helpers ---------- */
   const searchClients = useCallback(async (q: string): Promise<Client[]> => {
     if (q.trim().length < MIN_CHARS) return [];
     const { clients } = await fetchFromAPI<{ clients: Client[] }>(
-      `/dashboardadmin/client/find?q=${encodeURIComponent(q.trim())}`,
+      `/dashboardadmin/client/find?q=${encodeURIComponent(q.trim())}`
     );
     return clients;
   }, []);
@@ -118,11 +124,11 @@ export default function UpdateOrderPage() {
     async (q: string): Promise<ProductLite[]> => {
       if (q.trim().length < MIN_CHARS) return [];
       const { products } = await fetchFromAPI<{ products: ProductLite[] }>(
-        `/dashboardadmin/stock/products/find?q=${encodeURIComponent(q.trim())}`,
+        `/dashboardadmin/stock/products/find?q=${encodeURIComponent(q.trim())}`
       );
       return products;
     },
-    [],
+    []
   );
 
   const updateBasket = useCallback(
@@ -130,10 +136,10 @@ export default function UpdateOrderPage() {
       setBasket((prev) =>
         typeof action === "function"
           ? (action as (b: BasketItem[]) => BasketItem[])(prev)
-          : action,
+          : action
       );
     },
-    [],
+    []
   );
 
   /* ---------- preload boutiques ---------- */
@@ -142,7 +148,7 @@ export default function UpdateOrderPage() {
     (async () => {
       try {
         const { magasins }: { magasins: Magasin[] } = await fetchFromAPI(
-          "/dashboardadmin/stock/magasins/approved",
+          "/dashboardadmin/stock/magasins/approved"
         );
         setBoutiques(magasins);
       } catch (e) {
@@ -175,7 +181,7 @@ export default function UpdateOrderPage() {
     (async () => {
       try {
         const { order } = await fetchFromAPI<OrderResponse>(
-          `/dashboardadmin/orders/${orderId}`,
+          `/dashboardadmin/orders/${orderId}`
         );
         console.log("Fetched order ➜", order);
 
@@ -195,7 +201,7 @@ export default function UpdateOrderPage() {
             stockStatus: "in stock",
             attributes: it.attributes,
             chosen: {},
-          })),
+          }))
         );
 
         /* adresse ou magasin */
@@ -212,7 +218,7 @@ export default function UpdateOrderPage() {
           setSelectedBoutique(boutiqueObj);
 
           setBoutiques((prev) =>
-            prev.some((b) => b._id === id) ? prev : [...prev, boutiqueObj],
+            prev.some((b) => b._id === id) ? prev : [...prev, boutiqueObj]
           );
         }
 
@@ -229,7 +235,7 @@ export default function UpdateOrderPage() {
             description: o.description ?? "",
             price: Number(o.price ?? o.cost ?? 0),
             isPickup: Boolean(o.isPickup),
-          }),
+          })
         );
         setDeliveryOptions(mapped);
 
@@ -252,8 +258,7 @@ export default function UpdateOrderPage() {
     const found =
       paymentMethods.find(
         (m) =>
-          m.label === orderPaymentMethodRaw ||
-          m.name === orderPaymentMethodRaw,
+          m.label === orderPaymentMethodRaw || m.name === orderPaymentMethodRaw
       ) ?? null;
 
     if (found) {
@@ -272,7 +277,7 @@ export default function UpdateOrderPage() {
     (async () => {
       try {
         const { addresses } = await fetchFromAPI<{ addresses: Address[] }>(
-          `/dashboardadmin/clientAddress/${selectedClient._id}`,
+          `/dashboardadmin/clientAddress/${selectedClient._id}`
         );
         setAddresses(addresses);
       } catch (e) {
@@ -344,7 +349,7 @@ export default function UpdateOrderPage() {
   };
 
   /* ---------- guards ---------- */
-  const paymentOK  = Boolean(paymentMethodKey);
+  const paymentOK = Boolean(paymentMethodKey);
   const canGoStep2 = basket.length > 0;
   const canGoStep3 =
     canGoStep2 &&
@@ -358,37 +363,38 @@ export default function UpdateOrderPage() {
 
   /* ---------- UI ---------- */
   return (
-    <div className="w-[95%] mx-auto py-6 flex flex-col gap-8">
+    <div className="w-[95%] min-h-full mx-auto py-4 flex flex-col gap-8">
       <h1 className="text-2xl font-bold uppercase">Modifier la commande</h1>
-
+      <OrderStepsNav currentStep={step} />
       {/* STEP 1 ------------------------------------------------------ */}
       {step === 1 && (
         <>
-          <SelectClient
-            client={selectedClient}
-            searchClients={searchClients}
-            onSelect={setSelectedClient}
-            onClear={() => setSelectedClient(null)}
-          />
+          <div className="flex-1 flex flex-col gap-4 min-h-[70%]">
+            <SelectClient
+              client={selectedClient}
+              searchClients={searchClients}
+              onSelect={setSelectedClient}
+              onClear={() => setSelectedClient(null)}
+            />
 
-          <SelectProducts
-            client={selectedClient}
-            basket={basket}
-            setBasket={updateBasket}
-            searchProducts={searchProducts}
-          />
-
-          <div className="flex gap-4">
+            <SelectProducts
+              client={selectedClient}
+              basket={basket}
+              setBasket={updateBasket}
+              searchProducts={searchProducts}
+            />
+          </div>
+          <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
             <button
               onClick={cancel}
-              className="rounded-md border border-gray-300 px-4 py-2.5 text-sm hover:bg-primary hover:text-white"
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
             >
               Annuler
             </button>
             <button
               onClick={() => setStep(2)}
               disabled={!canGoStep2}
-              className="rounded-md border border-gray-300 px-4 py-2.5 text-sm hover:bg-primary hover:text-white disabled:opacity-50"
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50 cursor-pointer"
             >
               Suivant →
             </button>
@@ -399,71 +405,80 @@ export default function UpdateOrderPage() {
       {/* STEP 2 ------------------------------------------------------ */}
       {step === 2 && (
         <>
-          <SelectDeliveryOption
-            value={deliveryOpt?._id ?? null}
-            onChange={(_, opt) => {
-              setDeliveryOpt(opt);
-              if (opt?.isPickup) {
-                setSelectedAddressId(null);
-                setSelectedAddressLbl(null);
-              } else {
-                setSelectedBoutiqueId(null);
-                setSelectedBoutique(null);
-              }
-            }}
-            options={deliveryOptions}
-            loading={loadingDelivery}
-          />
-
-          {deliveryOpt && !deliveryOpt.isPickup && (
-            <SelectAddress
-              client={selectedClient}
-              addresses={addresses}
-              value={selectedAddressId}
-              onChange={(id, label) => {
-                setSelectedAddressId(id);
-                setSelectedAddressLbl(label);
+          <div className="flex-1 flex flex-col gap-6 min-h-[70%]">
+            <SelectDeliveryOption
+              value={deliveryOpt?._id ?? null}
+              onChange={(_, opt) => {
+                setDeliveryOpt(opt);
+                if (opt?.isPickup) {
+                  setSelectedAddressId(null);
+                  setSelectedAddressLbl(null);
+                } else {
+                  setSelectedBoutiqueId(null);
+                  setSelectedBoutique(null);
+                }
               }}
-              loading={loadingAddresses}
+              options={deliveryOptions}
+              loading={loadingDelivery}
             />
-          )}
 
-          {deliveryOpt && deliveryOpt.isPickup && (
-            <SelectBoutiques
-              value={selectedBoutiqueId}
-              onChange={(id, b) => {
-                setSelectedBoutiqueId(id);
-                setSelectedBoutique(b ?? null);
-              }}
-            />
-          )}
+            {deliveryOpt && !deliveryOpt.isPickup && (
+              <SelectAddress
+                client={selectedClient}
+                addresses={addresses}
+                value={selectedAddressId}
+                onChange={(id, label) => {
+                  setSelectedAddressId(id);
+                  setSelectedAddressLbl(label);
+                }}
+                loading={loadingAddresses}
+              />
+            )}
 
-          {deliveryOpt && (
-            <SelectPaymentMethod
-              value={paymentMethodKey}
-              methods={paymentMethods}
-              loading={loadingPaymentMethods}
-              onChange={(key, method) => {
-                setPaymentMethodKey(key);
-                setPaymentMethodLabel(method?.label ?? null);
-              }}
-            />
-          )}
+            {deliveryOpt && deliveryOpt.isPickup && (
+              <SelectBoutiques
+                value={selectedBoutiqueId}
+                onChange={(id, b) => {
+                  setSelectedBoutiqueId(id);
+                  setSelectedBoutique(b ?? null);
+                }}
+              />
+            )}
 
-          <div className="flex gap-4">
+            {deliveryOpt && (
+              <SelectPaymentMethod
+                value={paymentMethodKey}
+                methods={paymentMethods}
+                loading={loadingPaymentMethods}
+                onChange={(key, method) => {
+                  setPaymentMethodKey(key);
+                  setPaymentMethodLabel(method?.label ?? null);
+                }}
+              />
+            )}
+          </div>
+          <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
             <button
-              onClick={() => setStep(1)}
-              className="rounded-md border border-gray-300 px-4 py-2.5 text-sm hover:bg-primary hover:text-white"
+              onClick={cancel}
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
             >
-              ← Précédent
+              Annuler
             </button>
-            <button
-              onClick={() => setStep(3)}
-              disabled={!canGoStep3}
-              className="rounded-md border border-gray-300 px-4 py-2.5 text-sm hover:bg-primary hover:text-white disabled:opacity-50"
-            >
-              Suivant →
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setStep(1)}
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+              >
+                ← Précédent
+              </button>
+              <button
+                onClick={() => setStep(3)}
+                disabled={!canGoStep3}
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50 cursor-pointer"
+              >
+                Suivant →
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -471,36 +486,39 @@ export default function UpdateOrderPage() {
       {/* STEP 3 ------------------------------------------------------ */}
       {step === 3 && (
         <>
-          <OrderPreview
-            onClose={() => setStep(2)}
-            client={selectedClient}
-            addressLabel={selectedAddressLbl}
-            magasin={selectedBoutique}
-            delivery={deliveryOpt}
-            basket={basket}
-            paymentMethod={paymentMethodLabel}
-          />
-
-          <div className="flex gap-4">
+          <div className="flex-1 flex flex-col gap-6 min-h-[70%]">
+            <OrderPreview
+              onClose={() => setStep(2)}
+              client={selectedClient}
+              addressLabel={selectedAddressLbl}
+              magasin={selectedBoutique}
+              delivery={deliveryOpt}
+              basket={basket}
+              paymentMethod={paymentMethodLabel}
+            />
+          </div>
+          <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
             <button
               onClick={cancel}
-              className="rounded-md border border-gray-300 px-4 py-2.5 text-sm hover:bg-primary hover:text-white"
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
             >
               Annuler
             </button>
-            <button
-              onClick={() => setStep(2)}
-              className="rounded-md border border-gray-300 px-4 py-2.5 text-sm hover:bg-primary hover:text-white"
-            >
-              ← Précédent
-            </button>
-            <button
-              onClick={save}
-              disabled={saving || !canGoStep3}
-              className="rounded-md border border-gray-300 px-4 py-2.5 text-sm hover:bg-primary hover:text-white disabled:opacity-50"
-            >
-              {saving ? "Enregistrement…" : "Enregistrer"}
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setStep(2)}
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+              >
+                ← Précédent
+              </button>
+              <button
+                onClick={save}
+                disabled={saving || !canGoStep3}
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+              >
+                {saving ? "Enregistrement…" : "Enregistrer"}
+              </button>
+            </div>
           </div>
         </>
       )}

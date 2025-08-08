@@ -297,7 +297,7 @@ export default function CreateOrderPage() {
             <button
               onClick={() => dispatch(setStep(2))}
               disabled={!canGoStep2}
-              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50"
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50 cursor-pointer"
             >
               Suivant →
             </button>

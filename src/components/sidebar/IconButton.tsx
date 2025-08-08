@@ -17,9 +17,9 @@ export default function IconButton({ icon, href, onClick }: Props) {
 
   // Added duration and ease for smoother color + scale transitions
   const base =
-    "absolute -right-8 bottom-6 h-12 w-12 flex justify-center items-center rounded-md text-white border-2 bg-hoverButton";
-  const normal = "hover:bg-hoverButton hover:scale-105";
-  const act = "bg-hoverButton text-primary";
+    "absolute -right-8 bottom-6 h-12 w-12 flex justify-center items-center rounded-md text-white border-2 bg-primary cursor-pointer";
+  const normal = "hover:bg-secondary hover:scale-105";
+  const act = "bg-secondary text-primary";
 
   const classes = `${base} ${active ? act : normal}`;
 
