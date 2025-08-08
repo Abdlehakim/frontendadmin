@@ -8,11 +8,13 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import SelectClient, { Client } from "@/components/create-order/selectClient";
-import SelectAddress, { Address } from "@/components/create-order/selectAddress";
+import SelectAddress, {
+  Address,
+} from "@/components/create-order/selectAddress";
 import SelectDeliveryOption, {
   DeliveryOption,
 } from "@/components/create-order/selectDeliveryOption";
-import SelectBoutiques from "@/components/create-order/SelectBoutiques";
+ import SelectBoutiques, { Magasin } from "@/components/create-order/SelectBoutiques";
 import SelectProducts, {
   BasketItem,
   ProductLite,
@@ -38,10 +40,16 @@ import {
   selectOrderCreation,
 } from "@/features/orderCreation/orderCreationSlice";
 
+interface IOrderItemAttribute {
+  attribute: string;
+  value: string;
+  name: string;          
+}
+
 const MIN_CHARS = 2;
 
 export default function CreateOrderPage() {
-  const router   = useRouter();
+  const router = useRouter();
   const dispatch = useAppDispatch();
 
   const {
@@ -55,47 +63,55 @@ export default function CreateOrderPage() {
     selectedAddressLbl,
     selectedBoutiqueId,
     selectedBoutique,
-    deliveryOptions: cachedDeliveryOpts,
-    boutiques: cachedBoutiques,
-    paymentMethods: cachedPaymentMethods,
   } = useAppSelector(selectOrderCreation);
 
   /* ----- local state ----- */
-  const [loadingDelivery,         setLoadingDelivery]         = useState(false);
-  const [loadingAddresses,        setLoadingAddresses]        = useState(false);
-  const [loadingPaymentMethods,   setLoadingPaymentMethods]   = useState(false);
-  const [addresses,               setAddresses]               = useState<Address[]>([]);
+  const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
+  const [loadingDelivery, setLoadingDelivery] = useState(false);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+   const [boutiquesList, setBoutiquesList]       = useState<Magasin[]>([]);
+    const [loadingBoutiques, setLoadingBoutiques] = useState(false);
 
   /* ---------- chargement des options de livraison ---------- */
-  useEffect(() => {
-    if (cachedDeliveryOpts.length) return;
-    setLoadingDelivery(true);
-    (async () => {
-      try {
-        await fetchFromAPI("/dashboardadmin/delivery-options");
-      } catch (e) {
-        console.error("Load delivery options error:", e);
-      } finally {
-        setLoadingDelivery(false);
-      }
-    })();
-  }, [cachedDeliveryOpts.length]);
+useEffect(() => {
+  setLoadingDelivery(true);
+  (async () => {
+    try {
+      // on récupère directement un DeliveryOption[]
+      const opts = await fetchFromAPI<DeliveryOption[]>(
+        "/dashboardadmin/delivery-options"
+      );
+      setDeliveryOptions(opts);
+    } catch (e) {
+      console.error("Load delivery options error:", e);
+    } finally {
+      setLoadingDelivery(false);
+    }
+  })();
+}, []);
 
   /* ---------- chargement des magasins (pickup) ---------- */
   useEffect(() => {
-    if (cachedBoutiques.length) return;
+    setLoadingBoutiques(true);
     (async () => {
       try {
-        await fetchFromAPI("/dashboardadmin/stock/magasins/approved");
+        const { magasins } = await fetchFromAPI<{ magasins: Magasin[] }>(
+          "/dashboardadmin/stock/magasins/approved"
+        );
+        setBoutiquesList(magasins);
       } catch (e) {
-        console.error("Load magasins error:", e);
+        console.error("Load boutiques error:", e);
+      } finally {
+        setLoadingBoutiques(false);
       }
     })();
-  }, [cachedBoutiques.length]);
+  }, []);
 
   /* ---------- chargement des moyens de paiement ---------- */
   useEffect(() => {
-    if (cachedPaymentMethods.length) return;
     setLoadingPaymentMethods(true);
     (async () => {
       try {
@@ -104,13 +120,14 @@ export default function CreateOrderPage() {
         }>("/dashboardadmin/payment/payment-settings/active");
 
         dispatch(cachePaymentMethods(activePaymentMethods));
+        setPaymentMethods(activePaymentMethods);
       } catch (e) {
         console.error("Load payment methods error:", e);
       } finally {
         setLoadingPaymentMethods(false);
       }
     })();
-  }, [cachedPaymentMethods.length, dispatch]);
+  }, [dispatch]);
 
   /* ---------- chargement des adresses du client sélectionné ---------- */
   useEffect(() => {
@@ -122,7 +139,7 @@ export default function CreateOrderPage() {
     (async () => {
       try {
         const { addresses } = await fetchFromAPI<{ addresses: Address[] }>(
-          `/dashboardadmin/clientAddress/${client._id}`,
+          `/dashboardadmin/clientAddress/${client._id}`
         );
         setAddresses(addresses);
       } catch (e) {
@@ -137,7 +154,7 @@ export default function CreateOrderPage() {
   const searchClients = useCallback(async (q: string): Promise<Client[]> => {
     if (q.trim().length < MIN_CHARS) return [];
     const { clients } = await fetchFromAPI<{ clients: Client[] }>(
-      `/dashboardadmin/client/find?q=${encodeURIComponent(q.trim())}`,
+      `/dashboardadmin/client/find?q=${encodeURIComponent(q.trim())}`
     );
     return clients;
   }, []);
@@ -147,11 +164,11 @@ export default function CreateOrderPage() {
     async (q: string): Promise<ProductLite[]> => {
       if (q.trim().length < MIN_CHARS) return [];
       const { products } = await fetchFromAPI<{ products: ProductLite[] }>(
-        `/dashboardadmin/stock/products/find?q=${encodeURIComponent(q.trim())}`,
+        `/dashboardadmin/stock/products/find?q=${encodeURIComponent(q.trim())}`
       );
       return products;
     },
-    [],
+    []
   );
 
   /* ---------- mise à jour du panier ---------- */
@@ -160,7 +177,7 @@ export default function CreateOrderPage() {
       const newBasket = typeof action === "function" ? action(basket) : action;
       dispatch(setBasket(newBasket));
     },
-    [basket, dispatch],
+    [basket, dispatch]
   );
 
   /* ---------- changement de mode de livraison ---------- */
@@ -173,7 +190,7 @@ export default function CreateOrderPage() {
         dispatch(setBoutique({ id: null, boutique: null }));
       }
     },
-    [dispatch],
+    [dispatch]
   );
 
   /* ---------- annuler ---------- */
@@ -221,8 +238,14 @@ export default function CreateOrderPage() {
           quantity: it.quantity,
           discount: it.discount,
           price: it.price,
-          attributes: it.attributes,
-        })),
+        attributes:
+    it.attributes?.map((row) => ({
+       attribute: row.attributeSelected._id,
+        name: row.attributeSelected.name,
+        value: it.chosen[row.attributeSelected._id]!,
+      })
+    ) as IOrderItemAttribute[],
+  })),
         deliveryMethod: deliveryOpt?.name,
         deliveryCost: deliveryOpt?.price,
         paymentMethod: paymentMethodLabel,
@@ -234,7 +257,7 @@ export default function CreateOrderPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        },
+        }
       );
 
       dispatch(resetOrderCreation());
@@ -312,7 +335,7 @@ export default function CreateOrderPage() {
             <SelectDeliveryOption
               value={deliveryOpt?._id ?? null}
               onChange={handleDeliveryChange}
-              options={cachedDeliveryOpts}
+              options={deliveryOptions}
               loading={loadingDelivery}
             />
 
@@ -321,28 +344,28 @@ export default function CreateOrderPage() {
                 client={client}
                 addresses={addresses}
                 value={selectedAddressId}
-                onChange={(id, label) =>
-                  dispatch(setAddress({ id, label }))
-                }
+                onChange={(id, label) => dispatch(setAddress({ id, label }))}
                 loading={loadingAddresses}
               />
             )}
 
             {deliveryOpt && deliveryOpt.isPickup && (
-              <SelectBoutiques
-                value={selectedBoutiqueId}
-                onChange={(id, b) => dispatch(setBoutique({ id, boutique: b }))}
-              />
+               <SelectBoutiques
+  value={selectedBoutiqueId}
+  boutiques={boutiquesList}
+  loading={loadingBoutiques}
+  onChange={(id, b) => dispatch(setBoutique({ id, boutique: b }))}
+ />
             )}
 
             {deliveryOpt && (
               <SelectPaymentMethod
                 value={paymentMethodKey}
-                methods={cachedPaymentMethods}
+                methods={paymentMethods}
                 loading={loadingPaymentMethods}
                 onChange={(key, method) =>
                   dispatch(
-                    setPaymentMethod({ key, label: method?.label ?? null }),
+                    setPaymentMethod({ key, label: method?.label ?? null })
                   )
                 }
               />

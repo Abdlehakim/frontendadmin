@@ -112,7 +112,7 @@ export default function SelectProducts({
     );
 
   const addProduct = (p: ProductLite) => {
-    if (basket.some((b) => b._id === p._id)) return; // avoid duplicates
+    if (basket.some((b) => b._id === p._id)) return;
     const chosen: Record<string, string> = {};
     p.attributes?.forEach((row) => {
       const id  = row.attributeSelected._id;
