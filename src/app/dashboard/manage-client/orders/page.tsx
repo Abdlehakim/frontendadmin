@@ -44,12 +44,13 @@ interface Order {
 }
 
 const pageSize = 8;
+
 const statusOptions = [
-  "Processing",
-  "Shipped",
-  "Cancelled",
-  "Refunded",
-  "Delivered",
+  { value: "Processing", label: "En cours" },
+  { value: "Shipped", label: "Expédiée" },
+  { value: "Cancelled", label: "Annulée" },
+  { value: "Refunded", label: "Remboursée" },
+  { value: "Delivered", label: "Livrée" },
 ];
 
 export default function OrdersPage() {
@@ -60,13 +61,11 @@ export default function OrdersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  /* delete-popup state */
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteOrderId, setDeleteOrderId] = useState("");
   const [deleteOrderRef, setDeleteOrderRef] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  /* ───────── derived lists ───────── */
   const filteredOrders = useMemo(
     () =>
       orders
@@ -87,7 +86,6 @@ export default function OrdersPage() {
     return filteredOrders.slice(start, start + pageSize);
   }, [filteredOrders, currentPage]);
 
-  /* ───────── fetch orders ───────── */
   useEffect(() => {
     async function fetchData() {
       try {
@@ -104,7 +102,6 @@ export default function OrdersPage() {
     fetchData();
   }, []);
 
-  /* ───────── server actions ───────── */
   const deleteOrder = async (id: string) => {
     await fetchFromAPI(`/dashboardadmin/orders/${id}`, {
       method: "DELETE",
@@ -128,7 +125,6 @@ export default function OrdersPage() {
     }
   };
 
-  /* ───────── popup helpers ───────── */
   const openDelete = (id: string, ref: string) => {
     setDeleteOrderId(id);
     setDeleteOrderRef(ref);
@@ -141,35 +137,32 @@ export default function OrdersPage() {
     try {
       await deleteOrder(id);
     } catch {
-      alert("Deletion failed.");
+      alert("Échec de la suppression.");
     }
     setDeleteLoading(false);
     closeDelete();
   };
 
-  /* ───────── render ───────── */
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* Header */}
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Commandes</h1>
         <Link href="/dashboard/manage-client/orders/create">
           <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
-            Create Commande
+            Créer une commande
           </button>
         </Link>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap justify-between items-end gap-6">
         <div className="flex items-center gap-2">
           <label htmlFor="searchOrder" className="font-medium">
-            Search by Ref:
+            Rechercher par réf :
           </label>
           <input
             id="searchOrder"
             className="border border-gray-300 rounded px-2 py-1"
-            placeholder="Enter ref"
+            placeholder="Entrer la référence"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -177,51 +170,50 @@ export default function OrdersPage() {
             }}
           />
         </div>
-        <div className='flex gap-4'>
-        <div className="flex items-center gap-2">
-          <label className="font-medium">F.Date:</label>
-          <DateFilter
-            onChange={(range) => {
-              setDateRange(range);
-              setCurrentPage(1);
-            }}
-          />
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <label className="font-medium">Filtrer par date :</label>
+            <DateFilter
+              onChange={(range) => {
+                setDateRange(range);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label htmlFor="statusFilter" className="font-medium">
+              Filtrer par statut :
+            </label>
+            <select
+              id="statusFilter"
+              className="border border-gray-300 rounded px-2 py-1"
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Tous les statuts</option>
+              {statusOptions.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <label htmlFor="statusFilter" className="font-medium">
-            F.Status:
-          </label>
-          <select
-            id="statusFilter"
-            className="border border-gray-300 rounded px-2 py-1"
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="">All Statuses</option>
-            {statusOptions.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div></div>
-        
       </div>
 
-      {/* Table */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr className="text-sm">
               <th className="px-4 py-2 text-center">Date</th>
-              <th className="px-4 py-2 text-center">REF</th>
-              <th className="px-4 py-2 text-center">Client Name</th>
-              <th className="px-4 py-2 text-center">Delivery Address</th>
-              <th className="px-4 py-2 text-center">Retrait en magasin</th>
-              <th className="px-4 py-2 text-center">Status</th>
+              <th className="px-4 py-2 text-center">Référence</th>
+              <th className="px-4 py-2 text-center">Nom client</th>
+              <th className="px-4 py-2 text-center">Adresse de livraison</th>
+              <th className="px-4 py-2 text-center">Retrait magasin</th>
+              <th className="px-4 py-2 text-center">Statut</th>
               <th className="px-4 py-2 text-center">Action</th>
             </tr>
           </thead>
@@ -233,7 +225,7 @@ export default function OrdersPage() {
               <tbody>
                 <tr>
                   <td colSpan={7} className="py-6 text-center text-gray-600">
-                    No orders found.
+                    Aucune commande trouvée.
                   </td>
                 </tr>
               </tbody>
@@ -261,8 +253,8 @@ export default function OrdersPage() {
                         className="border border-gray-300 rounded px-2 py-1 text-sm cursor-pointer"
                       >
                         {statusOptions.map((s) => (
-                          <option className="cursor-pointer" key={s} value={s}>
-                            {s}
+                          <option key={s.value} value={s.value}>
+                            {s.label}
                           </option>
                         ))}
                       </select>
@@ -284,7 +276,7 @@ export default function OrdersPage() {
                         <button
                           onClick={() => openDelete(o._id, o.ref)}
                           className="ButtonSquare"
-                          aria-label="Delete order"
+                          aria-label="Supprimer la commande"
                         >
                           <FaTrashAlt size={14} />
                         </button>
@@ -296,7 +288,6 @@ export default function OrdersPage() {
             )}
           </table>
 
-          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
               <FaSpinner className="animate-spin text-3xl" />
@@ -305,7 +296,6 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Pagination */}
       <div className="flex justify-center mt-4">
         <PaginationAdmin
           currentPage={currentPage}
@@ -314,7 +304,6 @@ export default function OrdersPage() {
         />
       </div>
 
-      {/* Delete Popup */}
       {isDeleteOpen && (
         <Popup
           id={deleteOrderId}

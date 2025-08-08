@@ -1,4 +1,3 @@
-// src/components/SidebarClient.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -30,59 +29,60 @@ interface SidebarItem {
   icon?: React.ReactElement;
   permission?: string;
   children?: SidebarItem[];
+  isHeader?: boolean;
 }
 
 const sidebarItems: SidebarItem[] = [
   {
-    name: "Dashboard",
+    name: "Tableau de bord",
     href: "/dashboard",
     icon: <MdOutlineDashboard size={20} />,
   },
   {
-    name: "Manage Access",
+    name: "Gestion des accès",
     icon: <FaUsersViewfinder size={20} />,
     permission: "M_Access",
     children: [
       {
-        name: "Users",
+        name: "Utilisateurs",
         href: "/dashboard/manage-access/users",
         icon: <FaUsersViewfinder size={20} />,
       },
       {
-        name: "Roles",
+        name: "Rôles",
         href: "/dashboard/manage-access/roles",
         icon: <FaUsersViewfinder size={20} />,
       },
     ],
   },
   {
-    name: "Manage Website",
+    name: "Gestion du site",
     icon: <CgWebsite size={20} />,
     children: [
       {
-        name: "Home page data",
+        name: "Données page d'accueil",
         href: "/dashboard/manage-website/home-page",
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Product page data",
+        name: "Données page produit",
         href: "/dashboard/manage-website/product-page",
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Company",
+        name: "Entreprise",
         href: "/dashboard/manage-website/company-data",
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Banners",
+        name: "Bannières",
         href: "/dashboard/manage-website/banners",
         icon: <LuCircleParking size={20} />,
       },
     ],
   },
   {
-    name: "Manage Stock",
+    name: "Gestion du stock",
     icon: <LuCircleParking size={20} />,
     children: [
       {
@@ -91,76 +91,82 @@ const sidebarItems: SidebarItem[] = [
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Brands",
+        name: "Marques",
         href: "/dashboard/manage-stock/brands",
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Categories",
+        name: "Catégories",
         href: "/dashboard/manage-stock/categories",
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Sous Categories",
+        name: "Sous-catégories",
         href: "/dashboard/manage-stock/sub-categories",
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Product Attributes",
+        name: "Attributs produits",
         href: "/dashboard/manage-stock/product-attributes",
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "All Products",
+        name: "Tous les produits",
         href: "/dashboard/manage-stock/products",
         icon: <LuCircleParking size={20} />,
       },
     ],
   },
   {
-    name: "Manage Client",
+    name: "Gestion des clients",
     icon: <PiUsersThree size={20} />,
     children: [
       {
-        name: "Clients siteweb",
-        href: "/dashboard/manage-client/clients",
-        icon: <LuCircleParking size={20} />,
+        name: "Clients",
+        isHeader: true,
+        children: [
+          {
+            name: "Site web",
+            href: "/dashboard/manage-client/clients",
+            icon: <LuCircleParking size={20} />,
+          },
+          {
+            name: "Magasin",
+            href: "/dashboard/manage-client/clients-shop",
+            icon: <LuCircleParking size={20} />,
+          },
+          {
+            name: "Société",
+            href: "/dashboard/manage-client/client-company",
+            icon: <LuCircleParking size={20} />,
+          },
+        ],
       },
       {
-        name: "Clients magasin",
-        href: "/dashboard/manage-client/clients-shop",
-        icon: <LuCircleParking size={20} />,
-      },
-        {
-        name: "Clients Societe",
-        href: "/dashboard/manage-client/client-company",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Orders",
+        name: "Commandes",
         href: "/dashboard/manage-client/orders",
         icon: <LuCircleParking size={20} />,
       },
     ],
   },
   {
-    name: "Payment Options",
+    name: "Options de paiement",
     icon: <FaRegMoneyBill1 size={20} />,
     children: [
       {
-        name: "Payment Methods",
+        name: "Méthodes de paiement",
         href: "/dashboard/payment-options/payment-methods/",
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Currency",
+        name: "Devise",
         href: "/dashboard/payment-options/currency",
         icon: <LuCircleParking size={20} />,
       },
     ],
   },
   {
-    name: "Delivery options",
+    name: "Options de livraison",
     href: "/dashboard/delivery-options",
     icon: <TbTruckDelivery size={20} />,
   },
@@ -169,12 +175,12 @@ const sidebarItems: SidebarItem[] = [
     icon: <PiArticleMediumBold size={20} />,
     children: [
       {
-        name: "Categories",
+        name: "Catégories",
         href: "/dashboard/blog/postcategorie",
         icon: <PiArticleMediumBold size={20} />,
       },
       {
-        name: "Sous Categories",
+        name: "Sous-catégories",
         href: "/dashboard/blog/postsubcategorie",
         icon: <PiArticleMediumBold size={20} />,
       },
@@ -194,7 +200,6 @@ export default function SidebarClient({ initialUser }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  // auto-expand sections on load when in expanded mode
   useEffect(() => {
     sidebarItems.forEach((item) => {
       if (item.children) {
@@ -241,7 +246,6 @@ export default function SidebarClient({ initialUser }: Props) {
       } h-screen`}
     >
       <div className="flex flex-col gap-4 h-screen relative">
-        {/* Header */}
         <div className="flex items-center justify-center h-[80px] border-b-2 ">
           <div className="flex items-center gap-2">
             <div className="bg-white px-1 text-2xl text-black rounded-md flex items-center justify-center font-bold">
@@ -270,7 +274,6 @@ export default function SidebarClient({ initialUser }: Props) {
           />
         </div>
 
-        {/* Navigation */}
         <nav
           className={`flex flex-col justify-between max-h-[80%] ${
             collapsed ? "overflow-visible" : "overflow-hidden"
@@ -282,45 +285,18 @@ export default function SidebarClient({ initialUser }: Props) {
                 (item) => !item.permission || hasPermission(item.permission)
               )
               .map((item) => {
-                // collapsed sidebar: just icon + pop-out on hover
+                const isOpen = !!expanded[item.name];
+
                 if (collapsed) {
                   return (
                     <div key={item.name} className="group relative">
-                      {item.children ? (
-                        <>
-                          <div className="flex h-8 gap-2 justify-center items-center w-full hover:bg-hoverButton transition-all duration-900">
-                            {item.icon}
-                          </div>
-
-                          <div className="absolute top-0 left-full hidden group-hover:block z-40 text-white">
-                            <div className="min-w-[200px] w-max ml-2 bg-primary rounded-md border-2 border-white shadow-lg">
-                              {/* Children */}
-                              {item.children.map((child) => (
-                                <Link
-                                  key={child.name}
-                                  href={child.href!}
-                                  className="block px-4 py-2 whitespace-nowrap hover:bg-hoverButton"
-                                >
-                                  {child.name}
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <Link
-                          href={item.href!}
-                          className="flex h-8 gap-2 justify-center items-center w-full hover:bg-hoverButton "
-                        >
-                          <span>{item.icon}</span>
-                        </Link>
-                      )}
+                      <div className="flex h-8 gap-2 justify-center items-center w-full hover:bg-hoverButton transition-all duration-900">
+                        {item.icon}
+                      </div>
                     </div>
                   );
                 }
 
-                // expanded sidebar
-                const isOpen = !!expanded[item.name];
                 return (
                   <div key={item.name}>
                     {item.children ? (
@@ -341,26 +317,47 @@ export default function SidebarClient({ initialUser }: Props) {
                             <BiChevronRight size={20} />
                           </span>
                         </div>
-
-                        {/* always in the tree, but animating max-height & opacity */}
                         <ul
-                          className={`
-      ml-8 flex flex-col gap-2 py-2 text-xs
-      overflow-hidden whitespace-nowrap
-      transition-[max-height,opacity] duration-600 ease-in-out
-      ${isOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"}
-    `}
+                          className={`ml-8 flex flex-col gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out ${
+  isOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+}`}
                         >
-                          {item.children.map((child) => (
-                            <li key={child.name}>
-                              <Link
-                                href={child.href!}
-                                className="flex items-center px-8 h-6 hover:bg-white hover:text-hoverText"
-                              >
-                                <span className="ml-5">{child.name}</span>
-                              </Link>
-                            </li>
-                          ))}
+                          {item.children.map((child) => {
+                            if (child.isHeader) {
+                              return (
+                                <div key={child.name}>
+                                  <div className="text-xs px-12 h-6 font-semibold text-white select-none">
+                                    {child.name}
+                                  </div>
+                                  <ul className="ml-4 flex flex-col gap-1 text-xs h-fit">
+                                    {child.children?.map((subChild) => (
+                                      <li key={subChild.name}>
+                                        <Link
+                                          href={subChild.href!}
+                                          className="flex items-center px-8 h-6 hover:bg-white hover:text-hoverText"
+                                        >
+                                          <span className="ml-5">
+                                            {subChild.name}
+                                          </span>
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <li key={child.name}>
+                                <Link
+                                  href={child.href!}
+                                  className="flex items-center px-8 h-6 hover:bg-white hover:text-hoverText"
+                                >
+                                  <span className="ml-5">{child.name}</span>
+                                </Link>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </>
                     ) : (
@@ -376,30 +373,24 @@ export default function SidebarClient({ initialUser }: Props) {
                 );
               })}
           </div>
-          {/* Sign-out */}
+
           <div
-            className={`
-    overflow-hidden flex items-center
-    transition-all duration-300 ease-in-out
-    ${collapsed ? "justify-center h-8 mt-8" : "justify-end h-16 mt-0"}
-  `}
+            className={`overflow-hidden flex items-center transition-all duration-300 ease-in-out ${
+              collapsed ? "justify-center h-8 mt-8" : "justify-end h-16 mt-0"
+            }`}
           >
             <button
               onClick={handleSignOut}
-              className={`
-      flex items-center justify-center
-      transition-colors duration-200 ease-in-out
-      ${
-        collapsed
-          ? ""
-          : "gap-2 h-10 w-36 border-y-2 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
-      }
-    `}
+              className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
+                collapsed
+                  ? ""
+                  : "gap-2 h-10 w-fit p-2 border-y-2 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
+              }`}
             >
               <VscSignOut size={20} />
               {!collapsed && (
-                <span className="ml-2 duration-200 transition-all whitespace-nowrap overflow-hidden">
-                  SIGN OUT
+                <span className="ml-2 duration-200 transition-all whitespace-nowrap overflow-hidden text-sm w-fit">
+                  SE DÉCONNECTER
                 </span>
               )}
             </button>
