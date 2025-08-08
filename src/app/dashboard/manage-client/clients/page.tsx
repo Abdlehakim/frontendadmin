@@ -92,7 +92,7 @@ export default function ClientsPage() {
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Tous les clients</h1>
+        <h1 className="text-3xl font-bold uppercase">Tous les clients sur Site Web</h1>
         <Link href="/dashboard/manage-access/clients/create">
           <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
             Créer un nouveau client

@@ -131,7 +131,7 @@ const sidebarItems: SidebarItem[] = [
             icon: <LuCircleParking size={20} />,
           },
           {
-            name: "Magasin",
+            name: "Passage",
             href: "/dashboard/manage-client/clients-shop",
             icon: <LuCircleParking size={20} />,
           },
