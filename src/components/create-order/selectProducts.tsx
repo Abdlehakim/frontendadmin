@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   Sélection et panier des produits pour la création de commande
+selectProducts.tsx
 ------------------------------------------------------------------ */
 "use client";
 

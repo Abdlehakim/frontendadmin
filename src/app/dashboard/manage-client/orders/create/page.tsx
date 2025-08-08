@@ -14,7 +14,9 @@ import SelectAddress, {
 import SelectDeliveryOption, {
   DeliveryOption,
 } from "@/components/create-order/selectDeliveryOption";
- import SelectBoutiques, { Magasin } from "@/components/create-order/SelectBoutiques";
+import SelectBoutiques, {
+  Magasin,
+} from "@/components/create-order/SelectBoutiques";
 import SelectProducts, {
   BasketItem,
   ProductLite,
@@ -43,7 +45,7 @@ import {
 interface IOrderItemAttribute {
   attribute: string;
   value: string;
-  name: string;          
+  name: string;
 }
 
 const MIN_CHARS = 2;
@@ -72,26 +74,26 @@ export default function CreateOrderPage() {
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-   const [boutiquesList, setBoutiquesList]       = useState<Magasin[]>([]);
-    const [loadingBoutiques, setLoadingBoutiques] = useState(false);
+  const [boutiquesList, setBoutiquesList] = useState<Magasin[]>([]);
+  const [loadingBoutiques, setLoadingBoutiques] = useState(false);
 
   /* ---------- chargement des options de livraison ---------- */
-useEffect(() => {
-  setLoadingDelivery(true);
-  (async () => {
-    try {
-      // on récupère directement un DeliveryOption[]
-      const opts = await fetchFromAPI<DeliveryOption[]>(
-        "/dashboardadmin/delivery-options"
-      );
-      setDeliveryOptions(opts);
-    } catch (e) {
-      console.error("Load delivery options error:", e);
-    } finally {
-      setLoadingDelivery(false);
-    }
-  })();
-}, []);
+  useEffect(() => {
+    setLoadingDelivery(true);
+    (async () => {
+      try {
+        // on récupère directement un DeliveryOption[]
+        const opts = await fetchFromAPI<DeliveryOption[]>(
+          "/dashboardadmin/delivery-options"
+        );
+        setDeliveryOptions(opts);
+      } catch (e) {
+        console.error("Load delivery options error:", e);
+      } finally {
+        setLoadingDelivery(false);
+      }
+    })();
+  }, []);
 
   /* ---------- chargement des magasins (pickup) ---------- */
   useEffect(() => {
@@ -238,14 +240,12 @@ useEffect(() => {
           quantity: it.quantity,
           discount: it.discount,
           price: it.price,
-        attributes:
-    it.attributes?.map((row) => ({
-       attribute: row.attributeSelected._id,
-        name: row.attributeSelected.name,
-        value: it.chosen[row.attributeSelected._id]!,
-      })
-    ) as IOrderItemAttribute[],
-  })),
+          attributes: it.attributes?.map((row) => ({
+            attribute: row.attributeSelected._id,
+            name: row.attributeSelected.name,
+            value: it.chosen[row.attributeSelected._id]!,
+          })) as IOrderItemAttribute[],
+        })),
         deliveryMethod: deliveryOpt?.name,
         deliveryCost: deliveryOpt?.price,
         paymentMethod: paymentMethodLabel,
@@ -350,12 +350,12 @@ useEffect(() => {
             )}
 
             {deliveryOpt && deliveryOpt.isPickup && (
-               <SelectBoutiques
-  value={selectedBoutiqueId}
-  boutiques={boutiquesList}
-  loading={loadingBoutiques}
-  onChange={(id, b) => dispatch(setBoutique({ id, boutique: b }))}
- />
+              <SelectBoutiques
+                value={selectedBoutiqueId}
+                boutiques={boutiquesList}
+                loading={loadingBoutiques}
+                onChange={(id, b) => dispatch(setBoutique({ id, boutique: b }))}
+              />
             )}
 
             {deliveryOpt && (

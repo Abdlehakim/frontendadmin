@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
+
 import OrderStepsNav from "@/components/create-order/OrderStepsNav";
 import SelectClient, { Client } from "@/components/create-order/selectClient";
 import SelectProducts, {
@@ -28,7 +29,12 @@ import OrderPreview from "@/components/create-order/OrderPreview";
 
 const MIN_CHARS = 2;
 
-/* ---------- API types ---------- */
+interface RawAttribute {
+  attribute: string;
+  name: string;
+  value: string;
+}
+
 interface OrderResponse {
   order: {
     _id: string;
@@ -37,14 +43,8 @@ interface OrderResponse {
     paymentMethod?: string;
     deliveryMethod?: string;
     deliveryCost?: number;
-    pickupMagasin: Array<{
-      Magasin: string;
-      MagasinAddress: string;
-    }>;
-    DeliveryAddress: Array<{
-      Address: string;
-      DeliverToAddress: string;
-    }>;
+    pickupMagasin: Array<{ Magasin: string; MagasinAddress: string }>;
+    DeliveryAddress: Array<{ Address: string; DeliverToAddress: string }>;
     orderItems: Array<{
       product: string;
       reference: string;
@@ -53,7 +53,7 @@ interface OrderResponse {
       tva: number;
       discount: number;
       quantity: number;
-      attributes?: ProductLite["attributes"];
+      attributes?: RawAttribute[];
     }>;
   };
 }
@@ -62,39 +62,34 @@ export default function UpdateOrderPage() {
   const router = useRouter();
   const { orderId } = useParams<{ orderId: string }>();
 
-  /* ---------- local caches ---------- */
-  const [boutiques, setBoutiques] = useState<Magasin[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-
-  /* ---------- local UI state ---------- */
   const [step, setStep] = useState<1 | 2 | 3>(1);
-
-  /* client & panier */
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [basket, setBasket] = useState<BasketItem[]>([]);
 
-  /* livraison & paiement */
   const [deliveryOpt, setDeliveryOpt] = useState<DeliveryOption | null>(null);
   const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
 
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [paymentMethodKey, setPaymentMethodKey] = useState<string | null>(null);
   const [paymentMethodLabel, setPaymentMethodLabel] = useState<string | null>(
     null
   );
+  const [orderPaymentMethodRaw, setOrderPaymentMethodRaw] = useState<
+    string | null
+  >(null);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
 
-  /* adresses */
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null
   );
   const [selectedAddressLbl, setSelectedAddressLbl] = useState<string | null>(
     null
   );
-
-  /* retrait magasin */
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [loadingBoutiques, setLoadingBoutiques] = useState(false);
+  const [boutiques, setBoutiques] = useState<Magasin[]>([]);
   const [selectedBoutiqueId, setSelectedBoutiqueId] = useState<string | null>(
     null
   );
@@ -102,16 +97,9 @@ export default function UpdateOrderPage() {
     null
   );
 
-  /* divers */
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  /* valeur brute de la méthode de paiement stockée sur la commande */
-  const [orderPaymentMethodRaw, setOrderPaymentMethodRaw] = useState<
-    string | null
-  >(null);
-
-  /* ---------- helpers ---------- */
   const searchClients = useCallback(async (q: string): Promise<Client[]> => {
     if (q.trim().length < MIN_CHARS) return [];
     const { clients } = await fetchFromAPI<{ clients: Client[] }>(
@@ -142,69 +130,73 @@ export default function UpdateOrderPage() {
     []
   );
 
-  /* ---------- preload boutiques ---------- */
   useEffect(() => {
-    if (boutiques.length) return;
-    (async () => {
-      try {
-        const { magasins }: { magasins: Magasin[] } = await fetchFromAPI(
-          "/dashboardadmin/stock/magasins/approved"
-        );
-        setBoutiques(magasins);
-      } catch (e) {
-        console.error("Load magasins error:", e);
-      }
-    })();
+    if (!boutiques.length) {
+      setLoadingBoutiques(true);
+      fetchFromAPI<{ magasins: Magasin[] }>(
+        "/dashboardadmin/stock/magasins/approved"
+      )
+        .then(({ magasins }) => setBoutiques(magasins))
+        .catch((e) => console.error("Load boutiques error:", e))
+        .finally(() => setLoadingBoutiques(false));
+    }
   }, [boutiques.length]);
 
-  /* ---------- preload payment methods ---------- */
   useEffect(() => {
-    if (paymentMethods.length) return;
-    setLoadingPaymentMethods(true);
-    (async () => {
-      try {
-        const { activePaymentMethods } = await fetchFromAPI<{
-          activePaymentMethods: PaymentMethod[];
-        }>("/dashboardadmin/payment/payment-settings/active");
-
-        setPaymentMethods(activePaymentMethods);
-      } catch (e) {
-        console.error("Load payment methods error:", e);
-      } finally {
-        setLoadingPaymentMethods(false);
-      }
-    })();
+    if (!paymentMethods.length) {
+      setLoadingPaymentMethods(true);
+      fetchFromAPI<{ activePaymentMethods: PaymentMethod[] }>(
+        "/dashboardadmin/payment/payment-settings/active"
+      )
+        .then(({ activePaymentMethods }) =>
+          setPaymentMethods(activePaymentMethods)
+        )
+        .catch((e) => console.error("Load payment methods error:", e))
+        .finally(() => setLoadingPaymentMethods(false));
+    }
   }, [paymentMethods.length]);
 
-  /* ---------- load order + delivery options ---------- */
   useEffect(() => {
     (async () => {
       try {
         const { order } = await fetchFromAPI<OrderResponse>(
           `/dashboardadmin/orders/${orderId}`
         );
-        console.log("Fetched order ➜", order);
-
-        /* client */
         setSelectedClient(order.client);
 
-        /* basket */
-        setBasket(
-          order.orderItems.map((it) => ({
-            _id: it.product,
-            name: it.name,
-            reference: it.reference,
-            price: it.price,
-            tva: it.tva,
-            discount: it.discount,
-            quantity: it.quantity,
-            stockStatus: "in stock",
-            attributes: it.attributes,
-            chosen: {},
-          }))
+        const productsDefs = await Promise.all(
+          order.orderItems.map((it) =>
+            fetchFromAPI<{ products: ProductLite[] }>(
+              `/dashboardadmin/stock/products/find?q=${encodeURIComponent(
+                it.reference
+              )}`
+            ).then((res) => res.products[0])
+          )
         );
 
-        /* adresse ou magasin */
+        setBasket(
+          order.orderItems.map((it, idx) => {
+            const prodDef = productsDefs[idx];
+            const chosen: Record<string, string> = {};
+            (it.attributes || []).forEach((attr) => {
+              chosen[attr.attribute] = attr.value;
+            });
+
+            return {
+              _id: it.product,
+              name: it.name,
+              reference: it.reference,
+              price: it.price,
+              tva: it.tva,
+              discount: it.discount,
+              quantity: it.quantity,
+              stockStatus: "in stock",
+              attributes: prodDef.attributes || [],
+              chosen,
+            };
+          })
+        );
+
         if (order.DeliveryAddress?.length) {
           setSelectedAddressId(String(order.DeliveryAddress[0].Address));
           setSelectedAddressLbl(order.DeliveryAddress[0].DeliverToAddress);
@@ -213,7 +205,7 @@ export default function UpdateOrderPage() {
         if (order.pickupMagasin?.length) {
           const first = order.pickupMagasin[0];
           const id = String(first.Magasin);
-          const boutiqueObj: Magasin = { _id: id, name: first.MagasinAddress };
+          const boutiqueObj = { _id: id, name: first.MagasinAddress };
           setSelectedBoutiqueId(id);
           setSelectedBoutique(boutiqueObj);
 
@@ -222,10 +214,8 @@ export default function UpdateOrderPage() {
           );
         }
 
-        /* stocke la valeur brute pour plus tard */
         setOrderPaymentMethodRaw(order.paymentMethod ?? null);
 
-        /* ----- fetch delivery options ----- */
         setLoadingDelivery(true);
         const data = await fetchFromAPI("/dashboardadmin/delivery-options");
         const mapped: DeliveryOption[] = (Array.isArray(data) ? data : []).map(
@@ -239,10 +229,8 @@ export default function UpdateOrderPage() {
         );
         setDeliveryOptions(mapped);
 
-        if (order.deliveryMethod) {
-          const found = mapped.find((d) => d.name === order.deliveryMethod);
-          if (found) setDeliveryOpt(found);
-        }
+        const selected = mapped.find((d) => d.name === order.deliveryMethod);
+        if (selected) setDeliveryOpt(selected);
       } catch {
         setError("Impossible de charger la commande.");
       } finally {
@@ -251,44 +239,33 @@ export default function UpdateOrderPage() {
     })();
   }, [orderId]);
 
-  /* ---------- applique la méthode de paiement une fois la liste dispo ---------- */
   useEffect(() => {
-    if (!orderPaymentMethodRaw || !paymentMethods.length) return;
-
-    const found =
-      paymentMethods.find(
+    if (orderPaymentMethodRaw && paymentMethods.length) {
+      const found = paymentMethods.find(
         (m) =>
           m.label === orderPaymentMethodRaw || m.name === orderPaymentMethodRaw
-      ) ?? null;
-
-    if (found) {
-      setPaymentMethodKey(found.name);
-      setPaymentMethodLabel(found.label);
+      );
+      if (found) {
+        setPaymentMethodKey(found.name);
+        setPaymentMethodLabel(found.label);
+      }
     }
   }, [paymentMethods, orderPaymentMethodRaw]);
 
-  /* ---------- fetch adresses ---------- */
   useEffect(() => {
     if (!selectedClient) {
       setAddresses([]);
       return;
     }
     setLoadingAddresses(true);
-    (async () => {
-      try {
-        const { addresses } = await fetchFromAPI<{ addresses: Address[] }>(
-          `/dashboardadmin/clientAddress/${selectedClient._id}`
-        );
-        setAddresses(addresses);
-      } catch (e) {
-        console.error("Load addresses error:", e);
-      } finally {
-        setLoadingAddresses(false);
-      }
-    })();
+    fetchFromAPI<{ addresses: Address[] }>(
+      `/dashboardadmin/clientAddress/${selectedClient._id}`
+    )
+      .then(({ addresses }) => setAddresses(addresses))
+      .catch((e) => console.error("Load addresses error:", e))
+      .finally(() => setLoadingAddresses(false));
   }, [selectedClient]);
 
-  /* ---------- actions ---------- */
   const cancel = () => router.back();
 
   const save = async () => {
@@ -300,11 +277,8 @@ export default function UpdateOrderPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientId: selectedClient?._id ?? null,
-
-          /* --- livraison / retrait --- */
           deliveryMethod: deliveryOpt?.name ?? null,
           deliveryCost: deliveryOpt?.price ?? null,
-
           DeliveryAddress:
             deliveryOpt && !deliveryOpt.isPickup && selectedAddressId
               ? [
@@ -314,7 +288,6 @@ export default function UpdateOrderPage() {
                   },
                 ]
               : [],
-
           pickupMagasin:
             deliveryOpt && deliveryOpt.isPickup && selectedBoutique
               ? [
@@ -324,10 +297,7 @@ export default function UpdateOrderPage() {
                   },
                 ]
               : [],
-
           paymentMethod: paymentMethodLabel,
-
-          /* --- produits --- */
           orderItems: basket.map((it) => ({
             product: it._id,
             reference: it.reference,
@@ -336,7 +306,11 @@ export default function UpdateOrderPage() {
             quantity: it.quantity,
             discount: it.discount,
             price: it.price,
-            attributes: it.attributes,
+            attributes: it.attributes?.map((row) => ({
+              attribute: row.attributeSelected._id,
+              name: row.attributeSelected.name,
+              value: it.chosen[row.attributeSelected._id]!,
+            })),
           })),
         }),
       });
@@ -348,16 +322,13 @@ export default function UpdateOrderPage() {
     }
   };
 
-  /* ---------- guards ---------- */
   const paymentOK = Boolean(paymentMethodKey);
   const canGoStep2 = basket.length > 0;
   const canGoStep3 =
     canGoStep2 &&
     deliveryOpt &&
     paymentOK &&
-    (deliveryOpt.isPickup
-      ? selectedBoutiqueId !== null
-      : selectedAddressId !== null);
+    (deliveryOpt.isPickup ? selectedBoutiqueId : selectedAddressId);
 
   if (error) return <p className="text-red-600">{error}</p>;
 
@@ -366,7 +337,8 @@ export default function UpdateOrderPage() {
     <div className="w-[95%] min-h-full mx-auto py-4 flex flex-col gap-8">
       <h1 className="text-2xl font-bold uppercase">Modifier la commande</h1>
       <OrderStepsNav currentStep={step} />
-      {/* STEP 1 ------------------------------------------------------ */}
+
+      {/* STEP 1: Client + Produits */}
       {step === 1 && (
         <>
           <div className="flex-1 flex flex-col gap-4 min-h-[70%]">
@@ -384,17 +356,18 @@ export default function UpdateOrderPage() {
               searchProducts={searchProducts}
             />
           </div>
+
           <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
             <button
               onClick={cancel}
-              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
             >
               Annuler
             </button>
             <button
               onClick={() => setStep(2)}
               disabled={!canGoStep2}
-              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50 cursor-pointer"
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50"
             >
               Suivant →
             </button>
@@ -402,7 +375,7 @@ export default function UpdateOrderPage() {
         </>
       )}
 
-      {/* STEP 2 ------------------------------------------------------ */}
+      {/* STEP 2: Livraison + Paiement */}
       {step === 2 && (
         <>
           <div className="flex-1 flex flex-col gap-6 min-h-[70%]">
@@ -435,14 +408,16 @@ export default function UpdateOrderPage() {
               />
             )}
 
-            {deliveryOpt && deliveryOpt.isPickup && (
+            {deliveryOpt?.isPickup && (
               <SelectBoutiques
-                value={selectedBoutiqueId}
-                onChange={(id, b) => {
-                  setSelectedBoutiqueId(id);
-                  setSelectedBoutique(b ?? null);
-                }}
-              />
+     value={selectedBoutiqueId}
+     boutiques={boutiques}
+     loading={loadingBoutiques}
+     onChange={(id, b) => {
+       setSelectedBoutiqueId(id);
+       setSelectedBoutique(b ?? null);
+     }}
+   />
             )}
 
             {deliveryOpt && (
@@ -457,24 +432,25 @@ export default function UpdateOrderPage() {
               />
             )}
           </div>
+
           <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
             <button
               onClick={cancel}
-              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
             >
               Annuler
             </button>
             <div className="flex gap-4">
               <button
                 onClick={() => setStep(1)}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
               >
                 ← Précédent
               </button>
               <button
                 onClick={() => setStep(3)}
                 disabled={!canGoStep3}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50 cursor-pointer"
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50"
               >
                 Suivant →
               </button>
@@ -483,7 +459,7 @@ export default function UpdateOrderPage() {
         </>
       )}
 
-      {/* STEP 3 ------------------------------------------------------ */}
+      {/* STEP 3: Aperçu */}
       {step === 3 && (
         <>
           <div className="flex-1 flex flex-col gap-6 min-h-[70%]">
@@ -497,24 +473,25 @@ export default function UpdateOrderPage() {
               paymentMethod={paymentMethodLabel}
             />
           </div>
+
           <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
             <button
               onClick={cancel}
-              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
             >
               Annuler
             </button>
             <div className="flex gap-4">
               <button
                 onClick={() => setStep(2)}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
               >
                 ← Précédent
               </button>
               <button
                 onClick={save}
                 disabled={saving || !canGoStep3}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
               >
                 {saving ? "Enregistrement…" : "Enregistrer"}
               </button>
