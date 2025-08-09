@@ -42,11 +42,6 @@ import {
   selectOrderCreation,
 } from "@/features/orderCreation/orderCreationSlice";
 
-interface IOrderItemAttribute {
-  attribute: string;
-  value: string;
-  name: string;
-}
 
 const MIN_CHARS = 2;
 
@@ -211,72 +206,89 @@ export default function CreateOrderPage() {
   })();
 
   /* ---------- soumission ---------- */
-  const handleSubmit = useCallback(async () => {
-    try {
-      const payload = {
-        client: client!._id,
-        clientName: client!.username ?? client!.name,
-        DeliveryAddress:
-          deliveryOpt && !deliveryOpt.isPickup && selectedAddressId
-            ? [
-                {
-                  Address: selectedAddressId,
-                  DeliverToAddress: selectedAddressLbl!,
-                },
-              ]
-            : [],
-        pickupMagasin:
-          deliveryOpt && deliveryOpt.isPickup && selectedBoutique
-            ? {
-                Magasin: selectedBoutique._id,
-                MagasinAddress: selectedBoutique.name,
-              }
-            : {},
-        orderItems: basket.map((it) => ({
-          product: it._id,
-          reference: it.reference,
-          name: it.name,
-          tva: it.tva,
-          quantity: it.quantity,
-          discount: it.discount,
-          price: it.price,
-          attributes: it.attributes?.map((row) => ({
-            attribute: row.attributeSelected._id,
-            name: row.attributeSelected.name,
-            value: it.chosen[row.attributeSelected._id]!,
-          })) as IOrderItemAttribute[],
-        })),
-        deliveryMethod: deliveryOpt?.name,
-        deliveryCost: deliveryOpt?.price,
-        paymentMethod: paymentMethodLabel,
-      };
-
-      const { order } = await fetchFromAPI<{ order: { _id: string } }>(
-        "/dashboardadmin/orders/submit",
+/* ---------- soumission ---------- */
+/* ---------- soumission ---------- */
+const handleSubmit = useCallback(async () => {
+  try {
+    const pickupArray =
+  deliveryOpt?.isPickup && selectedBoutique
+    ? [
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+          Magasin: selectedBoutique._id,
+          MagasinAddress: [selectedBoutique.name, selectedBoutique.address, selectedBoutique.city]
+            .filter(Boolean)
+            .join(", "),
+        },
+      ]
+    : [];
 
-      dispatch(resetOrderCreation());
-      router.push(`/dashboard/manage-client/orders/voir/${order._id}`);
-    } catch (err) {
-      console.error("Order submission failed:", err);
-      alert("Échec de la soumission de la commande.");
-    }
-  }, [
-    client,
-    selectedAddressId,
-    selectedAddressLbl,
-    selectedBoutique,
-    deliveryOpt,
-    basket,
-    router,
-    paymentMethodLabel,
-    dispatch,
-  ]);
+    const deliveryArray =
+      deliveryOpt && !deliveryOpt.isPickup && selectedAddressId
+        ? [
+            {
+              Address: selectedAddressId,
+              DeliverToAddress: selectedAddressLbl!,
+            },
+          ]
+        : [];
+
+    const payload = {
+      client: client!._id,
+      clientName: client!.username ?? client!.name,
+
+       DeliveryAddress: deliveryArray,
+  pickupMagasin: pickupArray,
+
+      orderItems: basket.map((it) => ({
+        product: it._id,
+        reference: it.reference,
+        name: it.name,
+        tva: it.tva,
+        quantity: it.quantity,
+        discount: it.discount,
+        price: it.price,
+        attributes: it.attributes?.map((row) => ({
+          attribute: row.attributeSelected._id,
+          name: row.attributeSelected.name,
+          value: it.chosen[row.attributeSelected._id]!,
+        })),
+      })),
+
+      // deliveryMethod est "required" dans le schéma
+      deliveryMethod: deliveryOpt!.name,
+      deliveryCost: deliveryOpt?.price ?? 0,
+
+      paymentMethod: paymentMethodLabel ?? undefined,
+    };
+
+    const { order } = await fetchFromAPI<{ order: { _id: string } }>(
+      "/dashboardadmin/orders/submit",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    dispatch(resetOrderCreation());
+    router.push(`/dashboard/manage-client/orders/voir/${order._id}`);
+  } catch (err) {
+    console.error("Order submission failed:", err);
+    alert("Échec de la soumission de la commande.");
+  }
+}, [
+  client,
+  selectedAddressId,
+  selectedAddressLbl,
+  selectedBoutique,
+  deliveryOpt,
+  basket,
+  router,
+  paymentMethodLabel,
+  dispatch,
+]);
+
+
 
   /* ---------- clear client ---------- */
   const clearSelectedClient = useCallback(() => {

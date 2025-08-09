@@ -29,6 +29,10 @@ import OrderPreview from "@/components/create-order/OrderPreview";
 
 const MIN_CHARS = 2;
 
+/* ---------- helpers ---------- */
+const formatMagasinAddress = (m: Magasin) =>
+  [m.name, m.address, m.city].filter(Boolean).join(", ");
+
 interface RawAttribute {
   attribute: string;
   name: string;
@@ -88,6 +92,7 @@ export default function UpdateOrderPage() {
     null
   );
   const [loadingAddresses, setLoadingAddresses] = useState(false);
+
   const [loadingBoutiques, setLoadingBoutiques] = useState(false);
   const [boutiques, setBoutiques] = useState<Magasin[]>([]);
   const [selectedBoutiqueId, setSelectedBoutiqueId] = useState<string | null>(
@@ -130,6 +135,7 @@ export default function UpdateOrderPage() {
     []
   );
 
+  /* Boutiques list */
   useEffect(() => {
     if (!boutiques.length) {
       setLoadingBoutiques(true);
@@ -142,6 +148,14 @@ export default function UpdateOrderPage() {
     }
   }, [boutiques.length]);
 
+  /* Enrich selected boutique when full list is available */
+  useEffect(() => {
+    if (!selectedBoutiqueId || !boutiques.length) return;
+    const full = boutiques.find((b) => b._id === selectedBoutiqueId);
+    if (full) setSelectedBoutique(full);
+  }, [boutiques, selectedBoutiqueId]);
+
+  /* Payment methods */
   useEffect(() => {
     if (!paymentMethods.length) {
       setLoadingPaymentMethods(true);
@@ -156,6 +170,7 @@ export default function UpdateOrderPage() {
     }
   }, [paymentMethods.length]);
 
+  /* Load order */
   useEffect(() => {
     (async () => {
       try {
@@ -174,28 +189,30 @@ export default function UpdateOrderPage() {
           )
         );
 
-        setBasket(
-          order.orderItems.map((it, idx) => {
-            const prodDef = productsDefs[idx];
-            const chosen: Record<string, string> = {};
-            (it.attributes || []).forEach((attr) => {
-              chosen[attr.attribute] = attr.value;
-            });
+      setBasket(
+  order.orderItems.map((it, idx) => {
+    const prodDef = productsDefs[idx];
 
-            return {
-              _id: it.product,
-              name: it.name,
-              reference: it.reference,
-              price: it.price,
-              tva: it.tva,
-              discount: it.discount,
-              quantity: it.quantity,
-              stockStatus: "in stock",
-              attributes: prodDef.attributes || [],
-              chosen,
-            };
-          })
-        );
+    const chosen: Record<string, string> = {};
+    (it.attributes || []).forEach((attr) => {
+      chosen[attr.attribute] = attr.value;
+    });
+    const attrs: BasketItem["attributes"] = (prodDef?.attributes ?? []) as BasketItem["attributes"];
+
+    return {
+      _id: it.product,
+      name: it.name,
+      reference: it.reference,
+      price: it.price,
+      tva: it.tva,
+      discount: it.discount,
+      quantity: it.quantity,
+      stockStatus: "in stock",
+      attributes: attrs,
+      chosen,
+    };
+  })
+);
 
         if (order.DeliveryAddress?.length) {
           setSelectedAddressId(String(order.DeliveryAddress[0].Address));
@@ -205,12 +222,12 @@ export default function UpdateOrderPage() {
         if (order.pickupMagasin?.length) {
           const first = order.pickupMagasin[0];
           const id = String(first.Magasin);
-          const boutiqueObj = { _id: id, name: first.MagasinAddress };
+          const boutiqueSeed: Magasin = { _id: id, name: first.MagasinAddress };
           setSelectedBoutiqueId(id);
-          setSelectedBoutique(boutiqueObj);
+          setSelectedBoutique(boutiqueSeed);
 
           setBoutiques((prev) =>
-            prev.some((b) => b._id === id) ? prev : [...prev, boutiqueObj]
+            prev.some((b) => b._id === id) ? prev : [...prev, boutiqueSeed]
           );
         }
 
@@ -239,6 +256,7 @@ export default function UpdateOrderPage() {
     })();
   }, [orderId]);
 
+  /* Map raw payment method to current methods */
   useEffect(() => {
     if (orderPaymentMethodRaw && paymentMethods.length) {
       const found = paymentMethods.find(
@@ -252,6 +270,7 @@ export default function UpdateOrderPage() {
     }
   }, [paymentMethods, orderPaymentMethodRaw]);
 
+  /* Load addresses for selected client */
   useEffect(() => {
     if (!selectedClient) {
       setAddresses([]);
@@ -293,7 +312,8 @@ export default function UpdateOrderPage() {
               ? [
                   {
                     Magasin: selectedBoutique._id,
-                    MagasinAddress: selectedBoutique.name,
+                    // 👇 store "name, address, city"
+                    MagasinAddress: formatMagasinAddress(selectedBoutique),
                   },
                 ]
               : [],
@@ -410,14 +430,14 @@ export default function UpdateOrderPage() {
 
             {deliveryOpt?.isPickup && (
               <SelectBoutiques
-     value={selectedBoutiqueId}
-     boutiques={boutiques}
-     loading={loadingBoutiques}
-     onChange={(id, b) => {
-       setSelectedBoutiqueId(id);
-       setSelectedBoutique(b ?? null);
-     }}
-   />
+                value={selectedBoutiqueId}
+                boutiques={boutiques}
+                loading={loadingBoutiques}
+                onChange={(id, b) => {
+                  setSelectedBoutiqueId(id);
+                  setSelectedBoutique(b ?? null);
+                }}
+              />
             )}
 
             {deliveryOpt && (

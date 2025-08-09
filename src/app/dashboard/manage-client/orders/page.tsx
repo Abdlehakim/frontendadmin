@@ -241,7 +241,7 @@ export default function OrdersPage() {
                     <td className="px-4 text-center truncate">
                       {o.DeliveryAddress[0]?.DeliverToAddress ?? "—"}
                     </td>
-                    <td className="px-4 text-center">
+                    <td className="px-4 text-center truncate">
                       {o.pickupMagasin.length > 0
                         ? o.pickupMagasin[0].MagasinAddress
                         : "—"}

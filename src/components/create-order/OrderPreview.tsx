@@ -35,6 +35,8 @@ interface OrderPreviewProps {
   basket: BasketItem[];
   paymentMethod?: string | null;
 }
+const formatMagasin = (m: Magasin | null) =>
+  m ? [m.name, m.address, m.city].filter(Boolean).join(", ") : "—";
 
 /* ---------- helpers ---------- */
 const frFmt = (n: number) => n.toFixed(2).replace(".", ",") + " TND";
@@ -126,12 +128,8 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
             {delivery?.isPickup ? "Magasin" : "Adresse"}
           </p>
           <p className="text-sm font-medium">
-            {delivery?.isPickup
-              ? magasin
-                ? `${magasin.name}${magasin.city ? " – " + magasin.city : ""}`
-                : "—"
-              : addressLabel ?? "—"}
-          </p>
+  {delivery?.isPickup ? formatMagasin(magasin) : (addressLabel ?? "—")}
+</p>
         </div>
       </div>
 
