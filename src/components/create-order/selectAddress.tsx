@@ -35,11 +35,13 @@ export interface Address {
 
 interface SelectAddressProps {
   client:    Client | null;
-  addresses: Address[];                       // ⟵ NEW
+  addresses: Address[];
   value:     string | null;
   onChange(id: string | null, label: string | null): void;
   loading?:  boolean;
+  refreshAddresses?: () => void | Promise<void>; // 👈 NEW
 }
+
 
 /* ---------- helpers ---------- */
 const fmt = (a: Address) =>
@@ -54,6 +56,7 @@ export default function SelectAddress({
   value,
   onChange,
   loading = false,
+   refreshAddresses, 
 }: SelectAddressProps) {
   /* ---------- state local ---------- */
   const [open,          setOpen]         = useState(false);
@@ -206,21 +209,25 @@ export default function SelectAddress({
 
       {/* Modal Add / Edit */}
       <AddAddress
-        isFormVisible={showForm}
-        getAddress={() => {}}
-        toggleForminVisibility={closeForm}
-        clientId={client._id}
-        editAddress={addressToEdit || undefined}
-      />
+    isFormVisible={showForm}
+    getAddress={async () => {     
+      await refreshAddresses?.();
+    }}
+    toggleForminVisibility={closeForm}
+    clientId={client._id}
+    editAddress={addressToEdit || undefined}
+  />
 
       {/* Modal Manage / Delete */}
       <ManageAddresses
-        isVisible={showManage}
-        addresses={addresses}
-        fetched={true}
-        onClose={closeManage}
-        refresh={() => {}}
-      />
+    isVisible={showManage}
+    addresses={addresses}
+    fetched={true}
+    onClose={closeManage}
+    refresh={async () => {         
+      await refreshAddresses?.();
+    }}
+  />
     </>
   );
 }

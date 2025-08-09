@@ -49,6 +49,8 @@ export default function CreateOrderPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
+
+
   const {
     step,
     client,
@@ -146,6 +148,21 @@ export default function CreateOrderPage() {
       }
     })();
   }, [client]);
+
+     const refreshAddresses = useCallback(async () => {
+    if (!client?._id) return;
+    setLoadingAddresses(true);
+    try {
+      const { addresses } = await fetchFromAPI<{ addresses: Address[] }>(
+        `/dashboardadmin/clientAddress/${client._id}`
+      );
+      setAddresses(addresses);
+    } catch (e) {
+      console.error("Refresh addresses error:", e);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  }, [client?._id]);
 
   /* ---------- recherche clients ---------- */
   const searchClients = useCallback(async (q: string): Promise<Client[]> => {
@@ -358,6 +375,7 @@ const handleSubmit = useCallback(async () => {
                 value={selectedAddressId}
                 onChange={(id, label) => dispatch(setAddress({ id, label }))}
                 loading={loadingAddresses}
+                  refreshAddresses={refreshAddresses}
               />
             )}
 

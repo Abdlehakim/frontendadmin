@@ -102,7 +102,7 @@ export default function AddAddress({
     try {
       /* ----- UPDATE (dashboard admin) ----- */
       if (editAddress) {
-        await fetchFromAPI(`/dashboardadmin/address/${editAddress._id}`, {
+        await fetchFromAPI(`/dashboardadmin/clientAddress/update/${editAddress._id}`, {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

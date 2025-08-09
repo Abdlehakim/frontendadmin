@@ -127,7 +127,7 @@ export default function CreateClientShopPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-1/6 px-6 py-2 bg-tertiary text-white rounded hover:opacity-90 transition"
+            className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
           >
             {submitting ? "Adding..." : "Add"}
           </button>
@@ -135,7 +135,7 @@ export default function CreateClientShopPage() {
           <Link href="/dashboard/manage-client/clients-shop" className="w-1/6">
             <button
               type="button"
-              className="w-full px-6 py-2 bg-quaternary text-white rounded hover:opacity-90 transition"
+              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
             >
               Cancel
             </button>
