@@ -184,7 +184,7 @@ export default function ProductsClientPage() {
               <th className="py-2 text-sm font-medium text-center border-x-4">
                 Name
               </th>
-              <th className="py-2 text-sm font-medium text-center">
+              <th className="py-2 text-sm font-medium text-center border-x-4 max-2xl:hidden">
                 Cre/updt By
               </th>
               <th className="py-2 text-sm font-medium text-center border-x-4 max-2xl:hidden">
@@ -218,7 +218,7 @@ export default function ProductsClientPage() {
                     <td className="py-2 text-center font-semibold truncate">
                       {p.name}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 text-center max-2xl:hidden">
                       {p.updatedBy?.username || p.createdBy?.username || "—"}
                     </td>
                     <td className="py-2 text-center max-2xl:hidden">

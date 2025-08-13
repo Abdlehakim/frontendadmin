@@ -20,7 +20,12 @@ interface Props {
   removeExtra: (index: number) => void;
   existingMainImageUrl?: string | null;
   existingExtraImagesUrls?: string[];
+  loading?: boolean;
 }
+
+const Skel = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
+);
 
 export default function StepDetails({
   form,
@@ -33,12 +38,32 @@ export default function StepDetails({
   removeExtra,
   existingMainImageUrl = null,
   existingExtraImagesUrls = [],
+  loading = true,
 }: Props) {
   const labels: Record<keyof Pick<ProductForm, "name" | "info" | "description">, string> = {
     name: "Nom",
     info: "Infos",
     description: "Description",
   };
+
+  if (loading) {
+    return (
+      <section className="flex gap-6 h-full">
+        <div className="flex flex-col gap-4 w-1/2 h-full px-6">
+          <Skel className="h-4 w-24" />
+          <Skel className="h-10 w-full" />
+          <Skel className="h-4 w-20" />
+          <Skel className="h-10 w-3/4" />
+          <Skel className="h-4 w-28" />
+          <Skel className="h-full w-full" />
+        </div>
+        <div className="flex flex-col gap-4 w-1/2 h-full">
+          <Skel className="h-full w-full" />
+          <Skel className="h-full w-full" />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="flex gap-6 h-full">
@@ -59,7 +84,7 @@ export default function StepDetails({
                 value={form[k]}
                 onChange={onFixed}
                 required={k === "name"}
-                className="border-2 border-gray-300 rounded px-3 py-2"
+                className="border-2 border-gray-300 rounded h-10 px-3"
               />
             )}
           </label>
@@ -84,10 +109,9 @@ export default function StepDetails({
                   e.stopPropagation();
                   clearMain();
                 }}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                className="w-fit border border-gray-300 p-1 text-sm flex items-center gap-4 hover:bg-red-600 hover:text-white cursor-pointer absolute top-1 right-1 bg-white rounded-full"
               >
                 <MdDelete size={16} />
-                Supprimer
               </button>
             </div>
           ) : existingMainImageUrl ? (
@@ -99,10 +123,9 @@ export default function StepDetails({
                   e.stopPropagation();
                   clearMain();
                 }}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                className="w-fit border border-gray-300 p-1 text-sm flex items-center gap-4 hover:bg-red-600 hover:text-white cursor-pointer absolute top-1 right-1 bg-white rounded-full"
               >
                 <MdDelete size={16} />
-                Supprimer
               </button>
             </div>
           ) : (
@@ -132,10 +155,9 @@ export default function StepDetails({
                     e.stopPropagation();
                     removeExtra(idx);
                   }}
-                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                  className="w-fit border border-gray-300 p-1 text-sm flex items-center gap-4 hover:bg-red-600 hover:text-white cursor-pointer absolute top-1 right-1 bg-white rounded-full"
                 >
-                  <MdDelete size={14} />
-                  Retirer
+                  <MdDelete size={16} />
                 </button>
               </div>
             ))}
@@ -151,10 +173,9 @@ export default function StepDetails({
                       e.stopPropagation();
                       removeExtra(idx);
                     }}
-                    className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                    className="w-fit border border-gray-300 p-1 text-sm flex items-center gap-4 hover:bg-red-600 hover:text-white cursor-pointer absolute top-1 right-1 bg-white rounded-full"
                   >
-                    <MdDelete size={14} />
-                    Retirer
+                    <MdDelete size={16} />
                   </button>
                 </div>
               );

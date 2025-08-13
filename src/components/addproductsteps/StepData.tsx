@@ -1,15 +1,18 @@
+// ───────────────────────────────────────────────────────────────
 // src/components/addproductsteps/StepData.tsx
+// ───────────────────────────────────────────────────────────────
 "use client";
 
-import React, { ChangeEvent, useState, useEffect } from "react";
+import React, { ChangeEvent } from "react";
 import type { ProductForm } from "@/app/dashboard/manage-stock/products/create/page";
-import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
-interface Category { _id: string; name: string; }
-interface SubCategory { _id: string; name: string; }
-interface Magasin { _id: string; name: string; }
-interface Brand { _id: string; name: string; }
+/* Types for lists passed from the page */
+export interface Category { _id: string; name: string; }
+export interface SubCategory { _id: string; name: string; }
+export interface Magasin { _id: string; name: string; }
+export interface Brand { _id: string; name: string; }
 
+/* Fields */
 const DATA_FIELDS = [
   "categorie",
   "subcategorie",
@@ -31,6 +34,11 @@ interface Props {
   STOCK_OPTIONS: readonly ProductForm["stockStatus"][];
   PAGE_OPTIONS: readonly ProductForm["statuspage"][];
   ADMIN_OPTIONS: readonly ProductForm["vadmin"][];
+  /* NEW: lists (provided by page) */
+  categories: Category[];
+  subcategories: SubCategory[];
+  magasins: Magasin[];
+  brands: Brand[];
 }
 
 export default function StepData({
@@ -39,58 +47,18 @@ export default function StepData({
   STOCK_OPTIONS,
   PAGE_OPTIONS,
   ADMIN_OPTIONS,
+  categories,
+  subcategories,
+  magasins,
+  brands,
 }: Props) {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
-  const [magasins, setBoutiques] = useState<Magasin[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const catsRes = await fetchFromAPI<{ categories?: Category[] }>(
-          "/dashboardadmin/stock/categories"
-        );
-        setCategories(catsRes.categories ?? []);
-
-        const subsRes = await fetchFromAPI<{ subCategories?: SubCategory[] }>(
-          "/dashboardadmin/stock/subcategories"
-        );
-        setSubcategories(subsRes.subCategories ?? []);
-
-        const boutsRes = await fetchFromAPI<{ magasins?: Magasin[] }>(
-          "/dashboardadmin/stock/magasins"
-        );
-        setBoutiques(boutsRes.magasins ?? []);
-
-        const brandsRes = await fetchFromAPI<{ brands?: Brand[] }>(
-          "/dashboardadmin/stock/brands"
-        );
-        setBrands(brandsRes.brands ?? []);
-      } catch (err) {
-        console.error("Échec du chargement des listes d’options :", err);
-      }
-    })();
-  }, []);
-
-  const fieldLabels: Record<DataField, string> = {
-    categorie: "Catégorie",
-    subcategorie: "Sous-catégorie",
-    magasin: "Magasin",
-    brand: "Marque",
-    stock: "Stock",
-    price: "Prix",
-    tva: "TVA",
-    discount: "Remise",
-  };
-
   return (
     <section className="grid gap-6 grid-cols-3">
       {DATA_FIELDS.map((field: DataField) => {
         if (field === "categorie") {
           return (
             <label key={field} className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{fieldLabels[field]}</span>
+              <span className="text-sm font-medium">Catégorie</span>
               <select
                 name={field}
                 value={form[field] ?? ""}
@@ -110,7 +78,7 @@ export default function StepData({
         if (field === "subcategorie") {
           return (
             <label key={field} className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{fieldLabels[field]}</span>
+              <span className="text-sm font-medium">Sous-catégorie</span>
               <select
                 name={field}
                 value={form[field] ?? ""}
@@ -130,7 +98,7 @@ export default function StepData({
         if (field === "magasin") {
           return (
             <label key={field} className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{fieldLabels[field]}</span>
+              <span className="text-sm font-medium">Magasin</span>
               <select
                 name={field}
                 value={form[field] ?? ""}
@@ -138,9 +106,9 @@ export default function StepData({
                 className="border border-gray-300 bg-inputcolor rounded px-3 py-2"
               >
                 <option value="">Sélectionnez un magasin</option>
-                {magasins.map((b) => (
-                  <option key={b._id} value={b._id}>
-                    {b.name}
+                {magasins.map((m) => (
+                  <option key={m._id} value={m._id}>
+                    {m.name}
                   </option>
                 ))}
               </select>
@@ -150,7 +118,7 @@ export default function StepData({
         if (field === "brand") {
           return (
             <label key={field} className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{fieldLabels[field]}</span>
+              <span className="text-sm font-medium">Marque</span>
               <select
                 name={field}
                 value={form[field] ?? ""}
@@ -170,7 +138,12 @@ export default function StepData({
 
         return (
           <label key={field} className="flex flex-col gap-1">
-            <span className="text-sm font-medium">{fieldLabels[field]}</span>
+            <span className="text-sm font-medium capitalize">
+              {field === "price" ? "Prix" :
+               field === "stock" ? "Stock" :
+               field === "tva" ? "TVA" :
+               field === "discount" ? "Remise" : field}
+            </span>
             <input
               name={field}
               value={form[field] as string}

@@ -92,6 +92,12 @@ interface FetchedProduct {
   extraImagesUrl?: string[];
 }
 
+/* Types for option lists */
+type Category = { _id: string; name: string };
+type SubCategory = { _id: string; name: string };
+type Magasin = { _id: string; name: string };
+type Brand = { _id: string; name: string };
+
 function cleanAttributeValue(
   value: string | AttributeRow[] | undefined
 ): string | AttributeRow[] {
@@ -104,7 +110,7 @@ function cleanAttributeValue(
         if (r.value?.trim()) clean.value = r.value.trim();
         if (r.hex?.trim()) {
           clean.hex = r.hex.trim();
-          if (!clean.value) clean.value = clean.hex;
+          if (!clean.value) clean.value = r.hex;
         }
         if (r.image?.trim()) clean.image = r.image.trim();
         if (r.imageId?.trim()) clean.imageId = r.imageId.trim();
@@ -156,6 +162,12 @@ export default function UpdateProductPage() {
   const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
   const [attributeFiles, setAttributeFiles] = useState<Map<string, File>>(new Map());
 
+  /* NEW: option lists state */
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
+  const [magasins, setBoutiques] = useState<Magasin[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
       "/dashboardadmin/stock/productattribute"
@@ -198,6 +210,35 @@ export default function UpdateProductPage() {
       }
     })();
   }, [productId]);
+
+  /* NEW: fetch option lists here (moved from StepData) */
+  useEffect(() => {
+    (async () => {
+      try {
+        const catsRes = await fetchFromAPI<{ categories?: Category[] }>(
+          "/dashboardadmin/stock/categories"
+        );
+        setCategories(catsRes.categories ?? []);
+
+        const subsRes = await fetchFromAPI<{ subCategories?: SubCategory[] }>(
+          "/dashboardadmin/stock/subcategories"
+        );
+        setSubcategories(subsRes.subCategories ?? []);
+
+        const boutsRes = await fetchFromAPI<{ magasins?: Magasin[] }>(
+          "/dashboardadmin/stock/magasins"
+        );
+        setBoutiques(boutsRes.magasins ?? []);
+
+        const brandsRes = await fetchFromAPI<{ brands?: Brand[] }>(
+          "/dashboardadmin/stock/brands"
+        );
+        setBrands(brandsRes.brands ?? []);
+      } catch (err) {
+        console.error("Échec du chargement des listes d’options :", err);
+      }
+    })();
+  }, []);
 
   const onFixed = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -329,8 +370,6 @@ export default function UpdateProductPage() {
     }
   };
 
-  if (loading) return <Overlay show spinnerSize={60} />;
-
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       <ProductBreadcrumb
@@ -348,6 +387,7 @@ export default function UpdateProductPage() {
       <form onSubmit={handleSubmit} className="flex flex-col justify-between gap-8 h-full">
         {step === 1 && (
           <StepDetails
+            loading={loading}
             form={form}
             onFixed={onFixed}
             mainImage={mainImage}
@@ -368,6 +408,11 @@ export default function UpdateProductPage() {
             STOCK_OPTIONS={STOCK_OPTIONS}
             PAGE_OPTIONS={PAGE_OPTIONS}
             ADMIN_OPTIONS={ADMIN_OPTIONS}
+            /* pass fetched lists */
+            categories={categories}
+            subcategories={subcategories}
+            magasins={magasins}
+            brands={brands}
           />
         )}
 
