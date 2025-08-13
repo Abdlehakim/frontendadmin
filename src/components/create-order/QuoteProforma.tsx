@@ -28,8 +28,8 @@ interface QuoteProformaProps {
   magasin: Magasin | null;
   delivery: DeliveryOption | null;
   basket: BasketItem[];
-  paymentMethod?: string | null;          // ← NEW
-  date: string;                           // already formatted
+  paymentMethod?: string | null;         
+  date: string;                        
 }
 
 /* ---------- helpers ---------- */

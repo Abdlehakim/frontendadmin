@@ -48,7 +48,7 @@ export default function CreateClientCompanyPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
-        },
+        }
       );
       router.push("/dashboard/manage-client/client-company");
     } catch (err) {
@@ -61,30 +61,31 @@ export default function CreateClientCompanyPage() {
 
   /* ---------- UI ---------- */
   return (
-    <div className="w-[80%] flex flex-col gap-y-4 p-4">
-      <h1 className="text-3xl font-bold">Create Client Company</h1>
+    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+      <div className="flex h-16 justify-between items-start">
+        <h1 className="text-3xl font-bold uppercase">Create Client Company</h1>
+      </div>
 
-      <nav className="text-sm underline-offset-1 underline flex items-center gap-2">
-        <Link
-          href="/dashboard/manage-client/client-company"
-          className="text-gray-500 hover:underline"
-        >
-          All Companies
-        </Link>
-        <span className="text-gray-400">
-          <MdArrowForwardIos />
-        </span>
-        <span className="text-gray-700 font-medium">Create Company</span>
-      </nav>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-[50px]">
-        <div className="flex flex-wrap justify-center gap-[50px]">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-8 justify-center items-center w-[80%] mx-auto h-[80%]"
+      >
+        <nav className="text-sm underline-offset-1 underline flex items-center gap-2">
+          <Link
+            href="/dashboard/manage-client/client-company"
+            className="text-gray-500 hover:underline"
+          >
+            All Companies
+          </Link>
+          <span className="text-gray-400">
+            <MdArrowForwardIos />
+          </span>
+          <span className="text-gray-700 font-medium">Create Company</span>
+        </nav>
+        <div className="flex flex-col justify-center gap-8 w-full">
           {/* Company Name */}
-          <div className="w-[30%] flex items-center gap-[16px]">
-            <label
-              htmlFor="companyName"
-              className="block text-sm font-medium mb-1"
-            >
+          <div className=" flex items-center gap-[16px]">
+            <label htmlFor="companyName" className="text-sm font-medium">
               Company Name*
             </label>
             <input
@@ -99,11 +100,8 @@ export default function CreateClientCompanyPage() {
           </div>
 
           {/* Contact Name (optional) */}
-          <div className="w-[30%] flex items-center gap-[16px]">
-            <label
-              htmlFor="contactName"
-              className="block text-sm font-medium mb-1"
-            >
+          <div className=" flex items-center gap-[16px]">
+            <label htmlFor="contactName" className="text-sm font-medium ">
               Contact Name
             </label>
             <input
@@ -117,8 +115,8 @@ export default function CreateClientCompanyPage() {
           </div>
 
           {/* Email (optional) */}
-          <div className="w-[30%] flex items-center gap-[16px]">
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+          <div className=" flex items-center gap-[16px]">
+            <label htmlFor="email" className="text-sm font-medium ">
               Email
             </label>
             <input
@@ -132,8 +130,8 @@ export default function CreateClientCompanyPage() {
           </div>
 
           {/* Phone */}
-          <div className="w-[20%] flex items-center gap-[16px]">
-            <label htmlFor="phone" className="block text-sm font-medium mb-1">
+          <div className=" flex items-center gap-[16px]">
+            <label htmlFor="phone" className="text-sm font-medium ">
               Phone*
             </label>
             <input
@@ -148,11 +146,8 @@ export default function CreateClientCompanyPage() {
           </div>
 
           {/* VAT Number (optional) */}
-          <div className="w-[20%] flex items-center gap-[16px]">
-            <label
-              htmlFor="vatNumber"
-              className="block text-sm font-medium mb-1"
-            >
+          <div className=" flex items-center gap-[16px]">
+            <label htmlFor="vatNumber" className="text-sm font-medium ">
               VAT Number
             </label>
             <input
@@ -176,7 +171,10 @@ export default function CreateClientCompanyPage() {
             {submitting ? "Adding..." : "Add"}
           </button>
 
-          <Link href="/dashboard/manage-client/client-company" className="w-1/6">
+          <Link
+            href="/dashboard/manage-client/client-company"
+            className="w-1/6"
+          >
             <button
               type="button"
               className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"

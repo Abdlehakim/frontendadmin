@@ -7,11 +7,7 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { useAuth, User } from "@/hooks/useAuthDashboard";
 import { MdOutlineDashboard } from "react-icons/md";
 import { FaUsersViewfinder, FaRegMoneyBill1 } from "react-icons/fa6";
-import {
-  LuCircleParking,
-  LuArrowBigLeft,
-  LuArrowBigRight,
-} from "react-icons/lu";
+import { LuCircleParking, LuArrowBigLeft, LuArrowBigRight } from "react-icons/lu";
 import { PiArticleMediumBold, PiUsersThree } from "react-icons/pi";
 import { CgWebsite } from "react-icons/cg";
 import { BiChevronRight } from "react-icons/bi";
@@ -31,6 +27,22 @@ interface SidebarItem {
   children?: SidebarItem[];
   isHeader?: boolean;
 }
+
+/* ---------- helpers (module-scoped to satisfy exhaustive-deps) ---------- */
+const normalizePath = (s?: string) => {
+  if (!s) return "";
+  // remove trailing slashes except when the path is just "/"
+  const noTrail = s.replace(/\/+$/, "");
+  return noTrail.length ? noTrail : "/";
+};
+const collectHrefs = (items?: SidebarItem[]): string[] => {
+  const out: string[] = [];
+  items?.forEach((it) => {
+    if (it.href) out.push(it.href);
+    if (it.children) out.push(...collectHrefs(it.children));
+  });
+  return out;
+};
 
 const sidebarItems: SidebarItem[] = [
   {
@@ -155,7 +167,8 @@ const sidebarItems: SidebarItem[] = [
     children: [
       {
         name: "Méthodes de paiement",
-        href: "/dashboard/payment-options/payment-methods/",
+        // IMPORTANT: no trailing slash (normalizePath also guards)
+        href: "/dashboard/payment-options/payment-methods",
         icon: <LuCircleParking size={20} />,
       },
       {
@@ -201,14 +214,23 @@ export default function SidebarClient({ initialUser }: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    const current = normalizePath(pathname || "/");
+    const next: Record<string, boolean> = {};
+
     sidebarItems.forEach((item) => {
-      if (item.children) {
-        const match = item.children.some((c) =>
-          pathname?.startsWith(c.href ?? "")
-        );
-        if (match) setExpanded({ [item.name]: true });
-      }
+      if (!item.children) return;
+      const hrefs = collectHrefs(item.children).map(normalizePath);
+
+      const match = hrefs.some((h) => {
+        if (!h) return false;
+        // exact match OR current path is under the href segment
+        return current === h || current.startsWith(h + "/");
+      });
+
+      if (match) next[item.name] = true;
     });
+
+    setExpanded(next);
   }, [pathname]);
 
   if (loading)
@@ -264,11 +286,7 @@ export default function SidebarClient({ initialUser }: Props) {
           </div>
           <IconButton
             icon={
-              collapsed ? (
-                <LuArrowBigRight size={20} />
-              ) : (
-                <LuArrowBigLeft size={20} />
-              )
+              collapsed ? <LuArrowBigRight size={20} /> : <LuArrowBigLeft size={20} />
             }
             onClick={toggleCollapse}
           />
@@ -281,9 +299,7 @@ export default function SidebarClient({ initialUser }: Props) {
         >
           <div>
             {sidebarItems
-              .filter(
-                (item) => !item.permission || hasPermission(item.permission)
-              )
+              .filter((item) => !item.permission || hasPermission(item.permission))
               .map((item) => {
                 const isOpen = !!expanded[item.name];
 
@@ -319,8 +335,8 @@ export default function SidebarClient({ initialUser }: Props) {
                         </div>
                         <ul
                           className={`ml-8 flex flex-col gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out ${
-  isOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
-}`}
+                            isOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+                          }`}
                         >
                           {item.children.map((child) => {
                             if (child.isHeader) {
@@ -336,9 +352,7 @@ export default function SidebarClient({ initialUser }: Props) {
                                           href={subChild.href!}
                                           className="flex items-center px-8 h-6 hover:bg-white hover:text-hoverText"
                                         >
-                                          <span className="ml-5">
-                                            {subChild.name}
-                                          </span>
+                                          <span className="ml-5">{subChild.name}</span>
                                         </Link>
                                       </li>
                                     ))}
