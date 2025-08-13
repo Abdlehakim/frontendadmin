@@ -9,9 +9,7 @@ interface Props {
   onBack: () => void;
   onNext: () => void;
   onCancel: () => void;
-  /** Label to show when not saving; defaults to “Add Product” */
   submitLabel?: string;
-  /** Label to show while saving; defaults to “Adding…” */
   submittingLabel?: string;
 }
 
@@ -21,52 +19,36 @@ export default function WizardNav({
   onBack,
   onNext,
   onCancel,
-  submitLabel = "Add Product",
-  submittingLabel = "Adding...",
+  submitLabel = "Ajouter le produit",
+  submittingLabel = "Ajout en cours...",
 }: Props) {
+  const btn =
+    "w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer";
+
   return (
-    <div className="flex justify-center gap-8 py-8">
-      {/* Cancel */}
-      <button
-        type="button"
-        onClick={onCancel}
-        className="px-6 py-2 bg-quaternary text-white rounded"
-      >
-        Cancel
+    <div className="flex w-[80%] mx-auto justify-between pb-8 gap-8">
+      <button type="button" onClick={onCancel} className={btn}>
+        Annuler
       </button>
 
-      {/* Back */}
+  <div className="flex justify-center gap-8">
       {step > 1 && (
-        <button
-          type="button"
-          onClick={onBack}
-          className="px-6 py-2 bg-quaternary text-white rounded"
-        >
-          Back
+        <button type="button" onClick={onBack} className={btn}>
+          Précédent
         </button>
       )}
 
-      {/* Next */}
       {step < 4 && (
-        <button
-          type="button"
-          onClick={onNext}
-          className="px-6 py-2 bg-tertiary text-white rounded"
-        >
-          Next
+        <button type="button" onClick={onNext} className={btn}>
+          Suivant
         </button>
       )}
 
-      {/* Submit */}
       {step === 4 && (
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-6 py-2 bg-tertiary text-white rounded"
-        >
+        <button type="submit" disabled={saving} className={btn}>
           {saving ? submittingLabel : submitLabel}
         </button>
       )}
-    </div>
+    </div></div>
   );
 }

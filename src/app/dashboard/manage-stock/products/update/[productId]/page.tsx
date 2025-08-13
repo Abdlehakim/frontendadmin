@@ -35,9 +35,6 @@ import {
   Vadmin,
 } from "@/constants/product-options";
 
-/* ------------------------------------------------------------------ */
-/* Extra types                                                        */
-/* ------------------------------------------------------------------ */
 export interface AttributeRow {
   name: string;
   value?: string;
@@ -51,16 +48,12 @@ type ServerAttr =
   | { definition: string; value: string }
   | null;
 
-/* detail payload sent to the server ─ eslint-safe */
 type ServerDetail = {
   name: string;
   description: string;
   image?: string | null;
 };
 
-/* ------------------------------------------------------------------ */
-/* Local form types                                                   */
-/* ------------------------------------------------------------------ */
 interface ProductForm {
   name: string;
   info: string;
@@ -99,9 +92,6 @@ interface FetchedProduct {
   extraImagesUrl?: string[];
 }
 
-/* ------------------------------------------------------------------ */
-/* helper: keep rows that have at least a non-blank name              */
-/* ------------------------------------------------------------------ */
 function cleanAttributeValue(
   value: string | AttributeRow[] | undefined
 ): string | AttributeRow[] {
@@ -124,7 +114,6 @@ function cleanAttributeValue(
   return "";
 }
 
-/* ================================================================== */
 export default function UpdateProductPage() {
   const router = useRouter();
   const { productId } = useParams();
@@ -156,12 +145,8 @@ export default function UpdateProductPage() {
   };
   const [form, setForm] = useState<ProductForm>(blankForm);
 
-  const [existingMainImageUrl, setExistingMainImageUrl] = useState<string | null>(
-    null
-  );
-  const [existingExtraImagesUrls, setExistingExtraImagesUrls] = useState<string[]>(
-    []
-  );
+  const [existingMainImageUrl, setExistingMainImageUrl] = useState<string | null>(null);
+  const [existingExtraImagesUrls, setExistingExtraImagesUrls] = useState<string[]>([]);
 
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [extraImages, setExtraImages] = useState<File[]>([]);
@@ -169,24 +154,16 @@ export default function UpdateProductPage() {
   const [defs, setDefs] = useState<AttributeDef[]>([]);
   const [attrPayload, setAttrPayload] = useState<AttributePayload[]>([]);
   const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
-  const [attributeFiles, setAttributeFiles] = useState<Map<string, File>>(
-    new Map()
-  );
+  const [attributeFiles, setAttributeFiles] = useState<Map<string, File>>(new Map());
 
-  /* ------------------------------------------------------------------ */
-  /* Fetch attribute definitions                                        */
-  /* ------------------------------------------------------------------ */
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
       "/dashboardadmin/stock/productattribute"
     )
       .then(({ productAttributes }) => setDefs(productAttributes))
-      .catch((err) => console.error("Failed to load attribute defs:", err));
+      .catch((err) => console.error("Échec du chargement des attributs:", err));
   }, []);
 
-  /* ------------------------------------------------------------------ */
-  /* Fetch product data                                                 */
-  /* ------------------------------------------------------------------ */
   useEffect(() => {
     (async () => {
       try {
@@ -215,16 +192,13 @@ export default function UpdateProductPage() {
         setExistingMainImageUrl(data.mainImageUrl ?? null);
         setExistingExtraImagesUrls(data.extraImagesUrl || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load product.");
+        setError(err instanceof Error ? err.message : "Échec du chargement du produit.");
       } finally {
         setLoading(false);
       }
     })();
   }, [productId]);
 
-  /* ------------------------------------------------------------------ */
-  /* Handlers                                                           */
-  /* ------------------------------------------------------------------ */
   const onFixed = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -232,11 +206,7 @@ export default function UpdateProductPage() {
   };
 
   const handleAttrsAndDetails = useCallback(
-    (
-      attrs: AttributePayload[],
-      details: ProductDetailPair[],
-      fileMap: Map<string, File>
-    ) => {
+    (attrs: AttributePayload[], details: ProductDetailPair[], fileMap: Map<string, File>) => {
       setAttrPayload(attrs);
       setDetailsPayload(details);
       setAttributeFiles(fileMap);
@@ -244,9 +214,6 @@ export default function UpdateProductPage() {
     []
   );
 
-  /* ----------------------------- */
-  /* Main image                    */
-  /* ----------------------------- */
   const handleMainChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setMainImage(file);
@@ -259,14 +226,6 @@ export default function UpdateProductPage() {
     if (mainRef.current) mainRef.current.value = "";
   };
 
-  /* ----------------------------- */
-  /* Extra images (add / remove)   */
-  /* ----------------------------- */
-
-  /**
-   * Updates the FileList on the <input type="file" multiple> element.
-   * Browsers treat FileList as read-only, so we rebuild via DataTransfer.
-   */
   const syncExtraInput = (files: File[]) => {
     if (!extraRef.current) return;
     const dt = new DataTransfer();
@@ -284,13 +243,10 @@ export default function UpdateProductPage() {
   };
 
   const removeExtra = (idx: number) => {
-    // Removing an existing URL (already on server)
     if (idx < existingExtraImagesUrls.length) {
       setExistingExtraImagesUrls((prev) => prev.filter((_, i) => i !== idx));
       return;
     }
-
-    // Removing a not-yet-uploaded File
     const fileIdx = idx - existingExtraImagesUrls.length;
     setExtraImages((prev) => {
       const newArr = prev.filter((_, i) => i !== fileIdx);
@@ -299,9 +255,6 @@ export default function UpdateProductPage() {
     });
   };
 
-  /* ------------------------------------------------------------------ */
-  /* Stepper navigation                                                 */
-  /* ------------------------------------------------------------------ */
   const next = () => {
     setError(null);
     if (step === 3) {
@@ -309,7 +262,7 @@ export default function UpdateProductPage() {
         Array.isArray(a.value) ? a.value.some((row) => !row.name?.trim()) : false
       );
       if (invalid) {
-        setError("Each attribute row needs a name (other fields are optional).");
+        setError("Chaque ligne d’attribut doit avoir un nom (les autres champs sont facultatifs).");
         return;
       }
     }
@@ -318,9 +271,6 @@ export default function UpdateProductPage() {
 
   const back = () => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
 
-  /* ------------------------------------------------------------------ */
-  /* Submit                                                             */
-  /* ------------------------------------------------------------------ */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -329,33 +279,26 @@ export default function UpdateProductPage() {
     try {
       const fd = new FormData();
 
-      // scalar fields
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
 
-      // images: main & extra
       if (mainImage) fd.append("mainImage", mainImage);
       else if (existingMainImageUrl === null) fd.append("removeMain", "1");
 
       extraImages.forEach((f) => fd.append("extraImages", f));
       fd.append("remainingExtraUrls", JSON.stringify(existingExtraImagesUrls));
 
-      // attributes
       const serverAttrs = attrPayload
         .map<ServerAttr>(({ attributeSelected, value }) => {
           const cleaned = cleanAttributeValue(value);
           if (typeof cleaned === "string" && cleaned.trim())
             return { definition: attributeSelected, value: cleaned };
           if (Array.isArray(cleaned) && cleaned.length > 0)
-            return {
-              definition: attributeSelected,
-              value: cleaned,
-            };
+            return { definition: attributeSelected, value: cleaned };
           return null;
         })
         .filter((entry): entry is Exclude<ServerAttr, null> => entry !== null);
       fd.append("attributes", JSON.stringify(serverAttrs));
 
-      // productDetails (typed — no "any")
       const serverDetails: ServerDetail[] = detailsPayload
         .filter((d) => d.name.trim())
         .map(({ name, description, image }) => {
@@ -363,55 +306,46 @@ export default function UpdateProductPage() {
             name: name.trim(),
             description: description?.trim() ?? "",
           };
-          if (image !== undefined) detail.image = image; // string | null
+          if (image !== undefined) detail.image = image;
           return detail;
         });
       fd.append("productDetails", JSON.stringify(serverDetails));
 
-      // attribute & details images
       for (const [key, file] of attributeFiles.entries()) {
-        if (key.startsWith("attributeImages-"))
-          fd.append("attributeImages", file, key);
-        if (key.startsWith("detailsImages-"))
-          fd.append("detailsImages", file, key);
+        if (key.startsWith("attributeImages-")) fd.append("attributeImages", file, key);
+        if (key.startsWith("detailsImages-")) fd.append("detailsImages", file, key);
       }
 
-      await fetchFromAPI(
-        `/dashboardadmin/stock/products/update/${productId}`,
-        { method: "PUT", body: fd }
-      );
+      await fetchFromAPI(`/dashboardadmin/stock/products/update/${productId}`, {
+        method: "PUT",
+        body: fd,
+      });
 
       setSuccess(true);
       setTimeout(() => router.push("/dashboard/manage-stock/products"), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update product.");
+      setError(err instanceof Error ? err.message : "Échec de la mise à jour du produit.");
       setSaving(false);
     }
   };
 
-  /* ------------------------------------------------------------------ */
-  /* Render                                                             */
-  /* ------------------------------------------------------------------ */
   if (loading) return <Overlay show spinnerSize={60} />;
 
   return (
-    <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 relative h-full">
+    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       <ProductBreadcrumb
         baseHref="/dashboard/manage-stock/products"
-        baseLabel="All Products"
-        currentLabel="Update Product"
+        baseLabel="Tous les produits"
+        currentLabel="Mettre à jour le produit"
       />
 
       <Stepper
-        steps={["Details", "Data", "Attributes", "Review"]}
+        steps={["Détails", "Données", "Attributs", "Aperçu"]}
         currentStep={step}
         onStepClick={(s) => setStep(s as 1 | 2 | 3 | 4)}
       />
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col justify-between gap-8 h-full"
-      >
+      <form onSubmit={handleSubmit} className="flex flex-col justify-between gap-8 h-full">
         {step === 1 && (
           <StepDetails
             form={form}
@@ -465,11 +399,10 @@ export default function UpdateProductPage() {
           onBack={back}
           onNext={next}
           onCancel={() => router.push("/dashboard/manage-stock/products")}
-          submitLabel="Update Product"
-          submittingLabel="Updating..."
+          submitLabel="Mettre à jour le produit"
+          submittingLabel="Mise à jour..."
         />
 
-        {/* hidden file inputs */}
         <input
           ref={mainRef}
           type="file"
@@ -487,10 +420,7 @@ export default function UpdateProductPage() {
         />
       </form>
 
-      <Overlay
-        show={saving || success}
-        message={success ? "Product updated successfully" : undefined}
-      />
+      <Overlay show={saving || success} message={success ? "Produit mis à jour avec succès" : undefined} />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
   );

@@ -217,7 +217,6 @@ export default function SidebarClient({ initialUser }: Props) {
                               href={sub.href!}
                               className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-white hover:text-hoverText rounded"
                             >
-                              {sub.icon && <span>{sub.icon}</span>}
                               <span>{sub.name}</span>
                             </Link>
                           </li>
@@ -233,7 +232,6 @@ export default function SidebarClient({ initialUser }: Props) {
                     href={child.href!}
                     className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-white hover:text-hoverText"
                   >
-                    {child.icon && <span>{child.icon}</span>}
                     <span>{child.name}</span>
                   </Link>
                 );

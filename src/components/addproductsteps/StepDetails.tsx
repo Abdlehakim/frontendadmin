@@ -34,18 +34,18 @@ export default function StepDetails({
   existingMainImageUrl = null,
   existingExtraImagesUrls = [],
 }: Props) {
+  const labels: Record<keyof Pick<ProductForm, "name" | "info" | "description">, string> = {
+    name: "Nom",
+    info: "Infos",
+    description: "Description",
+  };
+
   return (
     <section className="flex gap-6 h-full">
-      {/* ---------- text inputs ---------- */}
       <div className="flex flex-col gap-4 w-1/2 h-full px-6">
         {(["name", "info", "description"] as const).map((k) => (
-          <label
-            key={k}
-            className={
-              "flex flex-col gap-1 " + (k === "description" ? "flex-1" : "")
-            }
-          >
-            <span className="text-sm font-medium capitalize">{k}</span>
+          <label key={k} className={"flex flex-col gap-1 " + (k === "description" ? "flex-1" : "")}>
+            <span className="text-sm font-medium">{labels[k]}</span>
             {k === "description" ? (
               <textarea
                 name={k}
@@ -66,9 +66,7 @@ export default function StepDetails({
         ))}
       </div>
 
-      {/* ---------- image pickers ---------- */}
       <div className="flex flex-col gap-4 w-1/2 h-full">
-        {/* Main image */}
         <div
           onClick={chooseMain}
           className="relative border-2 border-gray-300 rounded-lg h-1/2 cursor-pointer hover:border-gray-400 transition"
@@ -78,56 +76,44 @@ export default function StepDetails({
           </div>
 
           {mainImage ? (
-            /* fresh main preview */
             <div className="relative w-full h-full rounded overflow-hidden">
-              <Image
-                src={URL.createObjectURL(mainImage)}
-                alt="Main Preview"
-                fill
-                className="object-cover"
-              />
+              <Image src={URL.createObjectURL(mainImage)} alt="Aperçu principal" fill className="object-cover" />
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   clearMain();
                 }}
-                className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
               >
-                <MdDelete size={16} className="text-red-600" />
+                <MdDelete size={16} />
+                Supprimer
               </button>
             </div>
           ) : existingMainImageUrl ? (
-            /* existing main preview */
             <div className="relative w-full h-full rounded overflow-hidden">
-              <Image
-                src={existingMainImageUrl}
-                alt="Current Main"
-                fill
-                className="object-cover"
-              />
+              <Image src={existingMainImageUrl} alt="Image principale actuelle" fill className="object-cover" />
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   clearMain();
                 }}
-                className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
+                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
               >
-                <MdDelete size={16} className="text-red-600" />
+                <MdDelete size={16} />
+                Supprimer
               </button>
             </div>
           ) : (
-            /* placeholder */
             <div className="flex items-center justify-center h-full text-gray-400 text-center">
-              Click to upload
+              Cliquez pour importer
               <br />
-              Main Image
+              Image principale
             </div>
           )}
         </div>
 
-        {/* Extra images */}
         <div
           onClick={chooseExtra}
           className="relative border-2 border-gray-300 rounded-lg h-1/2 cursor-pointer hover:border-gray-400 transition"
@@ -137,54 +123,38 @@ export default function StepDetails({
           </div>
 
           <div className="flex flex-wrap items-start gap-2 p-2 overflow-auto h-full">
-            {/* existing extras */}
             {existingExtraImagesUrls.map((url, idx) => (
-              <div
-                key={idx}
-                className="relative w-[80px] h-[100px] rounded overflow-hidden"
-              >
-                <Image
-                  src={url}
-                  alt={`Extra ${idx + 1}`}
-                  fill
-                  className="object-cover"
-                />
+              <div key={idx} className="relative w-[80px] h-[100px] rounded overflow-hidden">
+                <Image src={url} alt={`Supplémentaire ${idx + 1}`} fill className="object-cover" />
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     removeExtra(idx);
                   }}
-                  className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
+                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
                 >
-                  <MdDelete size={14} className="text-red-600" />
+                  <MdDelete size={14} />
+                  Retirer
                 </button>
               </div>
             ))}
 
-            {/* newly selected extras */}
             {extraImages.map((file, i) => {
               const idx = i + existingExtraImagesUrls.length;
               return (
-                <div
-                  key={idx}
-                  className="relative w-[80px] h-[100px] rounded overflow-hidden"
-                >
-                  <Image
-                    src={URL.createObjectURL(file)}
-                    alt={`New Extra ${i + 1}`}
-                    fill
-                    className="object-cover"
-                  />
+                <div key={idx} className="relative w-[80px] h-[100px] rounded overflow-hidden">
+                  <Image src={URL.createObjectURL(file)} alt={`Nouvelle image supplémentaire ${i + 1}`} fill className="object-cover" />
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeExtra(idx);
                     }}
-                    className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
+                    className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
                   >
-                    <MdDelete size={14} className="text-red-600" />
+                    <MdDelete size={14} />
+                    Retirer
                   </button>
                 </div>
               );
@@ -192,9 +162,9 @@ export default function StepDetails({
 
             {existingExtraImagesUrls.length + extraImages.length === 0 && (
               <div className="flex items-center justify-center w-full h-full text-gray-400 text-center">
-                Click to upload
+                Cliquez pour importer
                 <br />
-                Extra Images
+                Images supplémentaires
               </div>
             )}
           </div>
