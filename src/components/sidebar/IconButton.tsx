@@ -9,31 +9,78 @@ interface Props {
   icon: ReactNode;
   href?: string;
   onClick?: () => void;
+  /** Accessible label (and tooltip). */
+  ariaLabel?: string;
+  /** Extra Tailwind classes to merge. */
+  className?: string;
+  /** Keep absolute floating position by default (backward compatible). */
+  floating?: boolean;
+  /** Consider a link active when pathname starts with href (default: true). */
+  activeWhenStartsWith?: boolean;
 }
 
-export default function IconButton({ icon, href, onClick }: Props) {
-  const pathname = usePathname();
-  const active = href ? pathname === href : false;
+/** tiny join helper to avoid double spaces */
+const cx = (...parts: (string | false | null | undefined)[]) =>
+  parts.filter(Boolean).join(" ");
 
-  // Added duration and ease for smoother color + scale transitions
+const normalizePath = (s?: string) => {
+  if (!s) return "";
+  const noTrail = s.replace(/\/+$/, "");
+  return noTrail.length ? noTrail : "/";
+};
+
+export default function IconButton({
+  icon,
+  href,
+  onClick,
+  ariaLabel,
+  className,
+  floating = true,
+  activeWhenStartsWith = true,
+}: Props) {
+  const pathname = normalizePath(usePathname());
+  const normHref = normalizePath(href);
+
+  const active = href
+    ? activeWhenStartsWith
+      ? pathname === normHref || pathname.startsWith(normHref + "/")
+      : pathname === normHref
+    : false;
+
   const base =
-    "absolute -right-8 bottom-6 h-12 w-12 flex justify-center items-center rounded-md text-white border-2 bg-primary cursor-pointer";
-  const normal = "hover:bg-secondary hover:scale-105";
-  const act = "bg-secondary text-primary";
-
-  const classes = `${base} ${active ? act : normal}`;
+    "inline-flex items-center justify-center h-12 w-12 rounded-md border-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/70";
+  const float = floating ? "absolute -right-8 bottom-6" : "";
+  const colors = active
+    ? "bg-secondary text-primary"
+    : "bg-primary text-white hover:bg-secondary hover:scale-105";
+  const classes = cx(base, float, colors, className);
 
   if (onClick) {
     return (
-      <button onClick={onClick} className={classes}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={classes}
+        aria-label={ariaLabel}
+        title={ariaLabel}
+      >
         {icon}
       </button>
     );
   }
 
+  if (href) {
+    return (
+      <Link href={href} className={classes} aria-label={ariaLabel} title={ariaLabel}>
+        {icon}
+      </Link>
+    );
+  }
+
+  // Fallback (no href, no onClick)
   return (
-    <Link href={href!} className={classes}>
+    <div className={classes} aria-label={ariaLabel} title={ariaLabel} role="img">
       {icon}
-    </Link>
+    </div>
   );
 }

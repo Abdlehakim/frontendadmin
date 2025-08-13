@@ -28,13 +28,13 @@ interface SidebarItem {
   isHeader?: boolean;
 }
 
-/* ---------- helpers (module-scoped to satisfy exhaustive-deps) ---------- */
+/* ---------------- helpers (module-scoped) ---------------- */
 const normalizePath = (s?: string) => {
   if (!s) return "";
-  // remove trailing slashes except when the path is just "/"
   const noTrail = s.replace(/\/+$/, "");
   return noTrail.length ? noTrail : "/";
 };
+
 const collectHrefs = (items?: SidebarItem[]): string[] => {
   const out: string[] = [];
   items?.forEach((it) => {
@@ -45,88 +45,36 @@ const collectHrefs = (items?: SidebarItem[]): string[] => {
 };
 
 const sidebarItems: SidebarItem[] = [
-  {
-    name: "Tableau de bord",
-    href: "/dashboard",
-    icon: <MdOutlineDashboard size={20} />,
-  },
+  { name: "Tableau de bord", href: "/dashboard", icon: <MdOutlineDashboard size={20} /> },
   {
     name: "Gestion des accès",
     icon: <FaUsersViewfinder size={20} />,
     permission: "M_Access",
     children: [
-      {
-        name: "Utilisateurs",
-        href: "/dashboard/manage-access/users",
-        icon: <FaUsersViewfinder size={20} />,
-      },
-      {
-        name: "Rôles",
-        href: "/dashboard/manage-access/roles",
-        icon: <FaUsersViewfinder size={20} />,
-      },
+      { name: "Utilisateurs", href: "/dashboard/manage-access/users", icon: <FaUsersViewfinder size={20} /> },
+      { name: "Rôles", href: "/dashboard/manage-access/roles", icon: <FaUsersViewfinder size={20} /> },
     ],
   },
   {
     name: "Gestion du site",
     icon: <CgWebsite size={20} />,
     children: [
-      {
-        name: "Données page d'accueil",
-        href: "/dashboard/manage-website/home-page",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Données page produit",
-        href: "/dashboard/manage-website/product-page",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Entreprise",
-        href: "/dashboard/manage-website/company-data",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Bannières",
-        href: "/dashboard/manage-website/banners",
-        icon: <LuCircleParking size={20} />,
-      },
+      { name: "Données page d'accueil", href: "/dashboard/manage-website/home-page", icon: <LuCircleParking size={20} /> },
+      { name: "Données page produit", href: "/dashboard/manage-website/product-page", icon: <LuCircleParking size={20} /> },
+      { name: "Entreprise", href: "/dashboard/manage-website/company-data", icon: <LuCircleParking size={20} /> },
+      { name: "Bannières", href: "/dashboard/manage-website/banners", icon: <LuCircleParking size={20} /> },
     ],
   },
   {
     name: "Gestion du stock",
     icon: <LuCircleParking size={20} />,
     children: [
-      {
-        name: "Magasins",
-        href: "/dashboard/manage-stock/magasins",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Marques",
-        href: "/dashboard/manage-stock/brands",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Catégories",
-        href: "/dashboard/manage-stock/categories",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Sous-catégories",
-        href: "/dashboard/manage-stock/sub-categories",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Attributs produits",
-        href: "/dashboard/manage-stock/product-attributes",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Tous les produits",
-        href: "/dashboard/manage-stock/products",
-        icon: <LuCircleParking size={20} />,
-      },
+      { name: "Magasins", href: "/dashboard/manage-stock/magasins", icon: <LuCircleParking size={20} /> },
+      { name: "Marques", href: "/dashboard/manage-stock/brands", icon: <LuCircleParking size={20} /> },
+      { name: "Catégories", href: "/dashboard/manage-stock/categories", icon: <LuCircleParking size={20} /> },
+      { name: "Sous-catégories", href: "/dashboard/manage-stock/sub-categories", icon: <LuCircleParking size={20} /> },
+      { name: "Attributs produits", href: "/dashboard/manage-stock/product-attributes", icon: <LuCircleParking size={20} /> },
+      { name: "Tous les produits", href: "/dashboard/manage-stock/products", icon: <LuCircleParking size={20} /> },
     ],
   },
   {
@@ -137,71 +85,30 @@ const sidebarItems: SidebarItem[] = [
         name: "Clients",
         isHeader: true,
         children: [
-          {
-            name: "Site web",
-            href: "/dashboard/manage-client/clients",
-            icon: <LuCircleParking size={20} />,
-          },
-          {
-            name: "Passage",
-            href: "/dashboard/manage-client/clients-shop",
-            icon: <LuCircleParking size={20} />,
-          },
-          {
-            name: "Société",
-            href: "/dashboard/manage-client/client-company",
-            icon: <LuCircleParking size={20} />,
-          },
+          { name: "Site web", href: "/dashboard/manage-client/clients", icon: <LuCircleParking size={20} /> },
+          { name: "Passage", href: "/dashboard/manage-client/clients-shop", icon: <LuCircleParking size={20} /> },
+          { name: "Société", href: "/dashboard/manage-client/client-company", icon: <LuCircleParking size={20} /> },
         ],
       },
-      {
-        name: "Commandes",
-        href: "/dashboard/manage-client/orders",
-        icon: <LuCircleParking size={20} />,
-      },
+      { name: "Commandes", href: "/dashboard/manage-client/orders", icon: <LuCircleParking size={20} /> },
     ],
   },
   {
     name: "Options de paiement",
     icon: <FaRegMoneyBill1 size={20} />,
     children: [
-      {
-        name: "Méthodes de paiement",
-        // IMPORTANT: no trailing slash (normalizePath also guards)
-        href: "/dashboard/payment-options/payment-methods",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Devise",
-        href: "/dashboard/payment-options/currency",
-        icon: <LuCircleParking size={20} />,
-      },
+      { name: "Méthodes de paiement", href: "/dashboard/payment-options/payment-methods", icon: <LuCircleParking size={20} /> },
+      { name: "Devise", href: "/dashboard/payment-options/currency", icon: <LuCircleParking size={20} /> },
     ],
   },
-  {
-    name: "Options de livraison",
-    href: "/dashboard/delivery-options",
-    icon: <TbTruckDelivery size={20} />,
-  },
+  { name: "Options de livraison", href: "/dashboard/delivery-options", icon: <TbTruckDelivery size={20} /> },
   {
     name: "Blog",
     icon: <PiArticleMediumBold size={20} />,
     children: [
-      {
-        name: "Catégories",
-        href: "/dashboard/blog/postcategorie",
-        icon: <PiArticleMediumBold size={20} />,
-      },
-      {
-        name: "Sous-catégories",
-        href: "/dashboard/blog/postsubcategorie",
-        icon: <PiArticleMediumBold size={20} />,
-      },
-      {
-        name: "Articles",
-        href: "/dashboard/blog/articles",
-        icon: <PiArticleMediumBold size={20} />,
-      },
+      { name: "Catégories", href: "/dashboard/blog/postcategorie", icon: <PiArticleMediumBold size={20} /> },
+      { name: "Sous-catégories", href: "/dashboard/blog/postsubcategorie", icon: <PiArticleMediumBold size={20} /> },
+      { name: "Articles", href: "/dashboard/blog/articles", icon: <PiArticleMediumBold size={20} /> },
     ],
   },
 ];
@@ -213,23 +120,16 @@ export default function SidebarClient({ initialUser }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  // auto-open section containing current route (expanded mode)
   useEffect(() => {
     const current = normalizePath(pathname || "/");
     const next: Record<string, boolean> = {};
-
     sidebarItems.forEach((item) => {
       if (!item.children) return;
       const hrefs = collectHrefs(item.children).map(normalizePath);
-
-      const match = hrefs.some((h) => {
-        if (!h) return false;
-        // exact match OR current path is under the href segment
-        return current === h || current.startsWith(h + "/");
-      });
-
+      const match = hrefs.some((h) => current === h || current.startsWith(h + "/"));
       if (match) next[item.name] = true;
     });
-
     setExpanded(next);
   }, [pathname]);
 
@@ -245,8 +145,7 @@ export default function SidebarClient({ initialUser }: Props) {
   }
 
   const initials = (user.username || user.email).slice(0, 2).toUpperCase();
-  const hasPermission = (perm: string) =>
-    Boolean(user.role?.permissions?.includes(perm));
+  const hasPermission = (perm: string) => Boolean(user.role?.permissions?.includes(perm));
   const toggleCollapse = () => setCollapsed((c) => !c);
   const toggleExpand = (name: string) =>
     setExpanded((prev) => {
@@ -259,6 +158,91 @@ export default function SidebarClient({ initialUser }: Props) {
     } finally {
       router.push("/");
     }
+  };
+
+  /* -------- collapsed mode row with fly-out + hover bridge -------- */
+  const CollapsedRow: React.FC<{ item: SidebarItem }> = ({ item }) => {
+    const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+
+    return (
+      <div
+        key={item.name}
+        className="
+          group relative
+          before:absolute before:left-full before:top-0 before:bottom-0 before:w-2
+          before:content-['']  /* hover bridge = same as ml-2 */
+        "
+      >
+        {/* icon cell */}
+        <div
+          className="flex h-8 gap-2 justify-center items-center w-full hover:bg-white hover:text-black transition-all duration-200"
+          title={item.name}
+        >
+          {item.href && !hasChildren ? (
+            <Link href={item.href} className="flex items-center justify-center w-full h-full">
+              {item.icon}
+            </Link>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center cursor-pointer">{item.icon}</div>
+          )}
+        </div>
+
+        {/* fly-out panel to the RIGHT with visual gap (ml-2) */}
+        {hasChildren && (
+          <div
+            className="
+              hidden group-hover:block
+              absolute left-full top-0 ml-2 z-50
+              min-w-56 max-w-72
+              rounded-md border border-white/10 shadow-xl
+              bg-primary text-white
+              overflow-hidden
+            "
+          >
+            {/* section title */}
+            <div className="px-3 py-2 text-xs font-semibold bg-white/10">{item.name}</div>
+
+            <div className="py-2">
+              {item.children?.map((child) => {
+                if (child.isHeader) {
+                  return (
+                    <div key={child.name} className="mb-1">
+                      <div className="px-4 py-1 text-[11px] uppercase tracking-wide text-white/80">
+                        {child.name}
+                      </div>
+                      <ul className="px-1">
+                        {child.children?.map((sub) => (
+                          <li key={sub.name}>
+                            <Link
+                              href={sub.href!}
+                              className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-white hover:text-hoverText rounded"
+                            >
+                              {sub.icon && <span>{sub.icon}</span>}
+                              <span>{sub.name}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={child.name}
+                    href={child.href!}
+                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-white hover:text-hoverText"
+                  >
+                    {child.icon && <span>{child.icon}</span>}
+                    <span>{child.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -275,20 +259,15 @@ export default function SidebarClient({ initialUser }: Props) {
             </div>
             {!collapsed && (
               <div className="flex flex-col transition-all whitespace-nowrap overflow-hidden duration-300 ease-in-out">
-                <span className="capitalize">
-                  {user.username ?? user.email}
-                </span>
-                <span className="text-xs font-light">
-                  Role: {user.role?.name ?? "—"}
-                </span>
+                <span className="capitalize">{user.username ?? user.email}</span>
+                <span className="text-xs font-light">Role: {user.role?.name ?? "—"}</span>
               </div>
             )}
           </div>
           <IconButton
-            icon={
-              collapsed ? <LuArrowBigRight size={20} /> : <LuArrowBigLeft size={20} />
-            }
+            icon={collapsed ? <LuArrowBigRight size={20} /> : <LuArrowBigLeft size={20} />}
             onClick={toggleCollapse}
+            ariaLabel={collapsed ? "Ouvrir la barre latérale" : "Fermer la barre latérale"}
           />
         </div>
 
@@ -304,15 +283,11 @@ export default function SidebarClient({ initialUser }: Props) {
                 const isOpen = !!expanded[item.name];
 
                 if (collapsed) {
-                  return (
-                    <div key={item.name} className="group relative">
-                      <div className="flex h-8 gap-2 justify-center items-center w-full hover:bg-hoverButton transition-all duration-900">
-                        {item.icon}
-                      </div>
-                    </div>
-                  );
+                  // COLLAPSED: icon with hover fly-out
+                  return <CollapsedRow key={item.name} item={item} />;
                 }
 
+                // EXPANDED: accordion
                 return (
                   <div key={item.name}>
                     {item.children ? (
@@ -322,9 +297,7 @@ export default function SidebarClient({ initialUser }: Props) {
                           className="flex items-center px-8 h-8 cursor-pointer hover:bg-white hover:text-hoverText text-xs select-none"
                         >
                           <span className="mr-3">{item.icon}</span>
-                          <span className="flex-1 whitespace-nowrap overflow-hidden">
-                            {item.name}
-                          </span>
+                          <span className="flex-1 whitespace-nowrap overflow-hidden">{item.name}</span>
                           <span
                             className={`transform transition-transform duration-200 ease-in-out ${
                               isOpen ? "rotate-90" : "rotate-0"
@@ -377,10 +350,10 @@ export default function SidebarClient({ initialUser }: Props) {
                     ) : (
                       <Link
                         href={item.href!}
-                        className="flex items-center px-8 h-8 hover:bg-white hover:text-hoverText transition-all  text-xs mb-2"
+                        className="flex items-center px-8 h-8 hover:bg-white hover:text-hoverText transform transition-transform duration-200 ease-in-out text-xs mb-2"
                       >
                         <span className="mr-3">{item.icon}</span>
-                        {item.name}
+                          <span className="flex-1 whitespace-nowrap overflow-hidden">{item.name}</span>
                       </Link>
                     )}
                   </div>
@@ -396,9 +369,7 @@ export default function SidebarClient({ initialUser }: Props) {
             <button
               onClick={handleSignOut}
               className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
-                collapsed
-                  ? ""
-                  : "gap-2 h-10 w-fit p-2 border-y-2 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
+                collapsed ? "" : "gap-2 h-10 w-fit p-2 border-y-2 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
               }`}
             >
               <VscSignOut size={20} />
