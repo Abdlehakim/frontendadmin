@@ -114,7 +114,7 @@ function NiceSelect<T extends StringUnion>({
         }}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`min-w-[160px] inline-flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-medium
+        className={`min-w-[160px] inline-flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-medium cursor-pointer
                     bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100
                     focus:outline-none focus:ring-2 focus:ring-emerald-400 ${className}`}
       >
@@ -143,7 +143,7 @@ function NiceSelect<T extends StringUnion>({
                   <button
                     key={String(opt)}
                     type="button"
-                    className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2
+                    className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2 cursor-pointer
                       ${isActive ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
                       hover:bg-emerald-100 hover:text-emerald-800`}
                     onClick={() => {
