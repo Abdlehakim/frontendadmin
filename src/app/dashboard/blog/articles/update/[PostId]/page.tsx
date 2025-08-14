@@ -372,7 +372,7 @@ export default function UpdatePostPage() {
     );
   };
 
-  if(loading) return <Overlay show spinnerSize={60}/>;
+  if(loading) return ;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-6">
@@ -468,7 +468,7 @@ export default function UpdatePostPage() {
             </div>
           </aside>
         </form>
-        <Overlay show={busy||done} message={done?"Post updated":undefined} spinnerSize={60}/>
+        <Overlay show={busy||done} message={done?"Post updated":undefined}/>
         {err && <ErrorPopup message={err} onClose={()=>setErr(null)}/>}
       </div>
     </div>
