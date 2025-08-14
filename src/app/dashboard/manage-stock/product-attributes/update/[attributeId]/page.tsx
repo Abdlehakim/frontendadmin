@@ -101,7 +101,7 @@ export default function UpdateProductAttributePage() {
   /* ------------------------------------------------------------------ */
   /* render                                                             */
   /* ------------------------------------------------------------------ */
-  if (loading) return <Overlay show spinnerSize={60} />;
+  if (loading) return ;
 
   return (
     <div className="max-w-lg mx-auto p-6">

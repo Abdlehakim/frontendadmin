@@ -161,7 +161,7 @@ export default function UpdatePostCategoriePage() {
   /* --------------------------------------------------------------------- */
   /* Render                                                                */
   /* --------------------------------------------------------------------- */
-  if (loading) return <Overlay show spinnerSize={60} />;
+  if (loading) return ;
 
   return (
     <div className="relative mx-auto flex h-full w-[80%] flex-col gap-6 p-4">

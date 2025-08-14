@@ -152,7 +152,7 @@ export default function UpdateSubCategoryPage() {
     }
   };
 
-  if (loading) return <Overlay show spinnerSize={60} />;
+  if (loading) return ;
 
   return (
     <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 relative h-full">
