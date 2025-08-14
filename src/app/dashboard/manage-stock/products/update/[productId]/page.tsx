@@ -10,6 +10,7 @@ import React, {
   useCallback,
   ChangeEvent,
   FormEvent,
+  useMemo,
 } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
@@ -92,7 +93,7 @@ interface FetchedProduct {
   extraImagesUrl?: string[];
 }
 
-/* Types for option lists */
+/* List types (for options) */
 type Category = { _id: string; name: string };
 type SubCategory = { _id: string; name: string };
 type Magasin = { _id: string; name: string };
@@ -153,7 +154,6 @@ export default function UpdateProductPage() {
 
   const [existingMainImageUrl, setExistingMainImageUrl] = useState<string | null>(null);
   const [existingExtraImagesUrls, setExistingExtraImagesUrls] = useState<string[]>([]);
-
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [extraImages, setExtraImages] = useState<File[]>([]);
 
@@ -162,12 +162,13 @@ export default function UpdateProductPage() {
   const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
   const [attributeFiles, setAttributeFiles] = useState<Map<string, File>>(new Map());
 
-  /* NEW: option lists state */
+  /* Options lists */
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
   const [magasins, setBoutiques] = useState<Magasin[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
 
+  /* Attribute definitions */
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
       "/dashboardadmin/stock/productattribute"
@@ -176,6 +177,7 @@ export default function UpdateProductPage() {
       .catch((err) => console.error("Échec du chargement des attributs:", err));
   }, []);
 
+  /* Product data */
   useEffect(() => {
     (async () => {
       try {
@@ -211,7 +213,7 @@ export default function UpdateProductPage() {
     })();
   }, [productId]);
 
-  /* NEW: fetch option lists here (moved from StepData) */
+  /* Options lists fetch (moved from StepData) */
   useEffect(() => {
     (async () => {
       try {
@@ -239,6 +241,40 @@ export default function UpdateProductPage() {
       }
     })();
   }, []);
+
+  /* Lookup maps for StepReview */
+  const catMap = useMemo(
+    () =>
+      categories.reduce<Record<string, string>>((acc, cur) => {
+        acc[cur._id] = cur.name;
+        return acc;
+      }, {}),
+    [categories]
+  );
+  const subMap = useMemo(
+    () =>
+      subcategories.reduce<Record<string, string>>((acc, cur) => {
+        acc[cur._id] = cur.name;
+        return acc;
+      }, {}),
+    [subcategories]
+  );
+  const shopMap = useMemo(
+    () =>
+      magasins.reduce<Record<string, string>>((acc, cur) => {
+        acc[cur._id] = cur.name;
+        return acc;
+      }, {}),
+    [magasins]
+  );
+  const brandMap = useMemo(
+    () =>
+      brands.reduce<Record<string, string>>((acc, cur) => {
+        acc[cur._id] = cur.name;
+        return acc;
+      }, {}),
+    [brands]
+  );
 
   const onFixed = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -371,7 +407,7 @@ export default function UpdateProductPage() {
   };
 
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+    <div className="relative mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       <ProductBreadcrumb
         baseHref="/dashboard/manage-stock/products"
         baseLabel="Tous les produits"
@@ -408,7 +444,6 @@ export default function UpdateProductPage() {
             STOCK_OPTIONS={STOCK_OPTIONS}
             PAGE_OPTIONS={PAGE_OPTIONS}
             ADMIN_OPTIONS={ADMIN_OPTIONS}
-            /* pass fetched lists */
             categories={categories}
             subcategories={subcategories}
             magasins={magasins}
@@ -435,6 +470,12 @@ export default function UpdateProductPage() {
             existingExtraImagesUrls={existingExtraImagesUrls}
             attrPayload={attrPayload}
             detailsPayload={detailsPayload}
+            lookupMaps={{
+              categories: catMap,
+              subcategories: subMap,
+              magasins: shopMap,
+              brands: brandMap,
+            }}
           />
         )}
 
@@ -465,7 +506,9 @@ export default function UpdateProductPage() {
         />
       </form>
 
-      <Overlay show={saving || success} message={success ? "Produit mis à jour avec succès" : undefined} />
+     <Overlay
+   show={saving || success}
+   message={success ? "Produit mis à jour avec succès" : "Le produit est en cours de création…"} />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
   );

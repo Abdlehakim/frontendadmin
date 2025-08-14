@@ -1,31 +1,29 @@
 // src/components/Overlay.tsx
+"use client";
+
 import React from "react";
-import { FaSpinner } from "react-icons/fa";
 
 interface OverlayProps {
-  /** Whether the overlay is visible */
   show: boolean;
-  /** If provided, render this message instead of the spinner */
+  /** Shown text (FR by default) */
   message?: string;
-  /** Spinner size when showing loader */
-  spinnerSize?: number;
 }
 
+/**
+ * Covers ONLY the parent container (use on a relative parent).
+ * White veil + centered message, no spinner.
+ */
 export default function Overlay({
   show,
-  message,
-  spinnerSize = 60,
+  message = "Le produit est en cours de création…",
 }: OverlayProps) {
   if (!show) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      {message ? (
-        <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-          <p className="text-lg font-semibold">{message}</p>
-        </div>
-      ) : (
-        <FaSpinner className="animate-spin text-white" size={spinnerSize} />
-      )}
+    <div className="absolute inset-0 z-50 bg-white/95 flex items-center justify-center">
+      <div className="px-4 py-3 text-xl font-medium text-secondary">
+        {message}
+      </div>
     </div>
   );
 }

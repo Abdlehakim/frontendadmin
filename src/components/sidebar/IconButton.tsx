@@ -48,7 +48,7 @@ export default function IconButton({
     : false;
 
   const base =
-    "inline-flex items-center justify-center h-12 w-12 rounded-md border-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/70";
+    "inline-flex items-center justify-center h-12 w-12 rounded-md border-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/70 cursor-pointer";
   const float = floating ? "absolute -right-8 bottom-6" : "";
   const colors = active
     ? "bg-secondary text-primary"

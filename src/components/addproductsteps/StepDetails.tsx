@@ -38,7 +38,7 @@ export default function StepDetails({
   removeExtra,
   existingMainImageUrl = null,
   existingExtraImagesUrls = [],
-  loading = true,
+  loading = false,
 }: Props) {
   const labels: Record<keyof Pick<ProductForm, "name" | "info" | "description">, string> = {
     name: "Nom",
