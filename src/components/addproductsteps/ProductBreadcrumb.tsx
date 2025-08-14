@@ -18,7 +18,7 @@ export default function ProductBreadcrumb({
 }: Props) {
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="text-3xl font-bold">{currentLabel}</h1>
+      <h1 className="text-3xl font-bold uppercase">{currentLabel}</h1>
       <nav className="text-sm underline flex items-center gap-2">
         <Link
           href={baseHref}
