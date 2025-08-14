@@ -252,7 +252,7 @@ export default function SidebarClient({ initialUser }: Props) {
       <div className="flex flex-col gap-4 h-screen relative">
         <div className="flex items-center justify-center h-[80px] border-b-2 ">
           <div className="flex items-center gap-2">
-            <div className="bg-white px-1 text-2xl text-black rounded-md flex items-center justify-center font-bold">
+            <div className="bg-white px-2 rounded-sm text-2xl text-primary  flex items-center justify-center font-bold">
               {initials}
             </div>
             {!collapsed && (
@@ -270,7 +270,7 @@ export default function SidebarClient({ initialUser }: Props) {
         </div>
 
         <nav
-          className={`flex flex-col justify-between max-h-[80%] ${
+          className={`flex flex-col justify-between max-h-[80%] select-none ${
             collapsed ? "overflow-visible" : "overflow-hidden"
           } gap-2 py-4 flex-grow`}
         >

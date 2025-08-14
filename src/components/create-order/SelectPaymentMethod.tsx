@@ -88,7 +88,7 @@ export default function SelectPaymentMethod({
 
         {open && (
           <ul
-            className="absolute left-0 right-0 z-20 mt-1 max-h-60 overflow-auto rounded-md
+            className="mb-10 absolute left-0 right-0 z-20 mt-1 max-h-60 overflow-auto rounded-md 
                        bg-white py-1 text-sm shadow-lg ring-1 ring-black/5"
           >
             {!loading &&

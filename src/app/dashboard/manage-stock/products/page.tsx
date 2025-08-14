@@ -1,4 +1,5 @@
-// ProductsClientPage — liste et actions (FR)
+// src/app/dashboard/manage-stock/products/page.tsx
+
 "use client";
 
 import React, {

@@ -10,6 +10,7 @@ import React, {
   useEffect,
   ChangeEvent,
   FormEvent,
+  useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
 
@@ -17,20 +18,16 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import Stepper from "@/components/Stepper";
 import Overlay from "@/components/Overlay";
 import ErrorPopup from "@/components/Popup/ErrorPopup";
-
 import ProductBreadcrumb from "@/components/addproductsteps/ProductBreadcrumb";
 import WizardNav from "@/components/addproductsteps/WizardNav";
-
 import StepDetails from "@/components/addproductsteps/StepDetails";
 import StepData from "@/components/addproductsteps/StepData";
-import StepAttributesDetails from "@/components/addproductsteps/StepAttributesDetails";
-import StepReview from "@/components/addproductsteps/StepReview";
-
-import type {
+import StepAttributesDetails, {
   AttributePayload,
   AttributeDef,
   ProductDetailPair,
 } from "@/components/addproductsteps/StepAttributesDetails";
+import StepReview from "@/components/addproductsteps/StepReview";
 
 import {
   STOCK_OPTIONS,
@@ -105,25 +102,35 @@ const blankForm: ProductForm = {
   vadmin: "not-approve",
 };
 
+type Category = { _id: string; name: string };
+type SubCategory = { _id: string; name: string };
+type Magasin = { _id: string; name: string };
+type Brand = { _id: string; name: string };
+
 export default function CreateProductPage() {
   const router = useRouter();
 
-  const mainRef  = useRef<HTMLInputElement>(null);
+  const mainRef = useRef<HTMLInputElement>(null);
   const extraRef = useRef<HTMLInputElement>(null);
 
-  const [step, setStep]       = useState<1 | 2 | 3 | 4>(1);
-  const [saving, setSaving]   = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [form, setForm]         = useState<ProductForm>(blankForm);
-  const [mainImage, setMainImage]     = useState<File | null>(null);
+  const [form, setForm] = useState<ProductForm>(blankForm);
+  const [mainImage, setMainImage] = useState<File | null>(null);
   const [extraImages, setExtraImages] = useState<File[]>([]);
 
-  const [defs,           setDefs]            = useState<AttributeDef[]>([]);
-  const [attrPayload,    setAttrPayload]     = useState<AttributePayload[]>([]);
+  const [defs, setDefs] = useState<AttributeDef[]>([]);
+  const [attrPayload, setAttrPayload] = useState<AttributePayload[]>([]);
   const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
-  const [fileMap,        setFileMap]         = useState<Map<string, File>>(new Map());
+  const [fileMap, setFileMap] = useState<Map<string, File>>(new Map());
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
+  const [magasins, setMagasins] = useState<Magasin[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
 
   useEffect(() => {
     fetchFromAPI<{ productAttributes: AttributeDef[] }>(
@@ -132,6 +139,67 @@ export default function CreateProductPage() {
       .then(({ productAttributes }) => setDefs(productAttributes))
       .catch((e) => console.error(e));
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const catsRes = await fetchFromAPI<{ categories?: Category[] }>(
+          "/dashboardadmin/stock/categories"
+        );
+        setCategories(catsRes.categories ?? []);
+
+        const subsRes = await fetchFromAPI<{ subCategories?: SubCategory[] }>(
+          "/dashboardadmin/stock/subcategories"
+        );
+        setSubcategories(subsRes.subCategories ?? []);
+
+        const shopsRes = await fetchFromAPI<{ magasins?: Magasin[] }>(
+          "/dashboardadmin/stock/magasins"
+        );
+        setMagasins(shopsRes.magasins ?? []);
+
+        const brandsRes = await fetchFromAPI<{ brands?: Brand[] }>(
+          "/dashboardadmin/stock/brands"
+        );
+        setBrands(brandsRes.brands ?? []);
+      } catch (e) {
+        console.error("Échec du chargement des listes d’options :", e);
+      }
+    })();
+  }, []);
+
+  const catMap = useMemo(
+    () =>
+      categories.reduce<Record<string, string>>((acc, cur) => {
+        acc[cur._id] = cur.name;
+        return acc;
+      }, {}),
+    [categories]
+  );
+  const subMap = useMemo(
+    () =>
+      subcategories.reduce<Record<string, string>>((acc, cur) => {
+        acc[cur._id] = cur.name;
+        return acc;
+      }, {}),
+    [subcategories]
+  );
+  const shopMap = useMemo(
+    () =>
+      magasins.reduce<Record<string, string>>((acc, cur) => {
+        acc[cur._id] = cur.name;
+        return acc;
+      }, {}),
+    [magasins]
+  );
+  const brandMap = useMemo(
+    () =>
+      brands.reduce<Record<string, string>>((acc, cur) => {
+        acc[cur._id] = cur.name;
+        return acc;
+      }, {}),
+    [brands]
+  );
 
   const handleAttrsAndDetails = useCallback(
     (
@@ -157,12 +225,12 @@ export default function CreateProductPage() {
     setError(null);
     if (step === 3) {
       const invalid = attrPayload.some((a) =>
-        Array.isArray(a.value)
-          ? a.value.some((r) => !r.name.trim())
-          : false
+        Array.isArray(a.value) ? a.value.some((r) => !r.name.trim()) : false
       );
       if (invalid) {
-        setError("Each attribute row needs a name.");
+        setError(
+          "Chaque ligne d’attribut doit avoir un nom (les autres champs sont facultatifs)."
+        );
         return;
       }
     }
@@ -173,7 +241,7 @@ export default function CreateProductPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!mainImage) {
-      setError("Main image required");
+      setError("L’image principale est requise.");
       setStep(1);
       return;
     }
@@ -182,19 +250,17 @@ export default function CreateProductPage() {
     try {
       const fd = new FormData();
 
-      // scalar fields
       Object.entries(form).forEach(([k, v]) => {
         fd.append(k, v);
       });
 
-      // root images
       fd.append("mainImage", mainImage);
       extraImages.forEach((f) => fd.append("extraImages", f));
 
-      // attributes
       type AttrEither =
         | { definition: string; value: AttributeRow[] }
         | { definition: string; value: string };
+
       const serverAttrs = attrPayload
         .map<AttrEither | null>(({ attributeSelected, value }) => {
           const cleaned = cleanAttributeValue(value);
@@ -207,18 +273,18 @@ export default function CreateProductPage() {
           return null;
         })
         .filter((x): x is AttrEither => x !== null);
+
       fd.append("attributes", JSON.stringify(serverAttrs));
 
-      // details
       const serverDetails = detailsPayload
         .filter((d) => d.name.trim())
-        .map(({ name, description }) => ({
+        .map(({ name, description, image }) => ({
           name: name.trim(),
-          description: description?.trim(),
+          description: description?.trim() ?? "",
+          image,
         }));
       fd.append("productDetails", JSON.stringify(serverDetails));
 
-      // dynamic image uploads
       const attrEntries = [...fileMap.entries()].filter(([k]) =>
         k.startsWith("attributeImages-")
       );
@@ -243,43 +309,46 @@ export default function CreateProductPage() {
       });
 
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard/manage-stock/products"), 3000);
+      setTimeout(() => router.push("/dashboard/manage-stock/products"), 2000);
     } catch (err: unknown) {
-      console.error(err);
       const message =
-        err instanceof Error ? err.message : String(err) || "Failed to create product";
+        err instanceof Error ? err.message : String(err) || "Échec de création du produit";
       setError(message);
       setSaving(false);
     }
   };
 
+  const chooseMain = () => mainRef.current?.click();
+  const chooseExtra = () => extraRef.current?.click();
+
   return (
-    <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 h-full">
+    <div className="relative mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       <ProductBreadcrumb
         baseHref="/dashboard/manage-stock/products"
-        baseLabel="All Products"
-        currentLabel="Create Product"
+        baseLabel="Tous les produits"
+        currentLabel="Créer un produit"
       />
 
       <Stepper
-        steps={["Details", "Data", "Attributes", "Review"]}
+        steps={["Détails", "Données", "Attributs", "Aperçu"]}
         currentStep={step}
         onStepClick={(s) => setStep(s as 1 | 2 | 3 | 4)}
       />
 
-      <form onSubmit={handleSubmit} className="flex flex-col h-full gap-8">
+      <form onSubmit={handleSubmit} className="flex flex-col justify-between gap-8 h-full">
         {step === 1 && (
           <StepDetails
             form={form}
             onFixed={onFixed}
             mainImage={mainImage}
             extraImages={extraImages}
-            chooseMain={() => mainRef.current?.click()}
-            chooseExtra={() => extraRef.current?.click()}
+            chooseMain={chooseMain}
+            chooseExtra={chooseExtra}
             clearMain={() => setMainImage(null)}
             removeExtra={removeExtra}
           />
         )}
+
         {step === 2 && (
           <StepData
             form={form}
@@ -287,23 +356,36 @@ export default function CreateProductPage() {
             STOCK_OPTIONS={STOCK_OPTIONS}
             PAGE_OPTIONS={PAGE_OPTIONS}
             ADMIN_OPTIONS={ADMIN_OPTIONS}
+            categories={categories}
+            subcategories={subcategories}
+            magasins={magasins}
+            brands={brands}
           />
         )}
+
         {step === 3 && (
           <StepAttributesDetails
             defs={defs}
-            initialAttrs={[]}
-            initialDetails={[]}
+            initialAttrs={attrPayload}
+            initialDetails={detailsPayload}
             ready={true}
             onChange={handleAttrsAndDetails}
           />
         )}
+
         {step === 4 && (
           <StepReview
             form={form}
             mainImage={mainImage}
+            extraImages={extraImages}
             attrPayload={attrPayload}
             detailsPayload={detailsPayload}
+            lookupMaps={{
+              categories: catMap,
+              subcategories: subMap,
+              magasins: shopMap,
+              brands: brandMap,
+            }}
           />
         )}
 
@@ -313,6 +395,8 @@ export default function CreateProductPage() {
           onBack={back}
           onNext={next}
           onCancel={() => router.push("/dashboard/manage-stock/products")}
+          submitLabel="Créer le produit"
+          submittingLabel="Création…"
         />
 
         <input
@@ -337,7 +421,7 @@ export default function CreateProductPage() {
 
       <Overlay
         show={saving || success}
-        message={success ? "Product successfully created" : undefined}
+        message={success ? "Produit créé avec succès" : "Le produit est en cours de création…"}
       />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
