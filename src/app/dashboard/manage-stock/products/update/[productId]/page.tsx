@@ -45,9 +45,8 @@ export interface AttributeRow {
 }
 
 type ServerAttr =
-  | { definition: string; value: AttributeRow[] }
-  | { definition: string; value: string }
-  | null;
+  | { attributeSelected: string; value: AttributeRow[] }
+  | { attributeSelected: string; value: string };
 
 type ServerDetail = {
   name: string;
@@ -365,16 +364,17 @@ export default function UpdateProductPage() {
       fd.append("remainingExtraUrls", JSON.stringify(existingExtraImagesUrls));
 
       const serverAttrs = attrPayload
-        .map<ServerAttr>(({ attributeSelected, value }) => {
-          const cleaned = cleanAttributeValue(value);
-          if (typeof cleaned === "string" && cleaned.trim())
-            return { definition: attributeSelected, value: cleaned };
-          if (Array.isArray(cleaned) && cleaned.length > 0)
-            return { definition: attributeSelected, value: cleaned };
-          return null;
-        })
-        .filter((entry): entry is Exclude<ServerAttr, null> => entry !== null);
-      fd.append("attributes", JSON.stringify(serverAttrs));
+  .map<ServerAttr | null>(({ attributeSelected, value }) => {
+    const cleaned = cleanAttributeValue(value);
+    if (typeof cleaned === "string" && cleaned.trim())
+      return { attributeSelected, value: cleaned };
+    if (Array.isArray(cleaned) && cleaned.length > 0)
+      return { attributeSelected, value: cleaned };
+    return null; // drop empty entries
+  })
+  .filter((e): e is ServerAttr => e !== null);
+
+fd.append("attributes", JSON.stringify(serverAttrs));
 
       const serverDetails: ServerDetail[] = detailsPayload
         .filter((d) => d.name.trim())
