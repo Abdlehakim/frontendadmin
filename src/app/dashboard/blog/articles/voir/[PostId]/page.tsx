@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { MdClose } from "react-icons/md";
-import Overlay from "@/components/Overlay";
+
 import ErrorPopup from "@/components/Popup/ErrorPopup";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
@@ -141,7 +141,7 @@ export default function ViewPostPage() {
     </div>
   );
 
-  if (loading) return <Overlay show spinnerSize={60} />;
+  if (loading) return;
   if (err || !post) return <ErrorPopup message={err ?? "Unknown error"} onClose={close} />;
 
   const {
