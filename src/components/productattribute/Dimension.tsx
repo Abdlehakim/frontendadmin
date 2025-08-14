@@ -11,7 +11,7 @@ import { FiPlus, FiX, FiImage } from "react-icons/fi";
 export interface DimPair {
   name: string;
   value: string;
-  image?: string;      // preview URL
+  image?: string;    
 }
 
 const PRESET_NAMES = [

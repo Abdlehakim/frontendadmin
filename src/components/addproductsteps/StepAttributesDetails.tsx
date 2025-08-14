@@ -13,10 +13,12 @@ import React, {
   useMemo,
 } from "react";
 import Image from "next/image";
-import { FiImage, FiX } from "react-icons/fi";
+import { FiImage } from "react-icons/fi";
+import { MdDelete } from "react-icons/md";
 import Dimension, { DimPair } from "@/components/productattribute/Dimension";
 import Color, { ColorPair } from "@/components/productattribute/Color";
 import OtherType, { OtherPair } from "@/components/productattribute/OtherType";
+import {FaTrashAlt } from "react-icons/fa";
 
 export type BaseType = "dimension" | "color" | "other type";
 
@@ -440,8 +442,8 @@ export default function StepAttributesDetails({
                     })
                   }
                 />
-                <button type="button" onClick={() => removeDetail(i)} className={btn}>
-                  Supprimer
+                <button type="button" onClick={() => removeDetail(i)} className="ButtonSquare">
+          <FaTrashAlt size={14} />
                 </button>
               </div>
 
@@ -527,9 +529,9 @@ export default function StepAttributesDetails({
                           return c;
                         });
                       }}
-                      className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                     >
-                      <FiX className="w-5 h-5" />
+                      <MdDelete size={16} />
                     </button>
                   </div>
                 )}

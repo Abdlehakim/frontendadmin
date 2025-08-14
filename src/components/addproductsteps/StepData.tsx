@@ -37,6 +37,13 @@ type DataField = typeof DATA_FIELDS[number];
 const SELECT_KEYS = ["stockStatus", "statuspage", "vadmin"] as const;
 type SelectField = typeof SELECT_KEYS[number];
 
+/* required flags from Product schema */
+const REQUIRED: Partial<Record<DataField | SelectField, boolean>> = {
+  categorie: true,
+  stock: true,
+  price: true,
+};
+
 /* --------------------- NiceSelect (portal dropdown) --------------------- */
 type StringUnion = string;
 interface NiceSelectProps<T extends StringUnion> {
@@ -46,6 +53,8 @@ interface NiceSelectProps<T extends StringUnion> {
   display?: (v: T) => string;
   className?: string;
   minWidth?: number;
+  allowClear?: boolean;
+  clearLabel?: string;
 }
 function NiceSelect<T extends StringUnion>({
   value,
@@ -54,6 +63,8 @@ function NiceSelect<T extends StringUnion>({
   display,
   className = "",
   minWidth = 160,
+  allowClear = false,
+  clearLabel = "Aucune",
 }: NiceSelectProps<T>) {
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -115,6 +126,29 @@ function NiceSelect<T extends StringUnion>({
             style={{ top: pos.top, left: pos.left, width: pos.width }}
           >
             <div className="rounded-md border bg-white shadow-lg max-h-60 overflow-auto" role="listbox">
+              {allowClear && (
+                <button
+                  type="button"
+                  className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2
+                              ${value === ("" as unknown as T) ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
+                              hover:bg-emerald-100 hover:text-emerald-800`}
+                  onClick={() => {
+                    onChange("" as unknown as T); // empty selection
+                    setOpen(false);
+                  }}
+                  role="option"
+                  aria-selected={String(value) === ""}
+                >
+                  <span
+                    className={`inline-flex h-4 w-4 items-center justify-center rounded-sm border
+                                ${String(value) === "" ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 text-transparent"}`}
+                  >
+                    <FiCheck size={12} />
+                  </span>
+                  <span className="truncate">{clearLabel}</span>
+                </button>
+              )}
+
               {options.map((opt) => {
                 const isActive = opt === value;
                 const text = display ? display(opt) : String(opt);
@@ -125,7 +159,10 @@ function NiceSelect<T extends StringUnion>({
                     className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2
                                 ${isActive ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
                                 hover:bg-emerald-100 hover:text-emerald-800`}
-                    onClick={() => onChange(opt)}
+                    onClick={() => {
+                      onChange(opt);
+                      setOpen(false); // close dropdown after selection
+                    }}
                     role="option"
                     aria-selected={isActive}
                   >
@@ -176,18 +213,31 @@ export default function StepData({
     onFixed(e);
   };
 
+  const Label = ({
+    children,
+    required,
+  }: {
+    children: React.ReactNode;
+    required?: boolean;
+  }) => (
+    <span className="text-sm font-medium">
+      {children} {required && <span className="text-red-600" title="Requis">*</span>}
+    </span>
+  );
+
   return (
     <section className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
       {DATA_FIELDS.map((field: DataField) => {
         if (field === "categorie") {
           return (
             <label key={field} className="flex flex-col gap-1">
-              <span className="text-sm font-medium">Catégorie</span>
+              <Label required={!!REQUIRED.categorie}>Catégorie</Label>
               <NiceSelect<string>
                 value={form.categorie ?? ""}
                 options={categories.map((c) => c._id)}
                 onChange={(v) => emit("categorie", v)}
                 display={(v) => categories.find((c) => c._id === v)?.name ?? "—"}
+                /* required → no clear */
               />
             </label>
           );
@@ -195,12 +245,14 @@ export default function StepData({
         if (field === "subcategorie") {
           return (
             <label key={field} className="flex flex-col gap-1">
-              <span className="text-sm font-medium">Sous-catégorie</span>
+              <Label>Sous-catégorie</Label>
               <NiceSelect<string>
                 value={form.subcategorie ?? ""}
                 options={subcategories.map((s) => s._id)}
                 onChange={(v) => emit("subcategorie", v)}
                 display={(v) => subcategories.find((s) => s._id === v)?.name ?? "—"}
+                allowClear
+                clearLabel="Aucune"
               />
             </label>
           );
@@ -208,12 +260,14 @@ export default function StepData({
         if (field === "magasin") {
           return (
             <label key={field} className="flex flex-col gap-1">
-              <span className="text-sm font-medium">Magasin</span>
+              <Label>Magasin</Label>
               <NiceSelect<string>
                 value={form.magasin ?? ""}
                 options={magasins.map((m) => m._id)}
                 onChange={(v) => emit("magasin", v)}
                 display={(v) => magasins.find((m) => m._id === v)?.name ?? "—"}
+                allowClear
+                clearLabel="Aucune"
               />
             </label>
           );
@@ -221,12 +275,14 @@ export default function StepData({
         if (field === "brand") {
           return (
             <label key={field} className="flex flex-col gap-1">
-              <span className="text-sm font-medium">Marque</span>
+              <Label>Marque</Label>
               <NiceSelect<string>
                 value={form.brand ?? ""}
                 options={brands.map((b) => b._id)}
                 onChange={(v) => emit("brand", v)}
                 display={(v) => brands.find((b) => b._id === v)?.name ?? "—"}
+                allowClear
+                clearLabel="Aucune"
               />
             </label>
           );
@@ -234,18 +290,20 @@ export default function StepData({
 
         return (
           <label key={field} className="flex flex-col gap-1">
-            <span className="text-sm font-medium capitalize">
+            <Label required={!!REQUIRED[field]}>
               {field === "price" ? "Prix" :
                field === "stock" ? "Stock" :
                field === "tva" ? "TVA" :
                field === "discount" ? "Remise" : field}
-            </span>
+            </Label>
             <input
               name={field}
               value={form[field] as string}
               onChange={onFixed}
               onFocus={(e) => (e.target as HTMLInputElement).select()}
               className="border border-gray-300 bg-inputcolor rounded px-3 py-2"
+              required={!!REQUIRED[field]}
+              inputMode={field === "price" || field === "stock" || field === "tva" || field === "discount" ? "decimal" : undefined}
             />
           </label>
         );
