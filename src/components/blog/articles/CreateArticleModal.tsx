@@ -619,7 +619,6 @@ const handleSubmit = async (e: FormEvent) => {
         <Overlay
           show={busy || done}
           message={done ? "Post successfully created" : undefined}
-          spinnerSize={60}
         />
         {err && <ErrorPopup message={err} onClose={() => setErr(null)} />}
       </div>

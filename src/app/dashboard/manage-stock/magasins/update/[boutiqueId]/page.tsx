@@ -281,7 +281,6 @@ export default function UpdateBoutiquePage() {
       <Overlay
         show={submitting || showSuccess}
         message={showSuccess ? "Magasin updated successfully" : undefined}
-        spinnerSize={60}
       />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>

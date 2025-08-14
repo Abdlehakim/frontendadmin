@@ -378,7 +378,6 @@ export default function UpdatePostSubCategoriePage() {
       <Overlay
         show={submitting || showSuccess}
         message={showSuccess ? "Sub-category updated" : undefined}
-        spinnerSize={60}
       />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>

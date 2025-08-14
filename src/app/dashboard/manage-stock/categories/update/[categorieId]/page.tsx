@@ -293,7 +293,6 @@ export default function UpdateCategoryPage() {
         {/* Form-scoped overlay */}
         <Overlay
           show={loading || submitting || showSuccess}
-          spinnerSize={60}
           message={
             showSuccess ? "Category updated successfully" : undefined
           }
