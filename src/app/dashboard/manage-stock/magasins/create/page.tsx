@@ -59,7 +59,7 @@ import DetailsStep from "@/components/magasin/Steps/DetailsStep";
 import OpeningHoursStep from "@/components/magasin/Steps/OpeningHoursStep";
 import ReviewStep from "@/components/magasin/Steps/ReviewStep";
 
-export default function CreateBoutiquePage() {
+export default function CreateMagasinPage() {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement | null>(null);
 

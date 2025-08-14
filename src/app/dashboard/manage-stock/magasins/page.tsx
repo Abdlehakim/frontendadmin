@@ -29,9 +29,9 @@ interface Magasin {
 const PAGE_SIZE = 12;
 const statusOptions = ["approve", "not-approve"] as const;
 
-export default function BoutiquesClientPage() {
+export default function MagasinsClientPage() {
   /* data */
-  const [magasins, setBoutiques] = useState<Magasin[]>([]);
+  const [magasins, setMagasins] = useState<Magasin[]>([]);
   const [loading, setLoading] = useState(true);
 
   /* UI */
@@ -51,7 +51,7 @@ export default function BoutiquesClientPage() {
       const { magasins } = await fetchFromAPI<{ magasins: Magasin[] }>(
         "/dashboardadmin/stock/magasins",
       );
-      setBoutiques(magasins);
+      setMagasins(magasins);
       setLoading(false);
     })();
   }, []);
@@ -72,18 +72,18 @@ export default function BoutiquesClientPage() {
   );
 
   /* API actions */
-  const deleteBoutique = async (id: string) => {
+  const deleteMagasin = async (id: string) => {
     await fetchFromAPI(`/dashboardadmin/stock/magasins/delete/${id}`, {
       method: "DELETE",
     });
-    setBoutiques((prev) => prev.filter((b) => b._id !== id));
+    setMagasins((prev) => prev.filter((b) => b._id !== id));
   };
 
   const updateStatus = async (
     id: string,
     newStatus: (typeof statusOptions)[number],
   ) => {
-    setBoutiques((prev) =>
+    setMagasins((prev) =>
       prev.map((b) => (b._id === id ? { ...b, vadmin: newStatus } : b)),
     );
     try {
@@ -93,7 +93,7 @@ export default function BoutiquesClientPage() {
         body: JSON.stringify({ vadmin: newStatus }),
       });
     } catch {
-      setBoutiques((prev) => [...prev]); // revert
+      setMagasins((prev) => [...prev]); // revert
       alert("Failed to update status");
     }
   };
@@ -110,7 +110,7 @@ export default function BoutiquesClientPage() {
   const confirmDelete = async (id: string) => {
     setDeleteLoading(true);
     try {
-      await deleteBoutique(id);
+      await deleteMagasin(id);
     } catch {
       alert("Deletion failed.");
     }

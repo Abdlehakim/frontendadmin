@@ -10,7 +10,7 @@ import html2canvas from "html2canvas";
 
 import { Client } from "./selectClient";
 import { DeliveryOption } from "./selectDeliveryOption";
-import { Magasin } from "./SelectBoutiques";
+import { Magasin } from "./SelectMagasins";
 import { BasketItem } from "./selectProducts";
 import QuoteProforma from "./QuoteProforma";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";

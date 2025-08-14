@@ -164,7 +164,7 @@ export default function UpdateProductPage() {
   /* Options lists */
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
-  const [magasins, setBoutiques] = useState<Magasin[]>([]);
+  const [magasins, setMagasins] = useState<Magasin[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
 
   /* Attribute definitions */
@@ -229,7 +229,7 @@ export default function UpdateProductPage() {
         const boutsRes = await fetchFromAPI<{ magasins?: Magasin[] }>(
           "/dashboardadmin/stock/magasins"
         );
-        setBoutiques(boutsRes.magasins ?? []);
+        setMagasins(boutsRes.magasins ?? []);
 
         const brandsRes = await fetchFromAPI<{ brands?: Brand[] }>(
           "/dashboardadmin/stock/brands"

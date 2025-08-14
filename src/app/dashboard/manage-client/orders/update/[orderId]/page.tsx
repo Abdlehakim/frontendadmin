@@ -19,9 +19,9 @@ import SelectDeliveryOption, {
 import SelectAddress, {
   Address,
 } from "@/components/create-order/selectAddress";
-import SelectBoutiques, {
+import SelectMagasins, {
   Magasin,
-} from "@/components/create-order/SelectBoutiques";
+} from "@/components/create-order/SelectMagasins";
 import SelectPaymentMethod, {
   PaymentMethod,
 } from "@/components/create-order/SelectPaymentMethod";
@@ -93,12 +93,12 @@ export default function UpdateOrderPage() {
   );
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
-  const [loadingBoutiques, setLoadingBoutiques] = useState(false);
-  const [boutiques, setBoutiques] = useState<Magasin[]>([]);
-  const [selectedBoutiqueId, setSelectedBoutiqueId] = useState<string | null>(
+  const [loadingMagasins, setLoadingMagasins] = useState(false);
+  const [magasins, setMagasins] = useState<Magasin[]>([]);
+  const [selectedMagasinId, setSelectedMagasinId] = useState<string | null>(
     null
   );
-  const [selectedBoutique, setSelectedBoutique] = useState<Magasin | null>(
+  const [selectedMagasin, setSelectedMagasin] = useState<Magasin | null>(
     null
   );
 
@@ -135,25 +135,25 @@ export default function UpdateOrderPage() {
     []
   );
 
-  /* Boutiques list */
+  /* Magasins list */
   useEffect(() => {
-    if (!boutiques.length) {
-      setLoadingBoutiques(true);
+    if (!magasins.length) {
+      setLoadingMagasins(true);
       fetchFromAPI<{ magasins: Magasin[] }>(
         "/dashboardadmin/stock/magasins/approved"
       )
-        .then(({ magasins }) => setBoutiques(magasins))
-        .catch((e) => console.error("Load boutiques error:", e))
-        .finally(() => setLoadingBoutiques(false));
+        .then(({ magasins }) => setMagasins(magasins))
+        .catch((e) => console.error("Load magasins error:", e))
+        .finally(() => setLoadingMagasins(false));
     }
-  }, [boutiques.length]);
+  }, [magasins.length]);
 
-  /* Enrich selected boutique when full list is available */
+  /* Enrich selected magasin when full list is available */
   useEffect(() => {
-    if (!selectedBoutiqueId || !boutiques.length) return;
-    const full = boutiques.find((b) => b._id === selectedBoutiqueId);
-    if (full) setSelectedBoutique(full);
-  }, [boutiques, selectedBoutiqueId]);
+    if (!selectedMagasinId || !magasins.length) return;
+    const full = magasins.find((b) => b._id === selectedMagasinId);
+    if (full) setSelectedMagasin(full);
+  }, [magasins, selectedMagasinId]);
 
   /* Payment methods */
   useEffect(() => {
@@ -222,12 +222,12 @@ export default function UpdateOrderPage() {
         if (order.pickupMagasin?.length) {
           const first = order.pickupMagasin[0];
           const id = String(first.Magasin);
-          const boutiqueSeed: Magasin = { _id: id, name: first.MagasinAddress };
-          setSelectedBoutiqueId(id);
-          setSelectedBoutique(boutiqueSeed);
+          const magasinSeed: Magasin = { _id: id, name: first.MagasinAddress };
+          setSelectedMagasinId(id);
+          setSelectedMagasin(magasinSeed);
 
-          setBoutiques((prev) =>
-            prev.some((b) => b._id === id) ? prev : [...prev, boutiqueSeed]
+          setMagasins((prev) =>
+            prev.some((b) => b._id === id) ? prev : [...prev, magasinSeed]
           );
         }
 
@@ -308,12 +308,12 @@ export default function UpdateOrderPage() {
                 ]
               : [],
           pickupMagasin:
-            deliveryOpt && deliveryOpt.isPickup && selectedBoutique
+            deliveryOpt && deliveryOpt.isPickup && selectedMagasin
               ? [
                   {
-                    Magasin: selectedBoutique._id,
+                    Magasin: selectedMagasin._id,
                     // 👇 store "name, address, city"
-                    MagasinAddress: formatMagasinAddress(selectedBoutique),
+                    MagasinAddress: formatMagasinAddress(selectedMagasin),
                   },
                 ]
               : [],
@@ -348,7 +348,7 @@ export default function UpdateOrderPage() {
     canGoStep2 &&
     deliveryOpt &&
     paymentOK &&
-    (deliveryOpt.isPickup ? selectedBoutiqueId : selectedAddressId);
+    (deliveryOpt.isPickup ? selectedMagasinId : selectedAddressId);
 
   if (error) return <p className="text-red-600">{error}</p>;
 
@@ -407,8 +407,8 @@ export default function UpdateOrderPage() {
                   setSelectedAddressId(null);
                   setSelectedAddressLbl(null);
                 } else {
-                  setSelectedBoutiqueId(null);
-                  setSelectedBoutique(null);
+                  setSelectedMagasinId(null);
+                  setSelectedMagasin(null);
                 }
               }}
               options={deliveryOptions}
@@ -429,13 +429,13 @@ export default function UpdateOrderPage() {
             )}
 
             {deliveryOpt?.isPickup && (
-              <SelectBoutiques
-                value={selectedBoutiqueId}
-                boutiques={boutiques}
-                loading={loadingBoutiques}
+              <SelectMagasins
+                value={selectedMagasinId}
+                magasins={magasins}
+                loading={loadingMagasins}
                 onChange={(id, b) => {
-                  setSelectedBoutiqueId(id);
-                  setSelectedBoutique(b ?? null);
+                  setSelectedMagasinId(id);
+                  setSelectedMagasin(b ?? null);
                 }}
               />
             )}
@@ -487,7 +487,7 @@ export default function UpdateOrderPage() {
               onClose={() => setStep(2)}
               client={selectedClient}
               addressLabel={selectedAddressLbl}
-              magasin={selectedBoutique}
+              magasin={selectedMagasin}
               delivery={deliveryOpt}
               basket={basket}
               paymentMethod={paymentMethodLabel}

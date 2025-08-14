@@ -1,4 +1,4 @@
-// src/app/manage-stock/magasins/voir/[boutiqueId]/page.tsx
+// src/app/manage-stock/magasins/voir/[magasinId]/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -27,26 +27,26 @@ interface Magasin {
   openingHours?: Record<string, TimeRange[]>;
 }
 
-export default function BoutiqueViewPage() {
-  const { boutiqueId } = useParams();
+export default function MagasinViewPage() {
+  const { magasinId } = useParams();
   const router = useRouter();
-  const [magasin, setBoutique] = useState<Magasin | null>(null);
+  const [magasin, setMagasin] = useState<Magasin | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!boutiqueId) return;
+    if (!magasinId) return;
     setLoading(true);
-    fetchFromAPI<Magasin>(`/dashboardadmin/stock/magasins/${boutiqueId}`)
+    fetchFromAPI<Magasin>(`/dashboardadmin/stock/magasins/${magasinId}`)
       .then(data => {
-        setBoutique(data);
+        setMagasin(data);
         setError(null);
       })
       .catch(err => {
         setError(err instanceof Error ? err.message : "Failed to load magasin");
       })
       .finally(() => setLoading(false));
-  }, [boutiqueId]);
+  }, [magasinId]);
 
   if (loading) {
     return (

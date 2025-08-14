@@ -17,8 +17,8 @@ interface FormFields {
   HPcategorieSubTitle: string;
   HPbrandTitle: string;
   HPbrandSubTitle: string;
-  HPboutiqueTitle: string;
-  HPboutiqueSubTitle: string;
+  HPmagasinTitle: string;
+  HPmagasinSubTitle: string;
   HPNewProductTitle: string;
   HPNewProductSubTitle: string;
   HPPromotionTitle: string;
@@ -37,8 +37,8 @@ export default function CreateHomePageData() {
     HPcategorieSubTitle: "",
     HPbrandTitle: "",
     HPbrandSubTitle: "",
-    HPboutiqueTitle: "",
-    HPboutiqueSubTitle: "",
+    HPmagasinTitle: "",
+    HPmagasinSubTitle: "",
     HPNewProductTitle: "",
     HPNewProductSubTitle: "",
     HPPromotionTitle: "",
@@ -250,24 +250,24 @@ export default function CreateHomePageData() {
         {/* Magasin */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPboutiqueTitle" className="text-sm font-medium">Magasin Title*</label>
+            <label htmlFor="HPmagasinTitle" className="text-sm font-medium">Magasin Title*</label>
             <input
-              id="HPboutiqueTitle"
-              name="HPboutiqueTitle"
+              id="HPmagasinTitle"
+              name="HPmagasinTitle"
               type="text"
-              value={form.HPboutiqueTitle}
+              value={form.HPmagasinTitle}
               onChange={handleInputChange}
               required
               className="border-2 border-gray-300 rounded px-3 py-2"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPboutiqueSubTitle" className="text-sm font-medium">Magasin Sub Title*</label>
+            <label htmlFor="HPmagasinSubTitle" className="text-sm font-medium">Magasin Sub Title*</label>
             <input
-              id="HPboutiqueSubTitle"
-              name="HPboutiqueSubTitle"
+              id="HPmagasinSubTitle"
+              name="HPmagasinSubTitle"
               type="text"
-              value={form.HPboutiqueSubTitle}
+              value={form.HPmagasinSubTitle}
               onChange={handleInputChange}
               required
               className="border-2 border-gray-300 rounded px-3 py-2"

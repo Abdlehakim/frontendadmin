@@ -7,8 +7,8 @@ import { MdDelete } from "react-icons/md";
 import { PiImage } from "react-icons/pi";
 import {
   FormState,
-} from "@/app/dashboard/manage-stock/magasins/update/[boutiqueId]/page";
-import { textFieldIds } from "@/lib/boutiqueFields";
+} from "@/app/dashboard/manage-stock/magasins/update/[magasinId]/page";
+import { textFieldIds } from "@/lib/magasinFields";
 
 interface Props {
   form: FormState;

@@ -6,7 +6,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { Client } from "@/components/create-order/selectClient";
 import type { Address } from "@/components/create-order/selectAddress";
 import type { DeliveryOption } from "@/components/create-order/selectDeliveryOption";
-import type { Magasin } from "@/components/create-order/SelectBoutiques";
+import type { Magasin } from "@/components/create-order/SelectMagasins";
 import type { BasketItem } from "@/components/create-order/selectProducts";
 import type { PaymentMethod } from "@/components/create-order/SelectPaymentMethod";
 
@@ -19,8 +19,8 @@ interface OrderCreationState {
   selectedAddressId: string | null;
   selectedAddressLbl: string | null;
 
-  selectedBoutiqueId: string | null;
-  selectedBoutique: Magasin | null;
+  selectedMagasinId: string | null;
+  selectedMagasin: Magasin | null;
 
   deliveryOpt: DeliveryOption | null;
 
@@ -31,7 +31,7 @@ interface OrderCreationState {
 
   /* --- caches partagés (persistés) --- */
   deliveryOptions: DeliveryOption[];
-  boutiques: Magasin[];
+  magasins: Magasin[];
   paymentMethods: PaymentMethod[];
   addressesCache: Record<string, Address[]>; // par clientId
 }
@@ -43,8 +43,8 @@ const initialState: OrderCreationState = {
   selectedAddressId: null,
   selectedAddressLbl: null,
 
-  selectedBoutiqueId: null,
-  selectedBoutique: null,
+  selectedMagasinId: null,
+  selectedMagasin: null,
 
   deliveryOpt: null,
 
@@ -54,7 +54,7 @@ const initialState: OrderCreationState = {
   basket: [],
 
   deliveryOptions: [],
-  boutiques: [],
+  magasins: [],
   paymentMethods: [],
   addressesCache: {},
 };
@@ -74,12 +74,12 @@ const orderCreationSlice = createSlice({
       s.selectedAddressId  = a.payload.id;
       s.selectedAddressLbl = a.payload.label;
     },
-    setBoutique(
+    setMagasin(
       s,
-      a: PayloadAction<{ id: string | null; boutique: Magasin | null }>
+      a: PayloadAction<{ id: string | null; magasin: Magasin | null }>
     ) {
-      s.selectedBoutiqueId = a.payload.id;
-      s.selectedBoutique   = a.payload.boutique;
+      s.selectedMagasinId = a.payload.id;
+      s.selectedMagasin   = a.payload.magasin;
     },
     setDeliveryOption: (s, a: PayloadAction<DeliveryOption | null>) => {
       s.deliveryOpt = a.payload;
@@ -97,8 +97,8 @@ const orderCreationSlice = createSlice({
     cacheDeliveryOptions: (s, a: PayloadAction<DeliveryOption[]>) => {
       s.deliveryOptions = a.payload;
     },
-    cacheBoutiques: (s, a: PayloadAction<Magasin[]>) => {
-      s.boutiques = a.payload;
+    cacheMagasins: (s, a: PayloadAction<Magasin[]>) => {
+      s.magasins = a.payload;
     },
     cachePaymentMethods: (s, a: PayloadAction<PaymentMethod[]>) => {
       s.paymentMethods = a.payload;
@@ -114,7 +114,7 @@ const orderCreationSlice = createSlice({
     reset(state) {
       const {
         deliveryOptions,
-        boutiques,
+        magasins,
         paymentMethods,
         addressesCache,
       } = state;
@@ -123,7 +123,7 @@ const orderCreationSlice = createSlice({
 
       /* préservation des caches */
       state.deliveryOptions = deliveryOptions;
-      state.boutiques       = boutiques;
+      state.magasins       = magasins;
       state.paymentMethods  = paymentMethods;
       state.addressesCache  = addressesCache;
     },
@@ -135,12 +135,12 @@ export const {
   setStep,
   setClient,
   setAddress,
-  setBoutique,
+  setMagasin,
   setDeliveryOption,
   setPaymentMethod,
   setBasket,
   cacheDeliveryOptions,
-  cacheBoutiques,
+  cacheMagasins,
   cachePaymentMethods,
   cacheAddresses,
   reset,

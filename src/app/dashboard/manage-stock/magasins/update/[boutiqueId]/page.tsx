@@ -1,4 +1,4 @@
-// src/app/dashboard/manage-stock/magasins/update/[boutiqueId]/page.tsx
+// src/app/dashboard/manage-stock/magasins/update/[magasinId]/page.tsx
 "use client";
 
 import React, {
@@ -58,10 +58,10 @@ import DetailsStep from "@/components/magasin/Steps/DetailsStep";
 import OpeningHoursStep from "@/components/magasin/Steps/OpeningHoursStep";
 import ReviewStep from "@/components/magasin/Steps/ReviewStep";
 
-export default function UpdateBoutiquePage() {
+export default function UpdateMagasinPage() {
   const router = useRouter();
-  const params = useParams<{ boutiqueId: string }>();
-  const boutiqueId = params.boutiqueId;
+  const params = useParams<{ magasinId: string }>();
+  const magasinId = params.magasinId;
   const fileInput = useRef<HTMLInputElement | null>(null);
 
   /* ---------- ui state ---------- */
@@ -100,7 +100,7 @@ export default function UpdateBoutiquePage() {
           localisation?: string;
           image: string;
           openingHours: Record<string, TimeRange[]>;
-        }>(`/dashboardadmin/stock/magasins/${boutiqueId}`);
+        }>(`/dashboardadmin/stock/magasins/${magasinId}`);
 
         setInitialImageUrl(b.image);
 
@@ -135,7 +135,7 @@ export default function UpdateBoutiquePage() {
       }
     }
     load();
-  }, [boutiqueId]);
+  }, [magasinId]);
 
   /* ---------- generic setters ---------- */
   const onText = (e: ChangeEvent<HTMLInputElement>) => {
@@ -199,7 +199,7 @@ export default function UpdateBoutiquePage() {
       }
       fd.append("openingHours", JSON.stringify(oh));
 
-      await fetchFromAPI(`/dashboardadmin/stock/magasins/update/${boutiqueId}`, {
+      await fetchFromAPI(`/dashboardadmin/stock/magasins/update/${magasinId}`, {
         method: "PUT",
         body: fd,
       });

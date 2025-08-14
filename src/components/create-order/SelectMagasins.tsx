@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   components/create-order/SelectBoutiques.tsx
+   components/create-order/SelectMagasins.tsx
    (désormais purement “affichage” : ne fait plus de requête)
 ------------------------------------------------------------------ */
 "use client";
@@ -16,10 +16,10 @@ export interface Magasin {
   city?: string;
 }
 
-interface SelectBoutiquesProps {
+interface SelectMagasinsProps {
   value: string | null;
   /** liste déjà chargée par le parent */
-  boutiques?: Magasin[];
+  magasins?: Magasin[];
   /** état de chargement depuis le parent */
   loading?: boolean;
   onChange(id: string | null, magasin: Magasin | null): void;
@@ -29,12 +29,12 @@ interface SelectBoutiquesProps {
 const fmt = (b: Magasin) => `${b.name}${b.city ? " – " + b.city : ""}`;
 
 /* ---------- component ---------- */
-export default function SelectBoutiques({
+export default function SelectMagasins({
   value,
-  boutiques = [],
+  magasins = [],
   loading = false,
   onChange,
-}: SelectBoutiquesProps) {
+}: SelectMagasinsProps) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +49,7 @@ export default function SelectBoutiques({
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
-  const selected = value ? boutiques.find((b) => b._id === value) ?? null : null;
+  const selected = value ? magasins.find((b) => b._id === value) ?? null : null;
 
   return (
     <div className="py-4 bg-white space-y-4 mt-6">
@@ -90,7 +90,7 @@ export default function SelectBoutiques({
                        bg-white py-1 text-sm shadow-lg ring-1 ring-black/5"
           >
             {!loading &&
-              boutiques.map((b) => (
+              magasins.map((b) => (
                 <li
                   key={b._id}
                   onClick={() => {

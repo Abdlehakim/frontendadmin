@@ -1,4 +1,4 @@
-// src/lib/boutiqueFields.ts
+// src/lib/magasinFields.ts
 export const textFieldIds = [
   "name",
   "phoneNumber",

@@ -15,8 +15,8 @@ interface HomePageData {
   HPcategorieSubTitle: string;
   HPbrandTitle: string;
   HPbrandSubTitle: string;
-  HPboutiqueTitle: string;
-  HPboutiqueSubTitle: string;
+  HPmagasinTitle: string;
+  HPmagasinSubTitle: string;
   HPNewProductTitle: string;
   HPNewProductSubTitle: string;
   HPPromotionTitle: string;
@@ -136,13 +136,13 @@ export default function HomePageAdminPage() {
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium">Magasin Title</label>
               <div className="flex items-center border-2 border-gray-300 rounded px-3 h-10 bg-gray-50">
-                {item?.HPboutiqueTitle ?? ""}
+                {item?.HPmagasinTitle ?? ""}
               </div>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium">Magasin Sub Title</label>
               <div className="flex items-center border-2 border-gray-300 rounded px-3 h-10 bg-gray-50">
-                {item?.HPboutiqueSubTitle ?? ""}
+                {item?.HPmagasinSubTitle ?? ""}
               </div>
             </div>
           </div>

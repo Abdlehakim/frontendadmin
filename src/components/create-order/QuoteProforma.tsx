@@ -8,7 +8,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { BasketItem } from "./selectProducts";
 import { DeliveryOption } from "./selectDeliveryOption";
-import { Magasin } from "./SelectBoutiques";
+import { Magasin } from "./SelectMagasins";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 /* ---------- props ---------- */

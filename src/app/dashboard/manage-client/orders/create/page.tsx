@@ -14,9 +14,9 @@ import SelectAddress, {
 import SelectDeliveryOption, {
   DeliveryOption,
 } from "@/components/create-order/selectDeliveryOption";
-import SelectBoutiques, {
+import SelectMagasins, {
   Magasin,
-} from "@/components/create-order/SelectBoutiques";
+} from "@/components/create-order/SelectMagasins";
 import SelectProducts, {
   BasketItem,
   ProductLite,
@@ -33,7 +33,7 @@ import {
   setStep,
   setClient,
   setAddress,
-  setBoutique,
+  setMagasin,
   setDeliveryOption,
   setPaymentMethod,
   setBasket,
@@ -60,8 +60,8 @@ export default function CreateOrderPage() {
     basket,
     selectedAddressId,
     selectedAddressLbl,
-    selectedBoutiqueId,
-    selectedBoutique,
+    selectedMagasinId,
+    selectedMagasin,
   } = useAppSelector(selectOrderCreation);
 
   /* ----- local state ----- */
@@ -71,8 +71,8 @@ export default function CreateOrderPage() {
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [boutiquesList, setBoutiquesList] = useState<Magasin[]>([]);
-  const [loadingBoutiques, setLoadingBoutiques] = useState(false);
+  const [magasinsList, setMagasinsList] = useState<Magasin[]>([]);
+  const [loadingMagasins, setLoadingMagasins] = useState(false);
 
   /* ---------- chargement des options de livraison ---------- */
   useEffect(() => {
@@ -94,17 +94,17 @@ export default function CreateOrderPage() {
 
   /* ---------- chargement des magasins (pickup) ---------- */
   useEffect(() => {
-    setLoadingBoutiques(true);
+    setLoadingMagasins(true);
     (async () => {
       try {
         const { magasins } = await fetchFromAPI<{ magasins: Magasin[] }>(
           "/dashboardadmin/stock/magasins/approved"
         );
-        setBoutiquesList(magasins);
+        setMagasinsList(magasins);
       } catch (e) {
-        console.error("Load boutiques error:", e);
+        console.error("Load magasins error:", e);
       } finally {
-        setLoadingBoutiques(false);
+        setLoadingMagasins(false);
       }
     })();
   }, []);
@@ -201,7 +201,7 @@ export default function CreateOrderPage() {
       if (!opt || opt.isPickup) {
         dispatch(setAddress({ id: null, label: null }));
       } else {
-        dispatch(setBoutique({ id: null, boutique: null }));
+        dispatch(setMagasin({ id: null, magasin: null }));
       }
     },
     [dispatch]
@@ -218,7 +218,7 @@ export default function CreateOrderPage() {
   const canGoStep3 = (() => {
     if (!deliveryOpt) return false;
     const paymentOK = Boolean(paymentMethodKey);
-    if (deliveryOpt.isPickup) return selectedBoutiqueId !== null && paymentOK;
+    if (deliveryOpt.isPickup) return selectedMagasinId !== null && paymentOK;
     return selectedAddressId !== null && paymentOK;
   })();
 
@@ -228,11 +228,11 @@ export default function CreateOrderPage() {
 const handleSubmit = useCallback(async () => {
   try {
     const pickupArray =
-  deliveryOpt?.isPickup && selectedBoutique
+  deliveryOpt?.isPickup && selectedMagasin
     ? [
         {
-          Magasin: selectedBoutique._id,
-          MagasinAddress: [selectedBoutique.name, selectedBoutique.address, selectedBoutique.city]
+          Magasin: selectedMagasin._id,
+          MagasinAddress: [selectedMagasin.name, selectedMagasin.address, selectedMagasin.city]
             .filter(Boolean)
             .join(", "),
         },
@@ -297,7 +297,7 @@ const handleSubmit = useCallback(async () => {
   client,
   selectedAddressId,
   selectedAddressLbl,
-  selectedBoutique,
+  selectedMagasin,
   deliveryOpt,
   basket,
   router,
@@ -380,11 +380,11 @@ const handleSubmit = useCallback(async () => {
             )}
 
             {deliveryOpt && deliveryOpt.isPickup && (
-              <SelectBoutiques
-                value={selectedBoutiqueId}
-                boutiques={boutiquesList}
-                loading={loadingBoutiques}
-                onChange={(id, b) => dispatch(setBoutique({ id, boutique: b }))}
+              <SelectMagasins
+                value={selectedMagasinId}
+                magasins={magasinsList}
+                loading={loadingMagasins}
+                onChange={(id, b) => dispatch(setMagasin({ id, magasin: b }))}
               />
             )}
 
@@ -437,7 +437,7 @@ const handleSubmit = useCallback(async () => {
               onClose={() => dispatch(setStep(2))}
               client={client}
               addressLabel={selectedAddressLbl}
-              magasin={selectedBoutique}
+              magasin={selectedMagasin}
               delivery={deliveryOpt}
               basket={basket}
               paymentMethod={paymentMethodLabel}

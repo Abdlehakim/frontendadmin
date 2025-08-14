@@ -1,6 +1,5 @@
 /* ------------------------------------------------------------------
    components/create-order/SelectDeliveryOption.tsx
-   (désormais purement “affichage” : ne fait plus de requête)
 ------------------------------------------------------------------ */
 "use client";
 
