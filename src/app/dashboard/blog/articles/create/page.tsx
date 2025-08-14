@@ -511,7 +511,7 @@ export default function CreateArticlePage() {
         </aside>
       </form>
 
-      <Overlay show={busy || done} message={done ? "Post created!" : undefined} spinnerSize={60} />
+      <Overlay show={busy || done} message={done ? "Post created!" : undefined}/>
       {err && <ErrorPopup message={err} onClose={() => setErr(null)} />}
     </div>
   );
