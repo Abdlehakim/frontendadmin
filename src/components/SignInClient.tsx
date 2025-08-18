@@ -55,7 +55,7 @@ export default function SignInPage() {
   return (
     <div className="w-full h-screen flex items-center">
       <div className="w-[60%] max-lg:w-full flex justify-center items-center h-screen">
-        <div className="px-8 flex flex-col w-[600px] h-[700px] bg-white/80 rounded-xl justify-center gap-4 z-10">
+        <div className="px-8 flex flex-col w-[600px] h-screen bg-white/80 rounded-xl justify-center gap-4 z-10">
           <div className="flex flex-col gap-2 items-center">
             <h1 className="text-3xl font-bold mb-2">
               Bienvenue to Admin Dashboard
