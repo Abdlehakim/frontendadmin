@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FaRegEdit, FaRegEye, FaTrashAlt, FaPlus } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import { FiChevronDown, FiCheck } from "react-icons/fi";
 import PaginationAdmin from "@/components/PaginationAdmin";
@@ -25,6 +25,7 @@ import {
   StatusPage,
   Vadmin,
 } from "@/constants/product-options";
+import { IoMdCreate } from "react-icons/io";
 
 interface Product {
   _id: string;
@@ -66,7 +67,6 @@ function NiceSelect<T extends StringUnion>({
 
   const label = display ? display(value) : String(value);
 
-  // Reposition the menu when opened / on resize / on scroll
   const updatePos = () => {
     const b = btnRef.current?.getBoundingClientRect();
     if (!b) return;
@@ -82,8 +82,7 @@ function NiceSelect<T extends StringUnion>({
     const onDocClick = (e: MouseEvent) => {
       if (!btnRef.current) return;
       const target = e.target as Node;
-      if (btnRef.current.contains(target)) return; // click on button -> ignore
-      // if click inside the floating menu, ignore (menu has data-nice-select-root)
+      if (btnRef.current.contains(target)) return;
       const el = (target as HTMLElement)?.closest("[data-nice-select-root]");
       if (el) return;
       setOpen(false);
@@ -257,13 +256,26 @@ export default function ProductsClientPage() {
 
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4">
-      <div className="flex h-fit mx-auto w-[80%] justify-between items-center">
+      <div className="flex h-fit mx-auto md:w-full w-[80%] justify-between items-center">
         <h1 className="text-3xl font-bold uppercase">Produits</h1>
-        <Link href="/dashboard/manage-stock/products/create">
-          <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
-            Créer un produit
-          </button>
-        </Link>
+
+        {/* Desktop: text button / Mobile: icon-only */}
+        <div className="flex items-center">
+          <Link href="/dashboard/manage-stock/products/create" className="hidden md:block">
+            <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
+              Créer un produit
+            </button>
+          </Link>
+
+          <Link href="/dashboard/manage-stock/products/create" className="md:hidden">
+            <button
+              aria-label="Créer un produit"
+              className="ButtonSquare"
+            >
+              <IoMdCreate size={14} />
+            </button>
+          </Link>
+        </div>
       </div>
 
       <div className="flex md:justify-between items-end gap-6 h-fit justify-center">

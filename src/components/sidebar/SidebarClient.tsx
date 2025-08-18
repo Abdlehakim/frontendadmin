@@ -440,7 +440,7 @@ export default function SidebarClient({ initialUser }: Props) {
           </div>
 
           <nav
-            className={`flex flex-col justify-between max-h-[80%] select-none overflow-y-auto ${
+            className={`flex flex-col justify-between mb-20 select-none overflow-y-auto ${
               collapsed ? "overflow-y-visible" : "overflow-hidden"
             } gap-2 py-4 flex-grow`}
           >
