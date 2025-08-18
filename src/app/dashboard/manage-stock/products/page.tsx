@@ -256,8 +256,8 @@ export default function ProductsClientPage() {
   };
 
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      <div className="flex h-16 justify-between items-start">
+    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4">
+      <div className="flex h-fit mx-auto w-[80%] justify-between items-center">
         <h1 className="text-3xl font-bold uppercase">Produits</h1>
         <Link href="/dashboard/manage-stock/products/create">
           <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
@@ -266,7 +266,7 @@ export default function ProductsClientPage() {
         </Link>
       </div>
 
-      <div className="flex justify-between items-end gap-6 h-[70px]">
+      <div className="flex md:justify-between items-end gap-6 h-fit justify-center">
         <div className="flex items-center gap-2">
           <label className="font-medium">Recherche :</label>
           <input
@@ -281,8 +281,9 @@ export default function ProductsClientPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <table className="table-fixed w-full">
+      <div className="flex flex-col">
+        {/* ===== Desktop header (unchanged) ===== */}
+        <table className="table-fixed w-full hidden md:table">
           <thead className="bg-primary text-white">
             <tr>
               <th className="py-2 text-sm font-medium text-center">Réf</th>
@@ -299,7 +300,8 @@ export default function ProductsClientPage() {
         </table>
 
         <div className="relative flex-1 overflow-auto">
-          <table className="table-fixed w-full">
+          {/* ===== Desktop table body (unchanged) ===== */}
+          <table className="table-fixed w-full hidden md:table">
             {displayed.length === 0 && !loading ? (
               <tbody>
                 <tr>
@@ -364,6 +366,77 @@ export default function ProductsClientPage() {
               </tbody>
             )}
           </table>
+
+          {/* ===== Mobile cards ===== */}
+          <div className="md:hidden">
+            {displayed.length === 0 && !loading ? (
+              <div className="py-6 text-center text-gray-600">Aucun produit trouvé.</div>
+            ) : (
+              <div className="space-y-3">
+                {displayed.map((p, i) => (
+                  <div
+                    key={p._id}
+                    className={`rounded-md border ${i % 2 ? "bg-gray-100" : "bg-white"} p-3 shadow-sm`}
+                  >
+                    {/* Header: name + actions */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-semibold leading-tight truncate">{p.name}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">Réf : {p.reference}</div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Link href={`/dashboard/manage-stock/products/update/${p._id}`}>
+                          <button className="ButtonSquare">
+                            <FaRegEdit size={14} />
+                          </button>
+                        </Link>
+                        <Link href={`/dashboard/manage-stock/products/voir/${p._id}`}>
+                          <button className="ButtonSquare">
+                            <FaRegEye size={14} />
+                          </button>
+                        </Link>
+                        <button
+                          onClick={() => openDelete(p._id, p.name)}
+                          className="ButtonSquare"
+                        >
+                          <FaTrashAlt size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Meta */}
+                    <div className="mt-2 text-xs text-gray-600 flex items-center justify-between">
+                      <span>{p.updatedBy?.username || p.createdBy?.username || "—"}</span>
+                      <span>{new Date(p.updatedAt || p.createdAt).toLocaleDateString()}</span>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="mt-3 grid grid-cols-1 gap-2">
+                      <NiceSelect<Vadmin>
+                        value={p.vadmin}
+                        options={ADMIN_OPTIONS as readonly Vadmin[]}
+                        onChange={(v) => updateField(p._id, "vadmin", v)}
+                        className="w-full"
+                      />
+                      <NiceSelect<StockStatus>
+                        value={p.stockStatus}
+                        options={STOCK_OPTIONS as readonly StockStatus[]}
+                        onChange={(v) => updateField(p._id, "stockStatus", v)}
+                        className="w-full"
+                      />
+                      <NiceSelect<StatusPage>
+                        value={p.statuspage}
+                        options={PAGE_OPTIONS as readonly StatusPage[]}
+                        onChange={(v) => updateField(p._id, "statuspage", v)}
+                        display={(v) => (v === "none" ? "Aucune" : v.replace("-", " "))}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
