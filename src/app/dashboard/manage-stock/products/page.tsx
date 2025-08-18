@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { FaRegEdit, FaRegEye, FaTrashAlt, FaPlus } from "react-icons/fa";
+import { FaRegEdit, FaRegEye, FaTrashAlt} from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import { FiChevronDown, FiCheck } from "react-icons/fi";
 import PaginationAdmin from "@/components/PaginationAdmin";
