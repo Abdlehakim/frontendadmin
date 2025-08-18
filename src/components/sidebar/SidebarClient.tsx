@@ -213,7 +213,7 @@ export default function SidebarClient({ initialUser }: Props) {
   const { user, loading } = useAuth(initialUser);
   const router = useRouter();
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   // auto-open section containing current route (expanded mode)
