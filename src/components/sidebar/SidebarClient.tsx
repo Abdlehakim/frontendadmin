@@ -216,6 +216,24 @@ export default function SidebarClient({ initialUser }: Props) {
   const [collapsed, setCollapsed] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  // helper: active matcher (exact, or "startsWith" for non-root)
+  const isHrefActive = (href?: string) => {
+    if (!href) return false;
+    const cur = normalizePath(pathname || "/");
+    const target = normalizePath(href);
+    if (target === "/dashboard") return cur === target;
+    return cur === target || cur.startsWith(target + "/");
+  };
+
+  // helper: section is active if itself or any descendant is active
+  const isSectionActive = (item: SidebarItem): boolean => {
+    if (isHrefActive(item.href)) return true;
+    if (item.children?.length) {
+      return item.children.some(isSectionActive);
+    }
+    return false;
+  };
+
   // auto-open section containing current route (expanded mode)
   useEffect(() => {
     const current = normalizePath(pathname || "/");
@@ -264,6 +282,8 @@ export default function SidebarClient({ initialUser }: Props) {
     const hasChildren =
       Array.isArray(item.children) && item.children.length > 0;
 
+    const active = isSectionActive(item);
+
     return (
       <div
         key={item.name}
@@ -275,12 +295,15 @@ export default function SidebarClient({ initialUser }: Props) {
       >
         {/* icon cell */}
         <div
-          className="flex h-8 gap-2 justify-center items-center w-full hover:bg-white hover:text-black transition-all duration-200"
+          className={`flex h-8 gap-2 justify-center items-center w-full transition-all duration-200 ${
+            active ? "bg-white text-black" : "hover:bg-white hover:text-black"
+          }`}
           title={item.name}
         >
           {item.href && !hasChildren ? (
             <Link
               href={item.href}
+              aria-current={isHrefActive(item.href) ? "page" : undefined}
               className="flex items-center justify-center w-full h-full"
             >
               {item.icon}
@@ -318,26 +341,40 @@ export default function SidebarClient({ initialUser }: Props) {
                         {child.name}
                       </div>
                       <ul className="px-1">
-                        {child.children?.map((sub) => (
-                          <li key={sub.name}>
-                            <Link
-                              href={sub.href!}
-                              className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-white hover:text-hoverText rounded"
-                            >
-                              <span>{sub.name}</span>
-                            </Link>
-                          </li>
-                        ))}
+                        {child.children?.map((sub) => {
+                          const activeSub = isHrefActive(sub.href);
+                          return (
+                            <li key={sub.name}>
+                              <Link
+                                href={sub.href!}
+                                aria-current={activeSub ? "page" : undefined}
+                                className={`flex items-center gap-2 px-4 py-2 text-sm rounded ${
+                                  activeSub
+                                    ? "bg-white text-black"
+                                    : "hover:bg-white hover:text-hoverText"
+                                }`}
+                              >
+                                <span>{sub.name}</span>
+                              </Link>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   );
                 }
 
+                const activeChild = isHrefActive(child.href);
                 return (
                   <Link
                     key={child.name}
                     href={child.href!}
-                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-white hover:text-hoverText"
+                    aria-current={activeChild ? "page" : undefined}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm ${
+                      activeChild
+                        ? "bg-white text-black"
+                        : "hover:bg-white hover:text-hoverText"
+                    }`}
                   >
                     <span>{child.name}</span>
                   </Link>
@@ -351,181 +388,213 @@ export default function SidebarClient({ initialUser }: Props) {
   };
 
   return (
-  <>
-    {/* Overlay for mobile */}
-    {collapsed === false && (
-      <div
-        onClick={toggleCollapse}
-        className="fixed inset-0 bg-black/30 z-40 md:hidden"
-      />
-    )}
-    <aside
-      className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out   
+    <>
+      {/* Overlay for mobile */}
+      {collapsed === false && (
+        <div
+          onClick={toggleCollapse}
+          className="fixed inset-0 bg-black/30 z-40 md:hidden"
+        />
+      )}
+      <aside
+        className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out   
     ${
       collapsed
         ? "-translate-x-full w-[60px]"
         : "translate-x-0 w-[90%] md:w-[280px]"
     }
     md:static md:translate-x-0`}
-    >
-      <div className="flex flex-col gap-4 h-screen relative">
-        <div className="flex items-center justify-center h-[80px] border-b-2 ">
-          <div className="flex items-center gap-2">
-            <div className="bg-white px-2 rounded-sm text-2xl text-primary  flex items-center justify-center font-bold">
-              {initials}
-            </div>
-            {!collapsed && (
-              <div className="flex flex-col transition-all whitespace-nowrap overflow-hidden duration-300 ease-in-out">
-                <span className="capitalize">
-                  {user.username ?? user.email}
-                </span>
-                <span className="text-xs font-light">
-                  Role: {user.role?.name ?? "—"}
-                </span>
+      >
+        <div className="flex flex-col gap-4 h-screen relative">
+          <div className="flex items-center justify-center h-[80px] border-b-2 ">
+            <div className="flex items-center gap-2">
+              <div className="bg-white px-2 rounded-sm text-2xl text-primary  flex items-center justify-center font-bold">
+                {initials}
               </div>
-            )}
+              {!collapsed && (
+                <div className="flex flex-col transition-all whitespace-nowrap overflow-hidden duration-300 ease-in-out">
+                  <span className="capitalize">
+                    {user.username ?? user.email}
+                  </span>
+                  <span className="text-xs font-light">
+                    Role: {user.role?.name ?? "—"}
+                  </span>
+                </div>
+              )}
+            </div>
+            <IconButton
+              icon={
+                collapsed ? (
+                  <LuArrowBigRight size={20} />
+                ) : (
+                  <LuArrowBigLeft size={20} />
+                )
+              }
+              onClick={toggleCollapse}
+              ariaLabel={
+                collapsed
+                  ? "Ouvrir la barre latérale"
+                  : "Fermer la barre latérale"
+              }
+            />
           </div>
-          <IconButton
-            icon={
-              collapsed ? (
-                <LuArrowBigRight size={20} />
-              ) : (
-                <LuArrowBigLeft size={20} />
-              )
-            }
-            onClick={toggleCollapse}
-            ariaLabel={
-              collapsed
-                ? "Ouvrir la barre latérale"
-                : "Fermer la barre latérale"
-            }
-          />
-        </div>
 
-        <nav
-          className={`flex flex-col justify-between max-h-[80%] select-none overflow-y-auto ${
-            collapsed ? "overflow-y-visible" : "overflow-hidden"
-          } gap-2 py-4 flex-grow`}
-        >
-          <div>
-            {sidebarItems
-              .filter(
-                (item) => !item.permission || hasPermission(item.permission)
-              )
-              .map((item) => {
-                const isOpen = !!expanded[item.name];
+          <nav
+            className={`flex flex-col justify-between max-h-[80%] select-none overflow-y-auto ${
+              collapsed ? "overflow-y-visible" : "overflow-hidden"
+            } gap-2 py-4 flex-grow`}
+          >
+            <div>
+              {sidebarItems
+                .filter(
+                  (item) => !item.permission || hasPermission(item.permission)
+                )
+                .map((item) => {
+                  const isOpen = !!expanded[item.name];
 
-                if (collapsed) {
-                  // COLLAPSED: icon with hover fly-out
-                  return <CollapsedRow key={item.name} item={item} />;
-                }
+                  if (collapsed) {
+                    // COLLAPSED: icon with hover fly-out
+                    return <CollapsedRow key={item.name} item={item} />;
+                  }
 
-                // EXPANDED: accordion
-                return (
-                  <div key={item.name}>
-                    {item.children ? (
-                      <>
-                        <div
-                          onClick={() => toggleExpand(item.name)}
-                          className="flex items-center px-8 h-8 cursor-pointer hover:bg-white hover:text-hoverText text-xs select-none"
-                        >
-                          <span className="mr-3">{item.icon}</span>
-                          <span className="flex-1 whitespace-nowrap overflow-hidden">
-                            {item.name}
-                          </span>
-                          <span
-                            className={`transform transition-transform duration-200 ease-in-out ${
-                              isOpen ? "rotate-90" : "rotate-0"
+                  // EXPANDED: accordion
+                  return (
+                    <div key={item.name}>
+                      {item.children ? (
+                        <>
+                          <div
+                            onClick={() => toggleExpand(item.name)}
+                            className={`flex items-center px-8 h-8 cursor-pointer text-xs select-none ${
+                              isSectionActive(item)
+                                ? "bg-white text-black"
+                                : "hover:bg-white hover:text-hoverText"
                             }`}
                           >
-                            <BiChevronRight size={20} />
-                          </span>
-                        </div>
-                        <ul
-                          className={`ml-8 flex flex-col gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out ${
-                            isOpen
-                              ? "max-h-60 opacity-100"
-                              : "max-h-0 opacity-0"
-                          }`}
-                        >
-                          {item.children.map((child) => {
-                            if (child.isHeader) {
-                              return (
-                                <div key={child.name}>
-                                  <div className="text-xs px-12 h-6 font-semibold text-white select-none">
-                                    {child.name}
+                            <span className="mr-3">{item.icon}</span>
+                            <span className="flex-1 whitespace-nowrap overflow-hidden">
+                              {item.name}
+                            </span>
+                            <span
+                              className={`transform transition-transform duration-200 ease-in-out ${
+                                isOpen ? "rotate-90" : "rotate-0"
+                              }`}
+                            >
+                              <BiChevronRight size={20} />
+                            </span>
+                          </div>
+                          <ul
+                            className={`ml-8 flex flex-col gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out ${
+                              isOpen
+                                ? "max-h-60 opacity-100"
+                                : "max-h-0 opacity-0"
+                            }`}
+                          >
+                            {item.children.map((child) => {
+                              if (child.isHeader) {
+                                return (
+                                  <div key={child.name}>
+                                    <div className="text-xs px-12 h-6 font-semibold text-white select-none">
+                                      {child.name}
+                                    </div>
+                                    <ul className="ml-4 flex flex-col gap-1 text-xs h-fit">
+                                      {child.children?.map((subChild) => {
+                                        const active = isHrefActive(
+                                          subChild.href
+                                        );
+                                        return (
+                                          <li key={subChild.name}>
+                                            <Link
+                                              href={subChild.href!}
+                                              aria-current={
+                                                active ? "page" : undefined
+                                              }
+                                              className={`flex items-center px-8 h-6 ${
+                                                active
+                                                  ? "bg-white text-black"
+                                                  : "hover:bg-white hover:text-hoverText"
+                                              }`}
+                                            >
+                                              <span className="ml-5">
+                                                {subChild.name}
+                                              </span>
+                                            </Link>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
                                   </div>
-                                  <ul className="ml-4 flex flex-col gap-1 text-xs h-fit">
-                                    {child.children?.map((subChild) => (
-                                      <li key={subChild.name}>
-                                        <Link
-                                          href={subChild.href!}
-                                          className="flex items-center px-8 h-6 hover:bg-white hover:text-hoverText"
-                                        >
-                                          <span className="ml-5">
-                                            {subChild.name}
-                                          </span>
-                                        </Link>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
+                                );
+                              }
+
+                              const active = isHrefActive(child.href);
+                              return (
+                                <li key={child.name}>
+                                  <Link
+                                    href={child.href!}
+                                    aria-current={active ? "page" : undefined}
+                                    className={`flex items-center px-8 h-6 ${
+                                      active
+                                        ? "bg-white text-black"
+                                        : "hover:bg-white hover:text-hoverText"
+                                    }`}
+                                  >
+                                    <span className="ml-5">{child.name}</span>
+                                  </Link>
+                                </li>
                               );
-                            }
+                            })}
+                          </ul>
+                        </>
+                      ) : (
+                        (() => {
+                          const active = isHrefActive(item.href);
+                          return (
+                            <Link
+                              href={item.href!}
+                              aria-current={active ? "page" : undefined}
+                              className={`flex items-center px-8 h-8 transform transition-transform duration-200 ease-in-out text-xs mb-2 ${
+                                active
+                                  ? "bg-white text-black"
+                                  : "hover:bg-white hover:text-hoverText"
+                              }`}
+                            >
+                              <span className="mr-3">{item.icon}</span>
+                              <span className="flex-1 whitespace-nowrap overflow-hidden">
+                                {item.name}
+                              </span>
+                            </Link>
+                          );
+                        })()
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
 
-                            return (
-                              <li key={child.name}>
-                                <Link
-                                  href={child.href!}
-                                  className="flex items-center px-8 h-6 hover:bg-white hover:text-hoverText"
-                                >
-                                  <span className="ml-5">{child.name}</span>
-                                </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </>
-                    ) : (
-                      <Link
-                        href={item.href!}
-                        className="flex items-center px-8 h-8 hover:bg-white hover:text-hoverText transform transition-transform duration-200 ease-in-out text-xs mb-2"
-                      >
-                        <span className="mr-3">{item.icon}</span>
-                        <span className="flex-1 whitespace-nowrap overflow-hidden">
-                          {item.name}
-                        </span>
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-
-          <div
-            className={`flex items-center transition-all duration-300 ease-in-out ${
-              collapsed ? "justify-center h-8 mt-8" : "justify-end h-16 mt-0"
-            }`}
-          >
-            <button
-              onClick={handleSignOut}
-              className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
-                collapsed
-                  ? ""
-                  : "gap-2 h-10 w-fit p-2 border-y-2 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
+            <div
+              className={`flex items-center transition-all duration-300 ease-in-out ${
+                collapsed ? "justify-center h-8 mt-8" : "justify-end h-16 mt-0"
               }`}
             >
-              <VscSignOut size={20} />
-              {!collapsed && (
-                <span className="ml-2 duration-200 transition-all whitespace-nowrap text-sm w-fit">
-                  SE DÉCONNECTER
-                </span>
-              )}
-            </button>
-          </div>
-        </nav>
-      </div>
-    </aside>
-      </>
+              <button
+                onClick={handleSignOut}
+                className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
+                  collapsed
+                    ? ""
+                    : "gap-2 h-10 w-fit p-2 border-y-2 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
+                }`}
+              >
+                <VscSignOut size={20} />
+                {!collapsed && (
+                  <span className="ml-2 duration-200 transition-all whitespace-nowrap text-sm w-fit">
+                    SE DÉCONNECTER
+                  </span>
+                )}
+              </button>
+            </div>
+          </nav>
+        </div>
+      </aside>
+    </>
   );
 }
