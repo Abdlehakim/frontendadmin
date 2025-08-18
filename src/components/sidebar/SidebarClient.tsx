@@ -7,7 +7,11 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { useAuth, User } from "@/hooks/useAuthDashboard";
 import { MdOutlineDashboard } from "react-icons/md";
 import { FaUsersViewfinder, FaRegMoneyBill1 } from "react-icons/fa6";
-import { LuCircleParking, LuArrowBigLeft, LuArrowBigRight } from "react-icons/lu";
+import {
+  LuCircleParking,
+  LuArrowBigLeft,
+  LuArrowBigRight,
+} from "react-icons/lu";
 import { PiArticleMediumBold, PiUsersThree } from "react-icons/pi";
 import { CgWebsite } from "react-icons/cg";
 import { BiChevronRight } from "react-icons/bi";
@@ -45,36 +49,88 @@ const collectHrefs = (items?: SidebarItem[]): string[] => {
 };
 
 const sidebarItems: SidebarItem[] = [
-  { name: "Tableau de bord", href: "/dashboard", icon: <MdOutlineDashboard size={20} /> },
+  {
+    name: "Tableau de bord",
+    href: "/dashboard",
+    icon: <MdOutlineDashboard size={20} />,
+  },
   {
     name: "Gestion des accès",
     icon: <FaUsersViewfinder size={20} />,
     permission: "M_Access",
     children: [
-      { name: "Utilisateurs", href: "/dashboard/manage-access/users", icon: <FaUsersViewfinder size={20} /> },
-      { name: "Rôles", href: "/dashboard/manage-access/roles", icon: <FaUsersViewfinder size={20} /> },
+      {
+        name: "Utilisateurs",
+        href: "/dashboard/manage-access/users",
+        icon: <FaUsersViewfinder size={20} />,
+      },
+      {
+        name: "Rôles",
+        href: "/dashboard/manage-access/roles",
+        icon: <FaUsersViewfinder size={20} />,
+      },
     ],
   },
   {
     name: "Gestion du site",
     icon: <CgWebsite size={20} />,
     children: [
-      { name: "Données page d'accueil", href: "/dashboard/manage-website/home-page", icon: <LuCircleParking size={20} /> },
-      { name: "Données page produit", href: "/dashboard/manage-website/product-page", icon: <LuCircleParking size={20} /> },
-      { name: "Entreprise", href: "/dashboard/manage-website/company-data", icon: <LuCircleParking size={20} /> },
-      { name: "Bannières", href: "/dashboard/manage-website/banners", icon: <LuCircleParking size={20} /> },
+      {
+        name: "Données page d'accueil",
+        href: "/dashboard/manage-website/home-page",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Données page produit",
+        href: "/dashboard/manage-website/product-page",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Entreprise",
+        href: "/dashboard/manage-website/company-data",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Bannières",
+        href: "/dashboard/manage-website/banners",
+        icon: <LuCircleParking size={20} />,
+      },
     ],
   },
   {
     name: "Gestion du stock",
     icon: <LuCircleParking size={20} />,
     children: [
-      { name: "Magasins", href: "/dashboard/manage-stock/magasins", icon: <LuCircleParking size={20} /> },
-      { name: "Marques", href: "/dashboard/manage-stock/brands", icon: <LuCircleParking size={20} /> },
-      { name: "Catégories", href: "/dashboard/manage-stock/categories", icon: <LuCircleParking size={20} /> },
-      { name: "Sous-catégories", href: "/dashboard/manage-stock/sub-categories", icon: <LuCircleParking size={20} /> },
-      { name: "Attributs produits", href: "/dashboard/manage-stock/product-attributes", icon: <LuCircleParking size={20} /> },
-      { name: "Tous les produits", href: "/dashboard/manage-stock/products", icon: <LuCircleParking size={20} /> },
+      {
+        name: "Magasins",
+        href: "/dashboard/manage-stock/magasins",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Marques",
+        href: "/dashboard/manage-stock/brands",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Catégories",
+        href: "/dashboard/manage-stock/categories",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Sous-catégories",
+        href: "/dashboard/manage-stock/sub-categories",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Attributs produits",
+        href: "/dashboard/manage-stock/product-attributes",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Tous les produits",
+        href: "/dashboard/manage-stock/products",
+        icon: <LuCircleParking size={20} />,
+      },
     ],
   },
   {
@@ -85,30 +141,70 @@ const sidebarItems: SidebarItem[] = [
         name: "Clients",
         isHeader: true,
         children: [
-          { name: "Site web", href: "/dashboard/manage-client/clients", icon: <LuCircleParking size={20} /> },
-          { name: "Passage", href: "/dashboard/manage-client/clients-shop", icon: <LuCircleParking size={20} /> },
-          { name: "Société", href: "/dashboard/manage-client/client-company", icon: <LuCircleParking size={20} /> },
+          {
+            name: "Site web",
+            href: "/dashboard/manage-client/clients",
+            icon: <LuCircleParking size={20} />,
+          },
+          {
+            name: "Passage",
+            href: "/dashboard/manage-client/clients-shop",
+            icon: <LuCircleParking size={20} />,
+          },
+          {
+            name: "Société",
+            href: "/dashboard/manage-client/client-company",
+            icon: <LuCircleParking size={20} />,
+          },
         ],
       },
-      { name: "Commandes", href: "/dashboard/manage-client/orders", icon: <LuCircleParking size={20} /> },
+      {
+        name: "Commandes",
+        href: "/dashboard/manage-client/orders",
+        icon: <LuCircleParking size={20} />,
+      },
     ],
   },
   {
     name: "Options de paiement",
     icon: <FaRegMoneyBill1 size={20} />,
     children: [
-      { name: "Méthodes de paiement", href: "/dashboard/payment-options/payment-methods", icon: <LuCircleParking size={20} /> },
-      { name: "Devise", href: "/dashboard/payment-options/currency", icon: <LuCircleParking size={20} /> },
+      {
+        name: "Méthodes de paiement",
+        href: "/dashboard/payment-options/payment-methods",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Devise",
+        href: "/dashboard/payment-options/currency",
+        icon: <LuCircleParking size={20} />,
+      },
     ],
   },
-  { name: "Options de livraison", href: "/dashboard/delivery-options", icon: <TbTruckDelivery size={20} /> },
+  {
+    name: "Options de livraison",
+    href: "/dashboard/delivery-options",
+    icon: <TbTruckDelivery size={20} />,
+  },
   {
     name: "Blog",
     icon: <PiArticleMediumBold size={20} />,
     children: [
-      { name: "Catégories", href: "/dashboard/blog/postcategorie", icon: <PiArticleMediumBold size={20} /> },
-      { name: "Sous-catégories", href: "/dashboard/blog/postsubcategorie", icon: <PiArticleMediumBold size={20} /> },
-      { name: "Articles", href: "/dashboard/blog/articles", icon: <PiArticleMediumBold size={20} /> },
+      {
+        name: "Catégories",
+        href: "/dashboard/blog/postcategorie",
+        icon: <PiArticleMediumBold size={20} />,
+      },
+      {
+        name: "Sous-catégories",
+        href: "/dashboard/blog/postsubcategorie",
+        icon: <PiArticleMediumBold size={20} />,
+      },
+      {
+        name: "Articles",
+        href: "/dashboard/blog/articles",
+        icon: <PiArticleMediumBold size={20} />,
+      },
     ],
   },
 ];
@@ -127,7 +223,9 @@ export default function SidebarClient({ initialUser }: Props) {
     sidebarItems.forEach((item) => {
       if (!item.children) return;
       const hrefs = collectHrefs(item.children).map(normalizePath);
-      const match = hrefs.some((h) => current === h || current.startsWith(h + "/"));
+      const match = hrefs.some(
+        (h) => current === h || current.startsWith(h + "/")
+      );
       if (match) next[item.name] = true;
     });
     setExpanded(next);
@@ -145,7 +243,8 @@ export default function SidebarClient({ initialUser }: Props) {
   }
 
   const initials = (user.username || user.email).slice(0, 2).toUpperCase();
-  const hasPermission = (perm: string) => Boolean(user.role?.permissions?.includes(perm));
+  const hasPermission = (perm: string) =>
+    Boolean(user.role?.permissions?.includes(perm));
   const toggleCollapse = () => setCollapsed((c) => !c);
   const toggleExpand = (name: string) =>
     setExpanded((prev) => {
@@ -162,7 +261,8 @@ export default function SidebarClient({ initialUser }: Props) {
 
   /* -------- collapsed mode row with fly-out + hover bridge -------- */
   const CollapsedRow: React.FC<{ item: SidebarItem }> = ({ item }) => {
-    const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+    const hasChildren =
+      Array.isArray(item.children) && item.children.length > 0;
 
     return (
       <div
@@ -179,11 +279,16 @@ export default function SidebarClient({ initialUser }: Props) {
           title={item.name}
         >
           {item.href && !hasChildren ? (
-            <Link href={item.href} className="flex items-center justify-center w-full h-full">
+            <Link
+              href={item.href}
+              className="flex items-center justify-center w-full h-full"
+            >
               {item.icon}
             </Link>
           ) : (
-            <div className="w-full h-full flex items-center justify-center cursor-pointer">{item.icon}</div>
+            <div className="w-full h-full flex items-center justify-center cursor-pointer">
+              {item.icon}
+            </div>
           )}
         </div>
 
@@ -200,7 +305,9 @@ export default function SidebarClient({ initialUser }: Props) {
             "
           >
             {/* section title */}
-            <div className="px-3 py-2 text-xs font-semibold bg-white/10">{item.name}</div>
+            <div className="px-3 py-2 text-xs font-semibold bg-white/10 md:bg-white/10">
+              {item.name}
+            </div>
 
             <div className="py-2">
               {item.children?.map((child) => {
@@ -244,10 +351,22 @@ export default function SidebarClient({ initialUser }: Props) {
   };
 
   return (
+  <>
+    {/* Overlay for mobile */}
+    {collapsed === false && (
+      <div
+        onClick={toggleCollapse}
+        className="fixed inset-0 bg-black/30 z-40 md:hidden"
+      />
+    )}
     <aside
-      className={`flex flex-col justify-between bg-primary text-white transition-all duration-300 ease-in-out ${
-        collapsed ? "w-[60px]" : "w-[280px]"
-      } h-screen`}
+      className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out   
+    ${
+      collapsed
+        ? "-translate-x-full w-[60px]"
+        : "translate-x-0 w-[90%] md:w-[280px]"
+    }
+    md:static md:translate-x-0`}
     >
       <div className="flex flex-col gap-4 h-screen relative">
         <div className="flex items-center justify-center h-[80px] border-b-2 ">
@@ -257,26 +376,42 @@ export default function SidebarClient({ initialUser }: Props) {
             </div>
             {!collapsed && (
               <div className="flex flex-col transition-all whitespace-nowrap overflow-hidden duration-300 ease-in-out">
-                <span className="capitalize">{user.username ?? user.email}</span>
-                <span className="text-xs font-light">Role: {user.role?.name ?? "—"}</span>
+                <span className="capitalize">
+                  {user.username ?? user.email}
+                </span>
+                <span className="text-xs font-light">
+                  Role: {user.role?.name ?? "—"}
+                </span>
               </div>
             )}
           </div>
           <IconButton
-            icon={collapsed ? <LuArrowBigRight size={20} /> : <LuArrowBigLeft size={20} />}
+            icon={
+              collapsed ? (
+                <LuArrowBigRight size={20} />
+              ) : (
+                <LuArrowBigLeft size={20} />
+              )
+            }
             onClick={toggleCollapse}
-            ariaLabel={collapsed ? "Ouvrir la barre latérale" : "Fermer la barre latérale"}
+            ariaLabel={
+              collapsed
+                ? "Ouvrir la barre latérale"
+                : "Fermer la barre latérale"
+            }
           />
         </div>
 
         <nav
-          className={`flex flex-col justify-between max-h-[80%] select-none ${
-            collapsed ? "overflow-visible" : "overflow-hidden"
+          className={`flex flex-col justify-between max-h-[80%] select-none overflow-y-auto ${
+            collapsed ? "overflow-y-visible" : "overflow-hidden"
           } gap-2 py-4 flex-grow`}
         >
           <div>
             {sidebarItems
-              .filter((item) => !item.permission || hasPermission(item.permission))
+              .filter(
+                (item) => !item.permission || hasPermission(item.permission)
+              )
               .map((item) => {
                 const isOpen = !!expanded[item.name];
 
@@ -295,7 +430,9 @@ export default function SidebarClient({ initialUser }: Props) {
                           className="flex items-center px-8 h-8 cursor-pointer hover:bg-white hover:text-hoverText text-xs select-none"
                         >
                           <span className="mr-3">{item.icon}</span>
-                          <span className="flex-1 whitespace-nowrap overflow-hidden">{item.name}</span>
+                          <span className="flex-1 whitespace-nowrap overflow-hidden">
+                            {item.name}
+                          </span>
                           <span
                             className={`transform transition-transform duration-200 ease-in-out ${
                               isOpen ? "rotate-90" : "rotate-0"
@@ -306,7 +443,9 @@ export default function SidebarClient({ initialUser }: Props) {
                         </div>
                         <ul
                           className={`ml-8 flex flex-col gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out ${
-                            isOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+                            isOpen
+                              ? "max-h-60 opacity-100"
+                              : "max-h-0 opacity-0"
                           }`}
                         >
                           {item.children.map((child) => {
@@ -323,7 +462,9 @@ export default function SidebarClient({ initialUser }: Props) {
                                           href={subChild.href!}
                                           className="flex items-center px-8 h-6 hover:bg-white hover:text-hoverText"
                                         >
-                                          <span className="ml-5">{subChild.name}</span>
+                                          <span className="ml-5">
+                                            {subChild.name}
+                                          </span>
                                         </Link>
                                       </li>
                                     ))}
@@ -351,7 +492,9 @@ export default function SidebarClient({ initialUser }: Props) {
                         className="flex items-center px-8 h-8 hover:bg-white hover:text-hoverText transform transition-transform duration-200 ease-in-out text-xs mb-2"
                       >
                         <span className="mr-3">{item.icon}</span>
-                          <span className="flex-1 whitespace-nowrap overflow-hidden">{item.name}</span>
+                        <span className="flex-1 whitespace-nowrap overflow-hidden">
+                          {item.name}
+                        </span>
                       </Link>
                     )}
                   </div>
@@ -360,19 +503,21 @@ export default function SidebarClient({ initialUser }: Props) {
           </div>
 
           <div
-            className={`overflow-hidden flex items-center transition-all duration-300 ease-in-out ${
+            className={`flex items-center transition-all duration-300 ease-in-out ${
               collapsed ? "justify-center h-8 mt-8" : "justify-end h-16 mt-0"
             }`}
           >
             <button
               onClick={handleSignOut}
               className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
-                collapsed ? "" : "gap-2 h-10 w-fit p-2 border-y-2 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
+                collapsed
+                  ? ""
+                  : "gap-2 h-10 w-fit p-2 border-y-2 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
               }`}
             >
               <VscSignOut size={20} />
               {!collapsed && (
-                <span className="ml-2 duration-200 transition-all whitespace-nowrap overflow-hidden text-sm w-fit">
+                <span className="ml-2 duration-200 transition-all whitespace-nowrap text-sm w-fit">
                   SE DÉCONNECTER
                 </span>
               )}
@@ -381,5 +526,6 @@ export default function SidebarClient({ initialUser }: Props) {
         </nav>
       </div>
     </aside>
+      </>
   );
 }

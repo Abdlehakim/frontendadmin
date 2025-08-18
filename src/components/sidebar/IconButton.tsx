@@ -49,7 +49,9 @@ export default function IconButton({
 
   const base =
     "inline-flex items-center justify-center h-12 w-12 rounded-md border-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/70 cursor-pointer";
-  const float = floating ? "absolute -right-8 bottom-6" : "";
+  const float = floating
+  ? "absolute top-4 -right-8 md:top-auto md:-right-8 md:bottom-6"
+  : "";
   const colors = active
     ? "bg-secondary text-primary"
     : "bg-primary text-white hover:bg-secondary hover:scale-105";
