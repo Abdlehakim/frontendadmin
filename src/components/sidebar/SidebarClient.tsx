@@ -506,7 +506,7 @@ export default function SidebarClient({ initialUser }: Props) {
                                               aria-current={
                                                 active ? "page" : undefined
                                               }
-                                              className={`flex items-center px-8 h-6 ${
+                                              className={`flex items-center px-8 h-8 ${
                                                 active
                                                   ? "bg-white text-black"
                                                   : "hover:bg-white hover:text-hoverText"
@@ -530,7 +530,7 @@ export default function SidebarClient({ initialUser }: Props) {
                                   <Link
                                     href={child.href!}
                                     aria-current={active ? "page" : undefined}
-                                    className={`flex items-center px-8 h-6 ${
+                                    className={`flex items-center px-8 h-8 ${
                                       active
                                         ? "bg-white text-black"
                                         : "hover:bg-white hover:text-hoverText"
