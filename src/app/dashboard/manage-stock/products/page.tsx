@@ -276,7 +276,7 @@ export default function ProductsClientPage() {
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col justify-between h-fit min-h-screen md:h-screen">
       <div className="flex flex-col gap-4 h-full">
-        <div className="flex h-fit mx-auto w-full justify-between items-center">
+        <div className="flex h-fit mx-auto w-full justify-between items-center select-none">
           <h1 className="text-3xl font-bold uppercase">Produits</h1>
 
           {/* Desktop: text button / Mobile: icon-only */}
@@ -338,13 +338,13 @@ export default function ProductsClientPage() {
 
           <div className="relative flex-1 overflow-auto h-full">
             {/* ===== Desktop table body ===== */}
-            <table className="table-fixed w-full hidden md:table h-fit">
+            <table className="table-fixed w-full hidden md:table h-fit max-h-full">
               {displayed.length === 0 && !loading ? (
                 <tbody>
-                  <tr>
+                  <tr >
                     <td
-                      colSpan={5}
-                      className="py-6 text-center text-gray-600 h-full"
+                      colSpan={5}        
+                      className="py-6 text-center text-gray-600"
                     >
                       Aucun produit trouvé.
                     </td>
