@@ -310,7 +310,7 @@ export default function ProductsClientPage() {
               setCurrentPage(1);
             }}
             placeholder="Nom du produit"
-            className="w-[50%] border border-gray-300 rounded px-2 py-1"
+            className="w-[50%] md:w-[20%] border border-gray-300 rounded px-2 py-1"
           />
         </div>
 
@@ -337,8 +337,8 @@ export default function ProductsClientPage() {
           </table>
 
           <div className="relative flex-1 overflow-auto h-full">
-            {/* ===== Desktop table body (unchanged) ===== */}
-            <table className="table-fixed w-full hidden md:table h-full">
+            {/* ===== Desktop table body ===== */}
+            <table className="table-fixed w-full hidden md:table h-fit">
               {displayed.length === 0 && !loading ? (
                 <tbody>
                   <tr>
@@ -351,31 +351,36 @@ export default function ProductsClientPage() {
                   </tr>
                 </tbody>
               ) : (
-                <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
+                <tbody
+                  className="
+                    divide-y divide-gray-200
+                    [&>tr>td]:h-14
+                  "
+                >
                   {displayed.map((p, i) => (
                     <tr
                       key={p._id}
                       className={i % 2 ? "bg-gray-100" : "bg-white"}
                     >
-                      <td className="py-2 text-center">{p.reference}</td>
-                      <td className="py-2 text-center font-semibold truncate">
+                      <td className=" text-center">{p.reference}</td>
+                      <td className=" text-center font-semibold truncate">
                         {p.name}
                       </td>
-                      <td className="py-2 text-center max-2xl:hidden">
+                      <td className=" text-center max-2xl:hidden">
                         {p.updatedBy?.username || p.createdBy?.username || "—"}
                       </td>
-                      <td className="py-2 text-center max-2xl:hidden">
+                      <td className=" text-center max-2xl:hidden">
                         {new Date(
                           p.updatedAt || p.createdAt
                         ).toLocaleDateString()}
                       </td>
-                      <td className="py-2 w-5/9">
-                        <div className="flex justify-center items-center gap-2">
+                      <td className="w-5/9">
+                        <div className="flex justify-center items-center gap-2 h-8">
                           <NiceSelect<Vadmin>
                             value={p.vadmin}
                             options={ADMIN_OPTIONS as readonly Vadmin[]}
                             onChange={(v) => updateField(p._id, "vadmin", v)}
-                            className="truncate"
+                            className="h-8 py-0 leading-8 truncate"
                           />
 
                           <NiceSelect<StockStatus>
@@ -384,7 +389,7 @@ export default function ProductsClientPage() {
                             onChange={(v) =>
                               updateField(p._id, "stockStatus", v)
                             }
-                            className="truncate"
+                            className="h-8 py-0 leading-8 truncate"
                           />
 
                           <NiceSelect<StatusPage>
@@ -396,26 +401,26 @@ export default function ProductsClientPage() {
                             display={(v) =>
                               v === "none" ? "Aucune" : v.replace("-", " ")
                             }
-                            className="truncate"
+                            className="h-8 py-0 leading-8 truncate"
                           />
 
                           <Link
                             href={`/dashboard/manage-stock/products/update/${p._id}`}
                           >
-                            <button className="ButtonSquare">
+                            <button className="ButtonSquare h-8">
                               <FaRegEdit size={14} />
                             </button>
                           </Link>
                           <Link
                             href={`/dashboard/manage-stock/products/voir/${p._id}`}
                           >
-                            <button className="ButtonSquare">
+                            <button className="ButtonSquare h-8">
                               <FaRegEye size={14} />
                             </button>
                           </Link>
                           <button
                             onClick={() => openDelete(p._id, p.name)}
-                            className="ButtonSquare"
+                            className="ButtonSquare h-8"
                           >
                             <FaTrashAlt size={14} />
                           </button>
@@ -438,7 +443,7 @@ export default function ProductsClientPage() {
                   {displayed.map((p, i) => (
                     <div
                       key={p._id}
-                      className={`rounded-md border ${
+                      className={`rounded-md m-2 border-1 border-primary/20  ${
                         i % 2 ? "bg-gray-100" : "bg-white"
                       } p-3 shadow-sm`}
                     >
@@ -521,7 +526,7 @@ export default function ProductsClientPage() {
             </div>
 
             {loading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white h-screen bg-opacity-75">
                 <FaSpinner className="animate-spin text-3xl" />
               </div>
             )}
