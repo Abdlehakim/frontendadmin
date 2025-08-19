@@ -278,7 +278,7 @@ export default function ProductsClientPage() {
         </div>
       </div>
 
-      <div className="flex justify-start gap-2 items-center h-fit">
+      <div className="flex justify-start gap-2 items-center h-fit w-full">
           <label className="font-medium">Recherche :</label>
           <input
             value={searchTerm}
@@ -287,7 +287,7 @@ export default function ProductsClientPage() {
               setCurrentPage(1);
             }}
             placeholder="Nom du produit"
-            className="border border-gray-300 rounded px-2 py-1"
+            className="w-[50%] border border-gray-300 rounded px-2 py-1"
           />
       </div>
 
