@@ -410,7 +410,7 @@ export default function SidebarClient({ initialUser }: Props) {
                 {initials}
               </div>
               {!collapsed && (
-                <div className="flex flex-col transition-all whitespace-nowrap overflow-hidden duration-300 ease-in-out">
+                <div className="flex flex-col transition-all whitespace-nowrap duration-500 ease-in-out">
                   <span className="capitalize">
                     {user.username ?? user.email}
                   </span>
@@ -442,7 +442,7 @@ export default function SidebarClient({ initialUser }: Props) {
               collapsed ? "overflow-y-visible" : "overflow-hidden"
             } gap-2 flex-grow`}
           >
-            <div className="flex flex-col md:gap-2">
+            <div className="flex flex-col">
               {sidebarItems
                 .filter(
                   (item) => !item.permission || hasPermission(item.permission)
@@ -481,7 +481,7 @@ export default function SidebarClient({ initialUser }: Props) {
                             </span>
                           </div>
                           <ul
-                            className={`ml-8 flex flex-col gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out ${
+                            className={`ml-8 flex flex-col md:gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out ${
                               isOpen
                                 ? "max-h-60 opacity-100"
                                 : "max-h-0 opacity-0"
@@ -571,7 +571,7 @@ export default function SidebarClient({ initialUser }: Props) {
 
             <div
               className={`flex items-center transition-all duration-300 ease-in-out cursor-pointer ${
-                collapsed ? "h-12 gap-2 justify-center items-center w-full transition-all duration-200 hover:bg-white hover:text-black mt-[80%]" : "justify-center md:justify-end h-16"
+                collapsed ? "h-12 gap-2 justify-center items-center w-full transition-all duration-200 hover:bg-white hover:text-black mt-[80%]" : "justify-center h-16 mt-[20%]"
               }`}
             >
               <button
@@ -579,7 +579,7 @@ export default function SidebarClient({ initialUser }: Props) {
                 className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
                   collapsed
                     ? ""
-                    : "gap-2 h-10 w-fit p-2 border-y-2 border-x-2 rounded-r-md md:rounded-r-none md:border-r-0 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
+                    : "gap-2 h-10 w-fit p-2 border-y-2 border-2 rounded-md border-gray-200 hover:bg-white hover:text-hoverText"
                 }`}
               >
                 <VscSignOut size={20} />
