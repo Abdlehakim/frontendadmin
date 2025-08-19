@@ -408,7 +408,7 @@ export default function SidebarClient({ initialUser }: Props) {
         <div className="flex flex-col gap-4 h-screen relative">
           <div className="flex items-center justify-center h-[80px] border-b-2 ">
             <div className="flex items-center gap-2">
-              <div className="bg-white px-2 rounded-sm text-2xl text-primary  flex items-center justify-center font-bold">
+              <div className="bg-white px-2 rounded-sm text-2xl text-primary flex items-center justify-center font-bold">
                 {initials}
               </div>
               {!collapsed && (
@@ -440,9 +440,9 @@ export default function SidebarClient({ initialUser }: Props) {
           </div>
 
           <nav
-            className={`flex flex-col justify-between mb-20 select-none overflow-y-auto ${
+            className={`flex flex-col select-none overflow-y-auto ${
               collapsed ? "overflow-y-visible" : "overflow-hidden"
-            } gap-2 py-4 flex-grow`}
+            } gap-2 flex-grow`}
           >
             <div>
               {sidebarItems
@@ -573,7 +573,7 @@ export default function SidebarClient({ initialUser }: Props) {
 
             <div
               className={`flex items-center transition-all duration-300 ease-in-out ${
-                collapsed ? "justify-center h-8 mt-8" : "justify-end h-16 mt-0"
+                collapsed ? "justify-center h-8 mt-8" : "justify-center md:justify-end h-16 mt-0"
               }`}
             >
               <button
@@ -581,7 +581,7 @@ export default function SidebarClient({ initialUser }: Props) {
                 className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
                   collapsed
                     ? ""
-                    : "gap-2 h-10 w-fit p-2 border-y-2 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
+                    : "gap-2 h-10 w-fit p-2 border-y-2 border-x-2 rounded-r-md md:rounded-r-none md:border-r-0 border-l-2 rounded-l-md border-gray-200 hover:bg-white hover:text-hoverText"
                 }`}
               >
                 <VscSignOut size={20} />
