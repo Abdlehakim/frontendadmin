@@ -256,7 +256,7 @@ export default function ProductsClientPage() {
 
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4">
-      <div className="flex h-fit mx-auto md:w-full w-[80%] justify-between items-center">
+      <div className="flex h-fit mx-auto w-full justify-between items-center">
         <h1 className="text-3xl font-bold uppercase">Produits</h1>
 
         {/* Desktop: text button / Mobile: icon-only */}
