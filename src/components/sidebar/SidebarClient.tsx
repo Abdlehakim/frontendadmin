@@ -585,8 +585,8 @@ export default function SidebarClient({ initialUser }: Props) {
             <div
               className={`flex items-center transition-all duration-300 ease-in-out cursor-pointer ${
                 collapsed
-                  ? "h-12 gap-2 justify-center items-center w-full transition-all duration-200 hover:bg-white hover:text-black my-10"
-                  : "justify-center h-16 my-10"
+                  ? "h-12 gap-2 justify-center items-center w-full transition-all duration-200 hover:bg-white hover:text-black"
+                  : "justify-center h-16"
               }`}
             >
               <button
