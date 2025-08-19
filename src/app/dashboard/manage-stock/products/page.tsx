@@ -526,18 +526,19 @@ export default function ProductsClientPage() {
             </div>
 
             {loading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white h-screen bg-opacity-75">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white h-screen md:h-full bg-opacity-75">
                 <FaSpinner className="animate-spin text-3xl" />
               </div>
             )}
           </div>
         </div>
       </div>
+      {!loading && (
       <PaginationAdmin
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
-      />
+      />)}
       {isDeleteOpen && (
         <Popup
           id={deleteId}
