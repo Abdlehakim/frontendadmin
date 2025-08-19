@@ -48,8 +48,8 @@ export default function StepDetails({
 
   if (loading) {
     return (
-      <section className="flex gap-6 h-full">
-        <div className="flex flex-col gap-4 w-1/2 h-full px-6">
+      <section className="flex flex-col md:flex-row gap-6 h-full">
+        <div className="flex flex-col gap-4 w-full md:w-1/2 h-full px-6">
           <Skel className="h-4 w-24" />
           <Skel className="h-10 w-full" />
           <Skel className="h-4 w-20" />
@@ -66,8 +66,8 @@ export default function StepDetails({
   }
 
   return (
-    <section className="flex gap-6 h-full">
-      <div className="flex flex-col gap-4 w-1/2 h-full px-6">
+    <section className="flex flex-col md:flex-row gap-6 h-full">
+      <div className="flex flex-col gap-4 w-full md:w-1/2 h-full px-6">
         {(["name", "info", "description"] as const).map((k) => (
           <label key={k} className={"flex flex-col gap-1 " + (k === "description" ? "flex-1" : "")}>
             <span className="text-sm font-medium">{labels[k]}</span>
@@ -91,7 +91,7 @@ export default function StepDetails({
         ))}
       </div>
 
-      <div className="flex flex-col gap-4 w-1/2 h-full">
+      <div className="flex flex-col gap-4 w-full md:w-1/2 h-full px-6">
         <div
           onClick={chooseMain}
           className="relative border-2 border-gray-300 rounded-lg h-1/2 cursor-pointer hover:border-gray-400 transition"

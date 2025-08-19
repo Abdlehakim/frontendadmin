@@ -3,7 +3,16 @@
 // ───────────────────────────────────────────────────────────────
 "use client";
 
-import React, { useMemo, useState, useRef } from "react";
+import React, {
+  useMemo,
+  useState,
+  useRef,
+  useCallback,
+  useLayoutEffect,
+  useEffect,
+} from "react";
+import { createPortal } from "react-dom";
+import { FiChevronDown, FiCheck } from "react-icons/fi";
 import Image from "next/image";
 import type { ProductForm } from "@/app/dashboard/manage-stock/products/create/page";
 import type {
@@ -55,6 +64,146 @@ function hasImage(x: unknown): x is { image: string } {
   return isObject(x) && typeof (x as { image?: unknown }).image === "string";
 }
 
+/* --------------------- NiceSelect (same as StepData) --------------------- */
+type StringUnion = string;
+interface NiceSelectProps<T extends StringUnion> {
+  value: T;
+  options: readonly T[];
+  onChange: (v: T) => void;
+  display?: (v: T) => string;
+  className?: string;
+  minWidth?: number;
+  allowClear?: boolean;
+  clearLabel?: string;
+}
+function NiceSelect<T extends StringUnion>({
+  value,
+  options,
+  onChange,
+  display,
+  className = "",
+  minWidth = 160,
+  allowClear = false,
+  clearLabel = "Aucune",
+}: NiceSelectProps<T>) {
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const label = display ? display(value) : String(value);
+
+  const updatePos = useCallback(() => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setPos({ top: r.bottom + 4, left: r.left, width: Math.max(r.width, minWidth) });
+  }, [minWidth]);
+
+  useLayoutEffect(() => {
+    if (open) updatePos();
+  }, [open, updatePos]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t)) return;
+      if ((t as HTMLElement).closest("[data-niceselect-root]")) return;
+      setOpen(false);
+    };
+    const onMove = () => updatePos();
+    document.addEventListener("mousedown", onDoc);
+    window.addEventListener("resize", onMove);
+    window.addEventListener("scroll", onMove, true);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      window.removeEventListener("resize", onMove);
+      window.removeEventListener("scroll", onMove, true);
+    };
+  }, [open, updatePos]);
+
+  return (
+    <>
+      <button
+        type="button"
+        ref={btnRef}
+        onClick={() => setOpen((s) => !s)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`inline-flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-medium
+                    bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100
+                    focus:outline-none focus:ring-2 focus:ring-emerald-400 ${className}`}
+        style={{ minWidth }}
+      >
+        <span className="truncate">{label || "—"}</span>
+        <FiChevronDown className="shrink-0" />
+      </button>
+
+      {open && pos &&
+        createPortal(
+          <div
+            data-niceselect-root
+            className="fixed z-[1000]"
+            style={{ top: pos.top, left: pos.left, width: pos.width }}
+          >
+            <div className="rounded-md border bg-white shadow-lg max-h-60 overflow-auto" role="listbox">
+              {allowClear && (
+                <button
+                  type="button"
+                  className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2
+                              ${String(value) === "" ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
+                              hover:bg-emerald-100 hover:text-emerald-800`}
+                  onClick={() => {
+                    onChange("" as unknown as T);
+                    setOpen(false);
+                  }}
+                  role="option"
+                  aria-selected={String(value) === ""}
+                >
+                  <span
+                    className={`inline-flex h-4 w-4 items-center justify-center rounded-sm border
+                                ${String(value) === "" ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 text-transparent"}`}
+                  >
+                    <FiCheck size={12} />
+                  </span>
+                  <span className="truncate">{clearLabel}</span>
+                </button>
+              )}
+
+              {options.map((opt) => {
+                const isActive = opt === value;
+                const text = display ? display(opt) : String(opt);
+                return (
+                  <button
+                    key={String(opt)}
+                    type="button"
+                    className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2
+                                ${isActive ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
+                                hover:bg-emerald-100 hover:text-emerald-800`}
+                    onClick={() => {
+                      onChange(opt);
+                      setOpen(false);
+                    }}
+                    role="option"
+                    aria-selected={isActive}
+                  >
+                    <span
+                      className={`inline-flex h-4 w-4 items-center justify-center rounded-sm border
+                                  ${isActive ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 text-transparent"}`}
+                    >
+                      <FiCheck size={12} />
+                    </span>
+                    <span className="truncate">{text}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
+  );
+}
+
 /* ================================ Component ================================ */
 export default function StepReview({
   form,
@@ -66,7 +215,7 @@ export default function StepReview({
   detailsPayload,
   lookupMaps,
 }: Props) {
-  // Tabs
+  // Sections (formerly tabs)
   const tabs: Array<{ id: TabId; label: string }> = [
     { id: "infos", label: "Informations" },
     { id: "images", label: "Images" },
@@ -75,32 +224,6 @@ export default function StepReview({
     { id: "details", label: "Détails" },
   ];
   const [active, setActive] = useState<TabId>("infos");
-  const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({
-    infos: null,
-    images: null,
-    statuts: null,
-    attributs: null,
-    details: null,
-  });
-
-  const switchTab = (id: TabId) => setActive(id);
-
-  // Keyboard navigation (← → Home End)
-  const onKeyNav = (e: React.KeyboardEvent, idx: number) => {
-    const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
-    if (!keys.includes(e.key)) return;
-    e.preventDefault();
-    const order = tabs.map((t) => t.id);
-    let nextIndex = idx;
-    if (e.key === "ArrowLeft")
-      nextIndex = (idx - 1 + order.length) % order.length;
-    if (e.key === "ArrowRight") nextIndex = (idx + 1) % order.length;
-    if (e.key === "Home") nextIndex = 0;
-    if (e.key === "End") nextIndex = order.length - 1;
-    const nextId = order[nextIndex] as TabId;
-    setActive(nextId);
-    tabRefs.current[nextId]?.focus();
-  };
 
   const filePreview = (file: File) => URL.createObjectURL(file);
 
@@ -124,7 +247,6 @@ export default function StepReview({
     []
   );
 
-  // Order so that: Nom → Description (full width) → Infos (full width) → Catégorie (left) + Sous-catégorie (right) → rest
   const primaryOrder: (keyof ProductForm)[] = [
     "name",
     "description",
@@ -281,9 +403,9 @@ export default function StepReview({
     children: React.ReactNode;
   }) => (
     <div
-      role="tabpanel"
+      role="region"
       id={`panel-${id}`}
-      aria-labelledby={`tab-${id}`}
+      aria-labelledby={`section-${id}`}
       hidden={active !== id}
       className="pt-5"
     >
@@ -296,52 +418,24 @@ export default function StepReview({
       <header className="space-y-1">
         <h2 className="text-2xl font-bold">Récapitulatif du produit</h2>
         <p className="text-sm text-slate-500">
-          Basculez entre les onglets pour parcourir les informations.
+          Choisissez une section pour parcourir les informations.
         </p>
       </header>
 
-      {/* --- Tabs --- */}
-      <nav className="border-b border-slate-200">
-        <div
-          role="tablist"
-          aria-label="Onglets récapitulatif"
-          className="flex gap-6"
-        >
-          {tabs.map((t, idx) => {
-            const isActive = active === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                className={`group relative -mb-px px-3 pt-2 pb-2 text-sm font-medium transition-colors cursor-pointer
-    ${isActive ? "text-secondary" : "hover:text-secondary text-primary"}`}
-                onClick={() => switchTab(t.id)}
-                onKeyDown={(e) => onKeyNav(e, idx)}
-                id={`tab-${t.id}`}
-                role="tab"
-                aria-selected={isActive}
-                aria-controls={`panel-${t.id}`}
-                tabIndex={isActive ? 0 : -1}
-              >
-                {t.label}
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute left-2 right-2 -bottom-[1px] h-0.5 rounded transition-opacity
-      ${
-        isActive
-          ? "bg-secondary opacity-100"
-          : "opacity-0 group-hover:opacity-100 group-hover:bg-secondary"
-      }`}
-                />
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+      {/* --- Dropdown (styled exactly like StepData) --- */}
+      <div className="border-b border-slate-200 pb-3 flex justify-center">
+        <NiceSelect<TabId>
+          value={active}
+          options={tabs.map((t) => t.id) as readonly TabId[]}
+          onChange={(v) => setActive(v)}
+          display={(v) => tabs.find((t) => t.id === v)?.label ?? "—"}
+          /* no allowClear for sections */
+        />
+      </div>
 
-      {/* --- Tab panels --- */}
+      {/* --- Panels --- */}
       <Panel id="infos">
-        <dl className="grid md:grid-cols-2 gap-x-6 gap-y-3">
+        <dl className="grid grid-cols-2 md:grid-cols-2 gap-2 md:gap-x-6 md:gap-y-3">
           {primaryOrder.map((k) => (
             <div
               key={k}
@@ -373,7 +467,7 @@ export default function StepReview({
       </Panel>
 
       <Panel id="statuts">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col md:flex-wrap gap-3">
           {statusKeys.map((k) => (
             <div key={k} className="flex items-center gap-2">
               <span className="text-xs text-slate-500">{fieldLabels[k]} :</span>

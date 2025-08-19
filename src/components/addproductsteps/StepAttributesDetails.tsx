@@ -266,8 +266,8 @@ export default function StepAttributesDetails({
 
   /* ----------------------- UI ----------------------- */
   return (
-    <div className="flex gap-8 w-full">
-      <div className="flex flex-col gap-2 w-1/2 px-4">
+    <div className="flex flex-col md:flex-row gap-8 w-full">
+      <div className="flex flex-col gap-2 w-full md:w-1/2 px-4">
         <legend className="text-2xl font-bold">Attributs</legend>
 
         <select
@@ -423,7 +423,7 @@ export default function StepAttributesDetails({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 w-1/2 px-4">
+      <div className="flex flex-col gap-2 w-full  md:w-1/2 px-4">
         <legend className="text-2xl font-bold">Détails du produit</legend>
 
         <div className="space-y-4">

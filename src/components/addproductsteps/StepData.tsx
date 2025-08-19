@@ -226,7 +226,7 @@ export default function StepData({
   );
 
   return (
-    <section className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+    <section className="grid gap-6 grid-cols-2 md:grid-cols-2 xl:grid-cols-3 px-6">
       {DATA_FIELDS.map((field: DataField) => {
         if (field === "categorie") {
           return (

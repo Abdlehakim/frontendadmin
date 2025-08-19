@@ -82,10 +82,10 @@ export default function Color({
 
   return (
     <div className="flex flex-col rounded p-2">
-      <div className="grid grid-cols-12 gap-3 text-xs font-semibold text-gray-600 bg-white px-2 py-2 sticky top-0 z-10">
+      <div className="grid grid-cols-8 gap-3 text-xs font-semibold text-gray-600 bg-white px-2 py-2 sticky top-0 z-10">
         <div className="col-span-4">Nom</div>
-        <div className="col-span-4">Couleur</div>
-        <div className="col-span-3">Image</div>
+        <div className="col-span-2">Couleur</div>
+        <div className="col-span-1">Image</div>
         <div className="col-span-1" />
       </div>
 
@@ -100,7 +100,7 @@ export default function Color({
           return (
             <div
               key={idx}
-              className={`grid grid-cols-12 gap-3 items-center px-2 py-2 rounded ${
+              className={`grid grid-cols-8 gap-3 items-center px-2 py-2 rounded ${
                 idx % 2 === 0 ? "bg-gray-50" : "bg-white"
               } hover:bg-gray-100`}
             >
@@ -113,7 +113,7 @@ export default function Color({
               />
 
               {/* Couleur: swatch that FILLS the entire box + hex field */}
-              <div className="col-span-4 flex items-center gap-3">
+              <div className="col-span-2 flex items-center gap-3">
                 <div className="relative h-10 w-10 rounded-md border border-slate-300 shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-primary">
                   <div
                     className="absolute inset-0"
@@ -129,21 +129,11 @@ export default function Color({
                   />
                 </div>
 
-                <input
-                  className={`h-10 border px-3 rounded-md w-40 font-mono text-xs uppercase tracking-wide ${
-                    c.hex && !valid ? "border-red-400" : "border-slate-300"
-                  } focus:outline-none focus:ring-2 focus:ring-primary`}
-                  placeholder="#rrggbb"
-                  value={c.hex}
-                  onChange={(e) => setHex(idx, e.target.value)}
-                  onBlur={(e) => setHex(idx, e.target.value, true)}
-                  aria-invalid={Boolean(c.hex && !valid)}
-                  aria-label="Valeur hexadécimale"
-                />
+            
               </div>
 
               {/* Image */}
-              <div className="col-span-3 flex items-center gap-2">
+              <div className="col-span-1 flex items-center gap-2">
                 {!c.image ? (
                   <label
                     className="flex items-center gap-1 text-gray-600 cursor-pointer hover:text-blue-600"
