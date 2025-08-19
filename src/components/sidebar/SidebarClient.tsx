@@ -288,7 +288,7 @@ export default function SidebarClient({ initialUser }: Props) {
       <div
         key={item.name}
         className="
-          group relative fkex flex-col gap-4
+          group relative flex flex-col md:gap-2
         "
       >
         {/* icon cell */}
@@ -442,7 +442,7 @@ export default function SidebarClient({ initialUser }: Props) {
               collapsed ? "overflow-y-visible" : "overflow-hidden"
             } gap-2 flex-grow`}
           >
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col md:gap-2">
               {sidebarItems
                 .filter(
                   (item) => !item.permission || hasPermission(item.permission)
