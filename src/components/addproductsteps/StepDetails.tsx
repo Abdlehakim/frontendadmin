@@ -94,7 +94,7 @@ export default function StepDetails({
       <div className="flex flex-col gap-4 w-full md:w-1/2 h-full px-6">
         <div
           onClick={chooseMain}
-          className="relative border-2 border-gray-300 rounded-lg h-1/2 cursor-pointer hover:border-gray-400 transition"
+          className="relative border-2 border-gray-300 rounded-lg h-full md:h-1/2 cursor-pointer hover:border-gray-400 transition"
         >
           <div className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
             <PiImage size={24} />
@@ -129,7 +129,7 @@ export default function StepDetails({
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-400 text-center">
+            <div className="flex items-center justify-center h-70 md:h-full text-gray-400 text-center">
               Cliquez pour importer
               <br />
               Image principale
@@ -139,13 +139,13 @@ export default function StepDetails({
 
         <div
           onClick={chooseExtra}
-          className="relative border-2 border-gray-300 rounded-lg h-1/2 cursor-pointer hover:border-gray-400 transition"
+          className="relative border-2 border-gray-300 rounded-lg md:h-1/2 cursor-pointer hover:border-gray-400 transition h-full"
         >
           <div className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
             <PiImage size={24} />
           </div>
 
-          <div className="flex flex-wrap items-start gap-2 p-2 overflow-auto h-full">
+          <div className="flex flex-wrap items-start gap-2 p-2 overflow-auto h-70 md:h-full">
             {existingExtraImagesUrls.map((url, idx) => (
               <div key={idx} className="relative w-[80px] h-[100px] rounded overflow-hidden">
                 <Image src={url} alt={`Supplémentaire ${idx + 1}`} fill className="object-cover" />

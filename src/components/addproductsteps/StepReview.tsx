@@ -12,8 +12,8 @@ import React, {
   useEffect,
 } from "react";
 import { createPortal } from "react-dom";
-import { FiChevronDown, FiCheck } from "react-icons/fi";
 import Image from "next/image";
+import { FiChevronDown, FiCheck } from "react-icons/fi";
 import type { ProductForm } from "@/app/dashboard/manage-stock/products/create/page";
 import type {
   AttributePayload,
@@ -64,7 +64,7 @@ function hasImage(x: unknown): x is { image: string } {
   return isObject(x) && typeof (x as { image?: unknown }).image === "string";
 }
 
-/* --------------------- NiceSelect (same as StepData) --------------------- */
+/* --------------------- NiceSelect (copied from StepData) --------------------- */
 type StringUnion = string;
 interface NiceSelectProps<T extends StringUnion> {
   value: T;
@@ -150,7 +150,7 @@ function NiceSelect<T extends StringUnion>({
                 <button
                   type="button"
                   className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2
-                              ${String(value) === "" ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
+                              ${value === ("" as unknown as T) ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
                               hover:bg-emerald-100 hover:text-emerald-800`}
                   onClick={() => {
                     onChange("" as unknown as T);
@@ -215,7 +215,7 @@ export default function StepReview({
   detailsPayload,
   lookupMaps,
 }: Props) {
-  // Sections (formerly tabs)
+  // Tabs
   const tabs: Array<{ id: TabId; label: string }> = [
     { id: "infos", label: "Informations" },
     { id: "images", label: "Images" },
@@ -224,6 +224,32 @@ export default function StepReview({
     { id: "details", label: "Détails" },
   ];
   const [active, setActive] = useState<TabId>("infos");
+  const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({
+    infos: null,
+    images: null,
+    statuts: null,
+    attributs: null,
+    details: null,
+  });
+
+  const switchTab = (id: TabId) => setActive(id);
+
+  // Keyboard navigation (← → Home End)
+  const onKeyNav = (e: React.KeyboardEvent, idx: number) => {
+    const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
+    if (!keys.includes(e.key)) return;
+    e.preventDefault();
+    const order = tabs.map((t) => t.id);
+    let nextIndex = idx;
+    if (e.key === "ArrowLeft")
+      nextIndex = (idx - 1 + order.length) % order.length;
+    if (e.key === "ArrowRight") nextIndex = (idx + 1) % order.length;
+    if (e.key === "Home") nextIndex = 0;
+    if (e.key === "End") nextIndex = order.length - 1;
+    const nextId = order[nextIndex] as TabId;
+    setActive(nextId);
+    tabRefs.current[nextId]?.focus();
+  };
 
   const filePreview = (file: File) => URL.createObjectURL(file);
 
@@ -247,6 +273,7 @@ export default function StepReview({
     []
   );
 
+  // Order so that: Nom → Description → Infos → Catégorie → Sous-catégorie → rest
   const primaryOrder: (keyof ProductForm)[] = [
     "name",
     "description",
@@ -403,9 +430,9 @@ export default function StepReview({
     children: React.ReactNode;
   }) => (
     <div
-      role="region"
+      role="tabpanel"
       id={`panel-${id}`}
-      aria-labelledby={`section-${id}`}
+      aria-labelledby={`tab-${id}`}
       hidden={active !== id}
       className="pt-5"
     >
@@ -418,24 +445,69 @@ export default function StepReview({
       <header className="space-y-1">
         <h2 className="text-2xl font-bold">Récapitulatif du produit</h2>
         <p className="text-sm text-slate-500">
-          Choisissez une section pour parcourir les informations.
+          Basculez entre les onglets pour parcourir les informations.
         </p>
       </header>
 
-      {/* --- Dropdown (styled exactly like StepData) --- */}
-      <div className="border-b border-slate-200 pb-3 flex justify-center">
+      {/* --- Mobile dropdown (<= md): NiceSelect, identical look to StepData --- */}
+      <div className="md:hidden">
+        <label htmlFor="review-tab" className="sr-only">
+          Onglet
+        </label>
         <NiceSelect<TabId>
           value={active}
           options={tabs.map((t) => t.id) as readonly TabId[]}
           onChange={(v) => setActive(v)}
           display={(v) => tabs.find((t) => t.id === v)?.label ?? "—"}
-          /* no allowClear for sections */
+          className="w-full"
         />
       </div>
 
-      {/* --- Panels --- */}
+      {/* --- Tabs (desktop ≥ md) — unchanged --- */}
+      <nav className="border-b border-slate-200 hidden md:block">
+        <div
+          role="tablist"
+          aria-label="Onglets récapitulatif"
+          className="flex gap-6"
+        >
+          {tabs.map((t, idx) => {
+            const isActive = active === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                className={`group relative -mb-px px-3 pt-2 pb-2 text-sm font-medium transition-colors cursor-pointer
+    ${isActive ? "text-secondary" : "hover:text-secondary text-primary"}`}
+                onClick={() => switchTab(t.id)}
+                onKeyDown={(e) => onKeyNav(e, idx)}
+                id={`tab-${t.id}`}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`panel-${t.id}`}
+                tabIndex={isActive ? 0 : -1}
+                ref={(el: HTMLButtonElement | null) => {
+  tabRefs.current[t.id] = el;
+}}
+              >
+                {t.label}
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute left-2 right-2 -bottom-[1px] h-0.5 rounded transition-opacity
+      ${
+        isActive
+          ? "bg-secondary opacity-100"
+          : "opacity-0 group-hover:opacity-100 group-hover:bg-secondary"
+      }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* --- Tab panels --- */}
       <Panel id="infos">
-        <dl className="grid grid-cols-2 md:grid-cols-2 gap-2 md:gap-x-6 md:gap-y-3">
+        <dl className="grid md:grid-cols-2 gap-x-6 gap-y-3">
           {primaryOrder.map((k) => (
             <div
               key={k}
@@ -467,7 +539,7 @@ export default function StepReview({
       </Panel>
 
       <Panel id="statuts">
-        <div className="flex flex-col md:flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3">
           {statusKeys.map((k) => (
             <div key={k} className="flex items-center gap-2">
               <span className="text-xs text-slate-500">{fieldLabels[k]} :</span>

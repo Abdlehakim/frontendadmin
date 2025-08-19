@@ -322,7 +322,7 @@ export default function CreateProductPage() {
   const chooseExtra = () => extraRef.current?.click();
 
   return (
-    <div className="relative mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+    <div className="relative mx-auto pt-4 w-[95%] flex flex-col gap-4 h-full">
       <ProductBreadcrumb
         baseHref="/dashboard/manage-stock/products"
         baseLabel="Tous les produits"
@@ -335,7 +335,7 @@ export default function CreateProductPage() {
         onStepClick={(s) => setStep(s as 1 | 2 | 3 | 4)}
       />
 
-      <form onSubmit={handleSubmit} className="flex flex-col justify-between gap-8 h-full">
+      <form onSubmit={handleSubmit} className="flex flex-1 flex-col justify-between gap-8 h-fit ">
         {step === 1 && (
           <StepDetails
             form={form}
