@@ -288,14 +288,12 @@ export default function SidebarClient({ initialUser }: Props) {
       <div
         key={item.name}
         className="
-          group relative
-          before:absolute before:left-full before:top-0 before:bottom-0 before:w-2
-          before:content-['']  /* hover bridge = same as ml-2 */
+          group relative fkex flex-col gap-4
         "
       >
         {/* icon cell */}
         <div
-          className={`flex h-8 gap-2 justify-center items-center w-full transition-all duration-200 ${
+          className={`flex h-12 gap-2 justify-center items-center w-full transition-all duration-200 ${
             active ? "bg-white text-black" : "hover:bg-white hover:text-black"
           }`}
           title={item.name}
@@ -444,7 +442,7 @@ export default function SidebarClient({ initialUser }: Props) {
               collapsed ? "overflow-y-visible" : "overflow-hidden"
             } gap-2 flex-grow`}
           >
-            <div>
+            <div className="flex flex-col gap-2">
               {sidebarItems
                 .filter(
                   (item) => !item.permission || hasPermission(item.permission)
@@ -464,7 +462,7 @@ export default function SidebarClient({ initialUser }: Props) {
                         <>
                           <div
                             onClick={() => toggleExpand(item.name)}
-                            className={`flex items-center px-8 h-8 cursor-pointer text-xs select-none ${
+                            className={`flex items-center px-8 h-12 cursor-pointer text-xs select-none ${
                               isSectionActive(item)
                                 ? "bg-white text-black"
                                 : "hover:bg-white hover:text-hoverText"
@@ -552,7 +550,7 @@ export default function SidebarClient({ initialUser }: Props) {
                             <Link
                               href={item.href!}
                               aria-current={active ? "page" : undefined}
-                              className={`flex items-center px-8 h-8 transform transition-transform duration-200 ease-in-out text-xs mb-2 ${
+                              className={`flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mb-2 ${
                                 active
                                   ? "bg-white text-black"
                                   : "hover:bg-white hover:text-hoverText"
@@ -572,8 +570,8 @@ export default function SidebarClient({ initialUser }: Props) {
             </div>
 
             <div
-              className={`flex items-center transition-all duration-300 ease-in-out ${
-                collapsed ? "justify-center h-8 mt-8" : "justify-center md:justify-end h-16 mt-0"
+              className={`flex items-center transition-all duration-300 ease-in-out cursor-pointer ${
+                collapsed ? "h-12 gap-2 justify-center items-center w-full transition-all duration-200 hover:bg-white hover:text-black mt-[80%]" : "justify-center md:justify-end h-16"
               }`}
             >
               <button
