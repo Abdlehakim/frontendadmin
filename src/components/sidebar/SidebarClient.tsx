@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
@@ -216,6 +216,13 @@ export default function SidebarClient({ initialUser }: Props) {
   const [collapsed, setCollapsed] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  // MOBILE-ONLY CLOSE: closes the menu if viewport < md
+  const closeIfMobile = useCallback(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+      setCollapsed(true);
+    }
+  }, []);
+
   // helper: active matcher (exact, or "startsWith" for non-root)
   const isHrefActive = (href?: string) => {
     if (!href) return false;
@@ -301,6 +308,7 @@ export default function SidebarClient({ initialUser }: Props) {
           {item.href && !hasChildren ? (
             <Link
               href={item.href}
+              onClick={closeIfMobile}
               aria-current={isHrefActive(item.href) ? "page" : undefined}
               className="flex items-center justify-center w-full h-full"
             >
@@ -318,7 +326,7 @@ export default function SidebarClient({ initialUser }: Props) {
           <div
             className="
               hidden group-hover:block
-              absolute left-full top-0 ml-2 z-40
+              absolute left-full top-0 ml-2 z-50
               min-w-56 max-w-72
               rounded-md border border-white/10 shadow-xl
               bg-primary text-white
@@ -345,6 +353,7 @@ export default function SidebarClient({ initialUser }: Props) {
                             <li key={sub.name}>
                               <Link
                                 href={sub.href!}
+                                onClick={closeIfMobile}
                                 aria-current={activeSub ? "page" : undefined}
                                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded ${
                                   activeSub
@@ -367,6 +376,7 @@ export default function SidebarClient({ initialUser }: Props) {
                   <Link
                     key={child.name}
                     href={child.href!}
+                    onClick={closeIfMobile}
                     aria-current={activeChild ? "page" : undefined}
                     className={`flex items-center gap-2 px-4 py-2 text-sm ${
                       activeChild
@@ -395,7 +405,7 @@ export default function SidebarClient({ initialUser }: Props) {
         />
       )}
       <aside
-        className={`fixed top-0 left-0 z-40 h-screen bg-primary text-white transition-all duration-300 ease-in-out   
+        className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out   
     ${
       collapsed
         ? "-translate-x-full w-[60px]"
@@ -503,6 +513,7 @@ export default function SidebarClient({ initialUser }: Props) {
                                           <li key={subChild.name}>
                                             <Link
                                               href={subChild.href!}
+                                              onClick={closeIfMobile}
                                               aria-current={
                                                 active ? "page" : undefined
                                               }
@@ -529,6 +540,7 @@ export default function SidebarClient({ initialUser }: Props) {
                                 <li key={child.name}>
                                   <Link
                                     href={child.href!}
+                                    onClick={closeIfMobile}
                                     aria-current={active ? "page" : undefined}
                                     className={`flex items-center px-8 h-8 ${
                                       active
@@ -549,6 +561,7 @@ export default function SidebarClient({ initialUser }: Props) {
                           return (
                             <Link
                               href={item.href!}
+                              onClick={closeIfMobile}
                               aria-current={active ? "page" : undefined}
                               className={`flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mb-2 ${
                                 active
@@ -570,8 +583,10 @@ export default function SidebarClient({ initialUser }: Props) {
             </div>
 
             <div
-              className={`flex items-center transition-all duration-300 ease-in-out cursor-pointer z-50 ${
-                collapsed ? "h-12 gap-2 justify-center items-center w-full transition-all duration-200 hover:bg-white hover:text-black my-10" : "justify-center h-16 my-10"
+              className={`flex items-center transition-all duration-300 ease-in-out cursor-pointer ${
+                collapsed
+                  ? "h-12 gap-2 justify-center items-center w-full transition-all duration-200 hover:bg-white hover:text-black my-10"
+                  : "justify-center h-16 my-10"
               }`}
             >
               <button
