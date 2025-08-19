@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { FaRegEdit, FaRegEye, FaTrashAlt} from "react-icons/fa";
+import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import { FiChevronDown, FiCheck } from "react-icons/fi";
 import PaginationAdmin from "@/components/PaginationAdmin";
@@ -61,9 +61,11 @@ function NiceSelect<T extends StringUnion>({
 }: NiceSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(
-    null,
-  );
+  const [pos, setPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
 
   const label = display ? display(value) : String(value);
 
@@ -143,7 +145,11 @@ function NiceSelect<T extends StringUnion>({
                     key={String(opt)}
                     type="button"
                     className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2 cursor-pointer
-                      ${isActive ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
+                      ${
+                        isActive
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "text-slate-700"
+                      }
                       hover:bg-emerald-100 hover:text-emerald-800`}
                     onClick={() => {
                       onChange(opt);
@@ -154,7 +160,11 @@ function NiceSelect<T extends StringUnion>({
                   >
                     <span
                       className={`inline-flex h-4 w-4 items-center justify-center rounded-sm border
-                        ${isActive ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 text-transparent"}`}
+                        ${
+                          isActive
+                            ? "border-emerald-500 bg-emerald-500 text-white"
+                            : "border-slate-300 text-transparent"
+                        }`}
                     >
                       <FiCheck size={12} />
                     </span>
@@ -164,7 +174,7 @@ function NiceSelect<T extends StringUnion>({
               })}
             </div>
           </div>,
-          document.body,
+          document.body
         )}
     </>
   );
@@ -198,7 +208,7 @@ export default function ProductsClientPage() {
       setLoading(true);
       try {
         const { products } = await fetchFromAPI<{ products: Product[] }>(
-          "/dashboardadmin/stock/products",
+          "/dashboardadmin/stock/products"
         );
         setProducts(products);
       } catch (err) {
@@ -210,17 +220,26 @@ export default function ProductsClientPage() {
   }, []);
 
   const filtered = useMemo(
-    () => products.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase())),
-    [products, searchTerm],
+    () =>
+      products.filter((p) =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [products, searchTerm]
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const displayed = useMemo(
     () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [filtered, currentPage, pageSize],
+    [filtered, currentPage, pageSize]
   );
 
-  async function updateField<K extends keyof Product>(id: string, key: K, value: Product[K]) {
-    setProducts((prev) => prev.map((p) => (p._id === id ? { ...p, [key]: value } : p)));
+  async function updateField<K extends keyof Product>(
+    id: string,
+    key: K,
+    value: Product[K]
+  ) {
+    setProducts((prev) =>
+      prev.map((p) => (p._id === id ? { ...p, [key]: value } : p))
+    );
     try {
       await fetchFromAPI(`/dashboardadmin/stock/products/update/${id}`, {
         method: "PUT",
@@ -255,30 +274,34 @@ export default function ProductsClientPage() {
   };
 
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4">
-      <div className="flex h-fit mx-auto w-full justify-between items-center">
-        <h1 className="text-3xl font-bold uppercase">Produits</h1>
+    <div className="mx-auto py-4 w-[95%] flex flex-col justify-between h-screen">
+      <div className="flex flex-col gap-4 h-full">
+        <div className="flex h-fit mx-auto w-full justify-between items-center">
+          <h1 className="text-3xl font-bold uppercase">Produits</h1>
 
-        {/* Desktop: text button / Mobile: icon-only */}
-        <div className="flex items-center">
-          <Link href="/dashboard/manage-stock/products/create" className="hidden md:block">
-            <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
-              Créer un produit
-            </button>
-          </Link>
-
-          <Link href="/dashboard/manage-stock/products/create" className="md:hidden">
-            <button
-              aria-label="Créer un produit"
-              className="ButtonSquare"
+          {/* Desktop: text button / Mobile: icon-only */}
+          <div className="flex items-center">
+            <Link
+              href="/dashboard/manage-stock/products/create"
+              className="hidden md:block"
             >
-              <IoMdCreate size={14} />
-            </button>
-          </Link>
-        </div>
-      </div>
+              <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
+                Créer un produit
+              </button>
+            </Link>
 
-      <div className="flex justify-start gap-2 items-center h-fit w-full">
+            <Link
+              href="/dashboard/manage-stock/products/create"
+              className="md:hidden"
+            >
+              <button aria-label="Créer un produit" className="ButtonSquare">
+                <IoMdCreate size={14} />
+              </button>
+            </Link>
+          </div>
+        </div>
+
+        <div className="flex justify-start gap-2 items-center h-fit w-full">
           <label className="font-medium">Recherche :</label>
           <input
             value={searchTerm}
@@ -289,181 +312,227 @@ export default function ProductsClientPage() {
             placeholder="Nom du produit"
             className="w-[50%] border border-gray-300 rounded px-2 py-1"
           />
-      </div>
+        </div>
 
-      <div className="flex flex-col">
-        {/* ===== Desktop header (unchanged) ===== */}
-        <table className="table-fixed w-full hidden md:table">
-          <thead className="bg-primary text-white">
-            <tr>
-              <th className="py-2 text-sm font-medium text-center">Réf</th>
-              <th className="py-2 text-sm font-medium text-center border-x-4">Nom</th>
-              <th className="py-2 text-sm font-medium text-center border-x-4 max-2xl:hidden">
-                Créé/MàJ par
-              </th>
-              <th className="py-2 text-sm font-medium text-center border-x-4 max-2xl:hidden">
-                Créé/MàJ le
-              </th>
-              <th className="w-5/9 py-2 text-sm font-medium text-center border-x-4">Actions</th>
-            </tr>
-          </thead>
-        </table>
-
-        <div className="relative flex-1 overflow-auto">
-          {/* ===== Desktop table body (unchanged) ===== */}
+        <div className="flex flex-col h-full">
+          {/* ===== Desktop header (unchanged) ===== */}
           <table className="table-fixed w-full hidden md:table">
-            {displayed.length === 0 && !loading ? (
-              <tbody>
-                <tr>
-                  <td colSpan={5} className="py-6 text-center text-gray-600">
-                    Aucun produit trouvé.
-                  </td>
-                </tr>
-              </tbody>
-            ) : (
-              <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
-                {displayed.map((p, i) => (
-                  <tr key={p._id} className={i % 2 ? "bg-gray-100" : "bg-white"}>
-                    <td className="py-2 text-center">{p.reference}</td>
-                    <td className="py-2 text-center font-semibold truncate">{p.name}</td>
-                    <td className="py-2 text-center max-2xl:hidden">
-                      {p.updatedBy?.username || p.createdBy?.username || "—"}
+            <thead className="bg-primary text-white">
+              <tr>
+                <th className="py-2 text-sm font-medium text-center">Réf</th>
+                <th className="py-2 text-sm font-medium text-center border-x-4">
+                  Nom
+                </th>
+                <th className="py-2 text-sm font-medium text-center border-x-4 max-2xl:hidden">
+                  Créé/MàJ par
+                </th>
+                <th className="py-2 text-sm font-medium text-center border-x-4 max-2xl:hidden">
+                  Créé/MàJ le
+                </th>
+                <th className="w-5/9 py-2 text-sm font-medium text-center">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+          </table>
+
+          <div className="relative flex-1 overflow-auto h-full">
+            {/* ===== Desktop table body (unchanged) ===== */}
+            <table className="table-fixed w-full hidden md:table h-full">
+              {displayed.length === 0 && !loading ? (
+                <tbody>
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="py-6 text-center text-gray-600 h-full"
+                    >
+                      Aucun produit trouvé.
                     </td>
-                    <td className="py-2 text-center max-2xl:hidden">
-                      {new Date(p.updatedAt || p.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-2 w-5/9">
-                      <div className="flex justify-center items-center gap-2">
+                  </tr>
+                </tbody>
+              ) : (
+                <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
+                  {displayed.map((p, i) => (
+                    <tr
+                      key={p._id}
+                      className={i % 2 ? "bg-gray-100" : "bg-white"}
+                    >
+                      <td className="py-2 text-center">{p.reference}</td>
+                      <td className="py-2 text-center font-semibold truncate">
+                        {p.name}
+                      </td>
+                      <td className="py-2 text-center max-2xl:hidden">
+                        {p.updatedBy?.username || p.createdBy?.username || "—"}
+                      </td>
+                      <td className="py-2 text-center max-2xl:hidden">
+                        {new Date(
+                          p.updatedAt || p.createdAt
+                        ).toLocaleDateString()}
+                      </td>
+                      <td className="py-2 w-5/9">
+                        <div className="flex justify-center items-center gap-2">
+                          <NiceSelect<Vadmin>
+                            value={p.vadmin}
+                            options={ADMIN_OPTIONS as readonly Vadmin[]}
+                            onChange={(v) => updateField(p._id, "vadmin", v)}
+                            className="truncate"
+                          />
+
+                          <NiceSelect<StockStatus>
+                            value={p.stockStatus}
+                            options={STOCK_OPTIONS as readonly StockStatus[]}
+                            onChange={(v) =>
+                              updateField(p._id, "stockStatus", v)
+                            }
+                            className="truncate"
+                          />
+
+                          <NiceSelect<StatusPage>
+                            value={p.statuspage}
+                            options={PAGE_OPTIONS as readonly StatusPage[]}
+                            onChange={(v) =>
+                              updateField(p._id, "statuspage", v)
+                            }
+                            display={(v) =>
+                              v === "none" ? "Aucune" : v.replace("-", " ")
+                            }
+                            className="truncate"
+                          />
+
+                          <Link
+                            href={`/dashboard/manage-stock/products/update/${p._id}`}
+                          >
+                            <button className="ButtonSquare">
+                              <FaRegEdit size={14} />
+                            </button>
+                          </Link>
+                          <Link
+                            href={`/dashboard/manage-stock/products/voir/${p._id}`}
+                          >
+                            <button className="ButtonSquare">
+                              <FaRegEye size={14} />
+                            </button>
+                          </Link>
+                          <button
+                            onClick={() => openDelete(p._id, p.name)}
+                            className="ButtonSquare"
+                          >
+                            <FaTrashAlt size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              )}
+            </table>
+
+            {/* ===== Mobile cards ===== */}
+            <div className="md:hidden">
+              {displayed.length === 0 && !loading ? (
+                <div className="py-6 text-center text-gray-600">
+                  Aucun produit trouvé.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {displayed.map((p, i) => (
+                    <div
+                      key={p._id}
+                      className={`rounded-md border ${
+                        i % 2 ? "bg-gray-100" : "bg-white"
+                      } p-3 shadow-sm`}
+                    >
+                      {/* Header: name + actions */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-semibold leading-tight truncate">
+                            {p.name}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            Réf : {p.reference}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Link
+                            href={`/dashboard/manage-stock/products/update/${p._id}`}
+                          >
+                            <button className="ButtonSquare">
+                              <FaRegEdit size={14} />
+                            </button>
+                          </Link>
+                          <Link
+                            href={`/dashboard/manage-stock/products/voir/${p._id}`}
+                          >
+                            <button className="ButtonSquare">
+                              <FaRegEye size={14} />
+                            </button>
+                          </Link>
+                          <button
+                            onClick={() => openDelete(p._id, p.name)}
+                            className="ButtonSquare"
+                          >
+                            <FaTrashAlt size={14} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Meta */}
+                      <div className="mt-2 text-xs text-gray-600 flex items-center justify-between">
+                        <span>
+                          {p.updatedBy?.username ||
+                            p.createdBy?.username ||
+                            "—"}
+                        </span>
+                        <span>
+                          {new Date(
+                            p.updatedAt || p.createdAt
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      {/* Controls */}
+                      <div className="mt-3 grid grid-cols-1 gap-2">
                         <NiceSelect<Vadmin>
                           value={p.vadmin}
                           options={ADMIN_OPTIONS as readonly Vadmin[]}
                           onChange={(v) => updateField(p._id, "vadmin", v)}
-                          className="truncate"
+                          className="w-full"
                         />
-
                         <NiceSelect<StockStatus>
                           value={p.stockStatus}
                           options={STOCK_OPTIONS as readonly StockStatus[]}
                           onChange={(v) => updateField(p._id, "stockStatus", v)}
-                          className="truncate"
+                          className="w-full"
                         />
-
                         <NiceSelect<StatusPage>
                           value={p.statuspage}
                           options={PAGE_OPTIONS as readonly StatusPage[]}
                           onChange={(v) => updateField(p._id, "statuspage", v)}
-                          display={(v) => (v === "none" ? "Aucune" : v.replace("-", " "))}
-                          className="truncate"
+                          display={(v) =>
+                            v === "none" ? "Aucune" : v.replace("-", " ")
+                          }
+                          className="w-full"
                         />
-
-                        <Link href={`/dashboard/manage-stock/products/update/${p._id}`}>
-                          <button className="ButtonSquare">
-                            <FaRegEdit size={14} />
-                          </button>
-                        </Link>
-                        <Link href={`/dashboard/manage-stock/products/voir/${p._id}`}>
-                          <button className="ButtonSquare">
-                            <FaRegEye size={14} />
-                          </button>
-                        </Link>
-                        <button onClick={() => openDelete(p._id, p.name)} className="ButtonSquare">
-                          <FaTrashAlt size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            )}
-          </table>
-
-          {/* ===== Mobile cards ===== */}
-          <div className="md:hidden">
-            {displayed.length === 0 && !loading ? (
-              <div className="py-6 text-center text-gray-600">Aucun produit trouvé.</div>
-            ) : (
-              <div className="space-y-3">
-                {displayed.map((p, i) => (
-                  <div
-                    key={p._id}
-                    className={`rounded-md border ${i % 2 ? "bg-gray-100" : "bg-white"} p-3 shadow-sm`}
-                  >
-                    {/* Header: name + actions */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-semibold leading-tight truncate">{p.name}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">Réf : {p.reference}</div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Link href={`/dashboard/manage-stock/products/update/${p._id}`}>
-                          <button className="ButtonSquare">
-                            <FaRegEdit size={14} />
-                          </button>
-                        </Link>
-                        <Link href={`/dashboard/manage-stock/products/voir/${p._id}`}>
-                          <button className="ButtonSquare">
-                            <FaRegEye size={14} />
-                          </button>
-                        </Link>
-                        <button
-                          onClick={() => openDelete(p._id, p.name)}
-                          className="ButtonSquare"
-                        >
-                          <FaTrashAlt size={14} />
-                        </button>
                       </div>
                     </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                    {/* Meta */}
-                    <div className="mt-2 text-xs text-gray-600 flex items-center justify-between">
-                      <span>{p.updatedBy?.username || p.createdBy?.username || "—"}</span>
-                      <span>{new Date(p.updatedAt || p.createdAt).toLocaleDateString()}</span>
-                    </div>
-
-                    {/* Controls */}
-                    <div className="mt-3 grid grid-cols-1 gap-2">
-                      <NiceSelect<Vadmin>
-                        value={p.vadmin}
-                        options={ADMIN_OPTIONS as readonly Vadmin[]}
-                        onChange={(v) => updateField(p._id, "vadmin", v)}
-                        className="w-full"
-                      />
-                      <NiceSelect<StockStatus>
-                        value={p.stockStatus}
-                        options={STOCK_OPTIONS as readonly StockStatus[]}
-                        onChange={(v) => updateField(p._id, "stockStatus", v)}
-                        className="w-full"
-                      />
-                      <NiceSelect<StatusPage>
-                        value={p.statuspage}
-                        options={PAGE_OPTIONS as readonly StatusPage[]}
-                        onChange={(v) => updateField(p._id, "statuspage", v)}
-                        display={(v) => (v === "none" ? "Aucune" : v.replace("-", " "))}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                ))}
+            {loading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
+                <FaSpinner className="animate-spin text-3xl" />
               </div>
             )}
           </div>
-
-          {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
-              <FaSpinner className="animate-spin text-3xl" />
-            </div>
-          )}
         </div>
       </div>
-
-      <div className="flex justify-center mt-6">
-        <PaginationAdmin
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
-      </div>
-
+      <PaginationAdmin
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
       {isDeleteOpen && (
         <Popup
           id={deleteId}
