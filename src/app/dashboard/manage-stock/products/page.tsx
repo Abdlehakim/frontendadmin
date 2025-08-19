@@ -278,8 +278,7 @@ export default function ProductsClientPage() {
         </div>
       </div>
 
-      <div className="flex md:justify-between items-end gap-6 h-fit justify-center">
-        <div className="flex items-center gap-2">
+      <div className="flex justify-start gap-2 items-center h-fit">
           <label className="font-medium">Recherche :</label>
           <input
             value={searchTerm}
@@ -290,7 +289,6 @@ export default function ProductsClientPage() {
             placeholder="Nom du produit"
             className="border border-gray-300 rounded px-2 py-1"
           />
-        </div>
       </div>
 
       <div className="flex flex-col">
