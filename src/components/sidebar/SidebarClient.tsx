@@ -276,13 +276,22 @@ export default function SidebarClient({ initialUser }: Props) {
       const isOpen = !!prev[name];
       return isOpen ? {} : { [name]: true };
     });
-  const handleSignOut = async () => {
-    try {
-      await fetchFromAPI("/dashboardAuth/logout", { method: "POST" });
-    } finally {
-      router.push("/");
+const onSignOutClick = async (
+  e: React.MouseEvent<HTMLButtonElement> | React.PointerEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>
+) => {
+  e.preventDefault();
+  e.stopPropagation();
+  try {
+    await fetchFromAPI("/dashboardAuth/logout", { method: "POST" });
+  } finally {
+    // Close the sidebar on mobile to avoid any overlay/stacking issues.
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+      setCollapsed(true);
     }
-  };
+    router.push("/");
+  }
+};
+
 
   /* -------- collapsed mode row with fly-out + hover bridge -------- */
   const CollapsedRow: React.FC<{ item: SidebarItem }> = ({ item }) => {
@@ -472,7 +481,7 @@ export default function SidebarClient({ initialUser }: Props) {
                         <>
                           <div
                             onClick={() => toggleExpand(item.name)}
-                            className={`flex items-center px-8 h-12 cursor-pointer text-xs select-none ${
+                            className={`flex items-center px-8 h-12 cursor-pointer text-xs ${
                               isSectionActive(item)
                                 ? "bg-white text-black"
                                 : "hover:bg-white hover:text-hoverText"
@@ -491,7 +500,7 @@ export default function SidebarClient({ initialUser }: Props) {
                             </span>
                           </div>
                           <ul
-                            className={`ml-8 flex flex-col md:gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out ${
+                            className={`ml-8 flex flex-col gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out ${
                               isOpen
                                 ? "max-h-60 opacity-100"
                                 : "max-h-0 opacity-0"
@@ -582,29 +591,30 @@ export default function SidebarClient({ initialUser }: Props) {
                 })}
             </div>
 
-            <div
-              className={`flex items-center transition-all duration-300 ease-in-out cursor-pointer ${
-                collapsed
-                  ? "h-12 gap-2 justify-center items-center w-full transition-all duration-200 hover:bg-white hover:text-black"
-                  : "justify-center h-16"
-              }`}
-            >
-              <button
-                onClick={handleSignOut}
-                className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
-                  collapsed
-                    ? ""
-                    : "gap-2 h-10 w-fit p-2 border-y-2 border-2 rounded-md border-gray-200 hover:bg-white hover:text-hoverText"
-                }`}
-              >
-                <VscSignOut size={20} />
-                {!collapsed && (
-                  <span className="ml-2 duration-200 transition-all whitespace-nowrap text-sm w-fit">
-                    SE DÉCONNECTER
-                  </span>
-                )}
-              </button>
-            </div>
+          <div
+  className={`relative z-[60] select-none transition-all duration-300 ease-in-out ${
+    collapsed
+      ? "h-12 flex gap-2 justify-center items-center w-full hover:bg-white hover:text-black my-10"
+      : "h-16 flex justify-center my-10"
+  }`}
+>
+  <button
+    type="button"
+    onPointerUp={onSignOutClick}     // works for mouse + touch
+    className={`flex items-center justify-center transition-colors duration-200 ease-in-out ${
+      collapsed
+        ? "w-full h-full"            // large tap target when collapsed
+        : "gap-2 h-10 w-fit p-2 border-2 rounded-md border-gray-200 hover:bg-white hover:text-hoverText"
+    }`}
+    aria-label="Se déconnecter"
+  >
+    <VscSignOut size={20} />
+    {!collapsed && (
+      <span className="ml-2 whitespace-nowrap text-sm">SE DÉCONNECTER</span>
+    )}
+  </button>
+</div>
+
           </nav>
         </div>
       </aside>
