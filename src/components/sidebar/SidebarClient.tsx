@@ -448,7 +448,7 @@ export default function SidebarClient({ initialUser }: Props) {
           </div>
 
           <nav
-            className={`flex flex-col select-none overflow-y-auto ${
+            className={`flex flex-col md:select-none overflow-y-auto ${
               collapsed ? "overflow-y-visible" : "overflow-hidden"
             } gap-2 flex-grow`}
           >
