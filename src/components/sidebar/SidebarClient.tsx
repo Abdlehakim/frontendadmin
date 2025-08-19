@@ -318,7 +318,7 @@ export default function SidebarClient({ initialUser }: Props) {
           <div
             className="
               hidden group-hover:block
-              absolute left-full top-0 ml-2 z-50
+              absolute left-full top-0 ml-2 z-40
               min-w-56 max-w-72
               rounded-md border border-white/10 shadow-xl
               bg-primary text-white
@@ -395,7 +395,7 @@ export default function SidebarClient({ initialUser }: Props) {
         />
       )}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out   
+        className={`fixed top-0 left-0 z-40 h-screen bg-primary text-white transition-all duration-300 ease-in-out   
     ${
       collapsed
         ? "-translate-x-full w-[60px]"
@@ -570,7 +570,7 @@ export default function SidebarClient({ initialUser }: Props) {
             </div>
 
             <div
-              className={`flex items-center transition-all duration-300 ease-in-out cursor-pointer ${
+              className={`flex items-center transition-all duration-300 ease-in-out cursor-pointer z-50 ${
                 collapsed ? "h-12 gap-2 justify-center items-center w-full transition-all duration-200 hover:bg-white hover:text-black my-10" : "justify-center h-16 my-10"
               }`}
             >
