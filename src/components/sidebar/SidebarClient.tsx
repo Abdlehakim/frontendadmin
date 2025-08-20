@@ -274,7 +274,7 @@ export default function SidebarClient() {
                             </span>
                           </div>
                           <ul
-                            className={`ml-8 flex flex-col md:gap-2 py-2 text-xs overflow-hidden transition-all duration-500 ease-in-out gap-2 ${
+                            className={`ml-8 flex flex-col md:gap-2 text-xs overflow-hidden transition-all duration-500 ease-in-out gap-2 ${
                               isOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
                             }`}
                           >
@@ -334,7 +334,7 @@ export default function SidebarClient() {
                               href={item.href!}
                               onClick={closeIfMobile}
                               aria-current={active ? "page" : undefined}
-                              className={`flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mb-2 ${
+                              className={`flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs ${
                                 active ? "bg-white text-black" : "hover:bg-white hover:text-hoverText"
                               }`}
                             >
