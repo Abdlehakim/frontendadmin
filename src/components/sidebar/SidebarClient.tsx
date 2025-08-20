@@ -45,7 +45,8 @@ export default function SidebarClient() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [collapsed, setCollapsed] = useState(false);
+  // ⬇️ start collapsed
+  const [collapsed, setCollapsed] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [redirecting, setRedirecting] = useState(false);
 
@@ -58,7 +59,10 @@ export default function SidebarClient() {
   }, [loading, user, redirecting, router]);
 
   const closeIfMobile = useCallback(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches
+    ) {
       setCollapsed(true);
     }
   }, []);
@@ -83,7 +87,9 @@ export default function SidebarClient() {
     sidebarItems.forEach((item) => {
       if (!item.children) return;
       const hrefs = collectHrefs(item.children).map(normalizePath);
-      const match = hrefs.some((h) => current === h || current.startsWith(h + "/"));
+      const match = hrefs.some(
+        (h) => current === h || current.startsWith(h + "/")
+      );
       if (match) next[item.name] = true;
     });
     setExpanded(next);
@@ -102,7 +108,8 @@ export default function SidebarClient() {
   if (!user) return null;
 
   const initials = (user.username || user.email).slice(0, 2).toUpperCase();
-  const hasPermission = (perm: string) => Boolean(user.role?.permissions?.includes(perm));
+  const hasPermission = (perm: string) =>
+    Boolean(user.role?.permissions?.includes(perm));
   const toggleCollapse = () => setCollapsed((c) => !c);
   const toggleExpand = (name: string) =>
     setExpanded((prev) => {
@@ -124,7 +131,8 @@ export default function SidebarClient() {
   };
 
   const CollapsedRow: React.FC<{ item: SidebarItem }> = ({ item }) => {
-    const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+    const hasChildren =
+      Array.isArray(item.children) && item.children.length > 0;
     const active = isSectionActive(item);
 
     return (
@@ -150,10 +158,18 @@ export default function SidebarClient() {
             </div>
           )}
         </div>
-
+        {/* Hover bridge to preserve ml-2 gap */}
+        <span
+          aria-hidden
+          className="absolute left-full top-0 bottom-0 w-2 z-40"
+        />
         {hasChildren && (
-          <div className="hidden group-hover:block absolute left-full top-0 ml-2 z-50 min-w-56 max-w-72 rounded-md border border-white/10 shadow-xl bg-primary text-white overflow-hidden">
-            <div className="px-3 py-2 text-xs font-semibold bg-white/10">{item.name}</div>
+          <div
+            className="hidden group-hover:block absolute left-full top-0 ml-2 z-50 min-w-56 max-w-72 rounded-md shadow-xl bg-primary text-white overflow-hidden"
+          >
+            <div className="px-3 py-2 text-xs font-semibold bg-white/10">
+              {item.name}
+            </div>
             <div className="py-2">
               {item.children?.map((child) => {
                 if (child.isHeader) {
@@ -172,7 +188,9 @@ export default function SidebarClient() {
                                 onClick={closeIfMobile}
                                 aria-current={activeSub ? "page" : undefined}
                                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded ${
-                                  activeSub ? "bg-white text-black" : "hover:bg-white hover:text-hoverText"
+                                  activeSub
+                                    ? "bg-white text-black"
+                                    : "hover:bg-white hover:text-hoverText"
                                 }`}
                               >
                                 <span>{sub.name}</span>
@@ -193,7 +211,9 @@ export default function SidebarClient() {
                     onClick={closeIfMobile}
                     aria-current={activeChild ? "page" : undefined}
                     className={`flex items-center gap-2 px-4 py-2 text-sm ${
-                      activeChild ? "bg-white text-black" : "hover:bg-white hover:text-hoverText"
+                      activeChild
+                        ? "bg-white text-black"
+                        : "hover:bg-white hover:text-hoverText"
                     }`}
                   >
                     <span>{child.name}</span>
@@ -210,12 +230,17 @@ export default function SidebarClient() {
   return (
     <>
       {!collapsed ? (
-        <div onClick={toggleCollapse} className="fixed inset-0 bg-black/30 z-40 md:hidden" />
+        <div
+          onClick={toggleCollapse}
+          className="fixed inset-0 bg-black/30 z-40 md:hidden"
+        />
       ) : null}
 
       <aside
         className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out ${
-          collapsed ? "-translate-x-full w-[60px]" : "translate-x-0 w-[90%] md:w-[280px]"
+          collapsed
+            ? "-translate-x-full w-[60px]"
+            : "translate-x-0 w-[90%] md:w-[280px]"
         } md:static md:translate-x-0`}
       >
         <div className="flex flex-col h-screen relative">
@@ -226,15 +251,29 @@ export default function SidebarClient() {
               </div>
               {!collapsed && (
                 <div className="flex flex-col transition-all whitespace-nowrap duration-500 ease-in-out">
-                  <span className="capitalize">{user.username ?? user.email}</span>
-                  <span className="text-xs font-light">Role: {user.role?.name ?? "—"}</span>
+                  <span className="capitalize">
+                    {user.username ?? user.email}
+                  </span>
+                  <span className="text-xs font-light">
+                    Role: {user.role?.name ?? "—"}
+                  </span>
                 </div>
               )}
             </div>
             <IconButton
-              icon={collapsed ? <LuArrowBigRight size={20} /> : <LuArrowBigLeft size={20} />}
+              icon={
+                collapsed ? (
+                  <LuArrowBigRight size={20} />
+                ) : (
+                  <LuArrowBigLeft size={20} />
+                )
+              }
               onClick={toggleCollapse}
-              ariaLabel={collapsed ? "Ouvrir la barre latérale" : "Fermer la barre latérale"}
+              ariaLabel={
+                collapsed
+                  ? "Ouvrir la barre latérale"
+                  : "Fermer la barre latérale"
+              }
             />
           </div>
 
@@ -245,7 +284,9 @@ export default function SidebarClient() {
           >
             <div className="flex flex-col">
               {sidebarItems
-                .filter((item) => !item.permission || hasPermission(item.permission))
+                .filter(
+                  (item) => !item.permission || hasPermission(item.permission)
+                )
                 .map((item) => {
                   const isOpen = !!expanded[item.name];
 
@@ -260,11 +301,15 @@ export default function SidebarClient() {
                           <div
                             onClick={() => toggleExpand(item.name)}
                             className={`flex items-center px-8 h-12 cursor-pointer text-xs select-none ${
-                              isSectionActive(item) ? "bg-white text-black" : "hover:bg-white hover:text-hoverText"
+                              isSectionActive(item)
+                                ? "bg-white text-black"
+                                : "hover:bg-white hover:text-hoverText"
                             }`}
                           >
                             <span className="mr-3">{item.icon}</span>
-                            <span className="flex-1 whitespace-nowrap overflow-hidden">{item.name}</span>
+                            <span className="flex-1 whitespace-nowrap overflow-hidden">
+                              {item.name}
+                            </span>
                             <span
                               className={`transform transition-transform duration-200 ease-in-out ${
                                 isOpen ? "rotate-90" : "rotate-0"
@@ -275,30 +320,40 @@ export default function SidebarClient() {
                           </div>
                           <ul
                             className={`ml-8 flex flex-col md:gap-2 text-xs overflow-hidden transition-all duration-500 ease-in-out gap-2 ${
-                              isOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+                              isOpen
+                                ? "max-h-60 opacity-100"
+                                : "max-h-0 opacity-0"
                             }`}
                           >
                             {item.children.map((child) => {
                               if (child.isHeader) {
                                 return (
                                   <div key={child.name}>
-                                    <div className="text-xs px-12 h-6 font-semibold text-white select-none">
+                                    <div className="text-xs px-12 h-6 font-semibold text-white select-none flex items-center">
                                       {child.name}
                                     </div>
                                     <ul className="ml-4 flex flex-col gap-1 text-xs h-fit">
                                       {child.children?.map((subChild) => {
-                                        const active = isHrefActive(subChild.href);
+                                        const active = isHrefActive(
+                                          subChild.href
+                                        );
                                         return (
                                           <li key={subChild.name}>
                                             <Link
                                               href={subChild.href!}
                                               onClick={closeIfMobile}
-                                              aria-current={active ? "page" : undefined}
+                                              aria-current={
+                                                active ? "page" : undefined
+                                              }
                                               className={`flex items-center px-8 h-8 ${
-                                                active ? "bg-white text-black" : "hover:bg-white hover:text-hoverText"
+                                                active
+                                                  ? "bg-white text-black"
+                                                  : "hover:bg-white hover:text-hoverText"
                                               }`}
                                             >
-                                              <span className="ml-5">{subChild.name}</span>
+                                              <span className="ml-5">
+                                                {subChild.name}
+                                              </span>
                                             </Link>
                                           </li>
                                         );
@@ -316,7 +371,9 @@ export default function SidebarClient() {
                                     onClick={closeIfMobile}
                                     aria-current={active ? "page" : undefined}
                                     className={`flex items-center px-8 h-8 ${
-                                      active ? "bg-white text-black" : "hover:bg-white hover:text-hoverText"
+                                      active
+                                        ? "bg-white text-black"
+                                        : "hover:bg-white hover:text-hoverText"
                                     }`}
                                   >
                                     <span className="ml-5">{child.name}</span>
@@ -335,11 +392,15 @@ export default function SidebarClient() {
                               onClick={closeIfMobile}
                               aria-current={active ? "page" : undefined}
                               className={`flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs ${
-                                active ? "bg-white text-black" : "hover:bg-white hover:text-hoverText"
+                                active
+                                  ? "bg-white text-black"
+                                  : "hover:bg-white hover:text-hoverText"
                               }`}
                             >
                               <span className="mr-3">{item.icon}</span>
-                              <span className="flex-1 whitespace-nowrap overflow-hidden">{item.name}</span>
+                              <span className="flex-1 whitespace-nowrap overflow-hidden">
+                                {item.name}
+                              </span>
                             </Link>
                           );
                         })()
@@ -359,7 +420,9 @@ export default function SidebarClient() {
               <button
                 onClick={handleSignOut}
                 className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
-                  collapsed ? "" : "gap-2 h-10 w-fit p-2 border-y-2 border-2 rounded-md border-gray-200 hover:bg-white hover:text-hoverText"
+                  collapsed
+                    ? ""
+                    : "gap-2 h-10 w-fit p-2 border-y-2 border-2 rounded-md border-gray-200 hover:bg-white hover:text-hoverText"
                 }`}
               >
                 <VscSignOut size={20} />
