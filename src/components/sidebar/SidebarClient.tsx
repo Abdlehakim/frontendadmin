@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { useAuth } from "@/hooks/useAuthDashboard";
+import LoadingDots from "@/components/LoadingDots";
 
 import { LuArrowBigLeft, LuArrowBigRight } from "react-icons/lu";
 import { BiChevronRight } from "react-icons/bi";
@@ -44,7 +45,7 @@ export default function SidebarClient() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [redirecting, setRedirecting] = useState(false);
 
@@ -72,9 +73,7 @@ export default function SidebarClient() {
 
   const isSectionActive = (item: SidebarItem): boolean => {
     if (isHrefActive(item.href)) return true;
-    if (item.children?.length) {
-      return item.children.some(isSectionActive);
-    }
+    if (item.children?.length) return item.children.some(isSectionActive);
     return false;
   };
 
@@ -90,18 +89,17 @@ export default function SidebarClient() {
     setExpanded(next);
   }, [pathname]);
 
+  // Full-screen loading overlay while loading OR redirecting
   if (loading || redirecting) {
     return (
-      <aside className="bg-primary text-white flex items-center justify-center h-full">
-        Loading…
-      </aside>
+      <div className="fixed inset-0 z-[1000]">
+        <LoadingDots />
+      </div>
     );
   }
 
   // Early return while redirecting to avoid touching user when null
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const initials = (user.username || user.email).slice(0, 2).toUpperCase();
   const hasPermission = (perm: string) => Boolean(user.role?.permissions?.includes(perm));
@@ -116,14 +114,11 @@ export default function SidebarClient() {
     try {
       await fetchFromAPI<void>("/dashboardAuth/logout", { method: "POST" });
     } finally {
-      // local cleanups similar to Dropdown.tsx
       localStorage.removeItem("rememberedAdminEmail");
       localStorage.removeItem("token_FrontEndAdmin");
       localStorage.removeItem("adminUserName");
-      // update client auth state
       await logout();
       await refresh();
-      // keep push (not replace/refresh)
       router.push("/dashboard/signin");
     }
   };
@@ -157,20 +152,8 @@ export default function SidebarClient() {
         </div>
 
         {hasChildren && (
-          <div
-            className="
-              hidden group-hover:block
-              absolute left-full top-0 ml-2 z-50
-              min-w-56 max-w-72
-              rounded-md border border-white/10 shadow-xl
-              bg-primary text-white
-              overflow-hidden
-            "
-          >
-            <div className="px-3 py-2 text-xs font-semibold bg-white/10 md:bg-white/10">
-              {item.name}
-            </div>
-
+          <div className="hidden group-hover:block absolute left-full top-0 ml-2 z-50 min-w-56 max-w-72 rounded-md border border-white/10 shadow-xl bg-primary text-white overflow-hidden">
+            <div className="px-3 py-2 text-xs font-semibold bg-white/10">{item.name}</div>
             <div className="py-2">
               {item.children?.map((child) => {
                 if (child.isHeader) {
@@ -226,9 +209,10 @@ export default function SidebarClient() {
 
   return (
     <>
-      {collapsed === false && (
+      {!collapsed ? (
         <div onClick={toggleCollapse} className="fixed inset-0 bg-black/30 z-40 md:hidden" />
-      )}
+      ) : null}
+
       <aside
         className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out ${
           collapsed ? "-translate-x-full w-[60px]" : "translate-x-0 w-[90%] md:w-[280px]"
