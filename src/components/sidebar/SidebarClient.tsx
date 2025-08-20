@@ -1,20 +1,19 @@
+/* ------------------------------------------------------------------
+   src/components/sidebar/SidebarClient.tsx
+------------------------------------------------------------------ */
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
-import { useAuth, User } from "@/hooks/useAuthDashboard";
+import { useAuth } from "@/hooks/useAuthDashboard";
 
 import { LuArrowBigLeft, LuArrowBigRight } from "react-icons/lu";
 import { BiChevronRight } from "react-icons/bi";
 import { VscSignOut } from "react-icons/vsc";
 import IconButton from "@/components/sidebar/IconButton";
 import { sidebarItems } from "@/components/sidebar/sidebarItems";
-
-interface Props {
-  initialUser: User | null;
-}
 
 interface SidebarItem {
   name: string;
@@ -40,12 +39,22 @@ const collectHrefs = (items?: SidebarItem[]): string[] => {
   return out;
 };
 
-export default function SidebarClient({ initialUser }: Props) {
-  const { user, loading } = useAuth(initialUser);
+export default function SidebarClient() {
+  const { user, loading, logout, refresh } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
   const [collapsed, setCollapsed] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [redirecting, setRedirecting] = useState(false);
+
+  // Redirect AFTER render if unauthenticated
+  useEffect(() => {
+    if (!loading && !user && !redirecting) {
+      setRedirecting(true);
+      router.push("/dashboard/signin");
+    }
+  }, [loading, user, redirecting, router]);
 
   const closeIfMobile = useCallback(() => {
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
@@ -81,14 +90,16 @@ export default function SidebarClient({ initialUser }: Props) {
     setExpanded(next);
   }, [pathname]);
 
-  if (loading)
+  if (loading || redirecting) {
     return (
       <aside className="bg-primary text-white flex items-center justify-center h-full">
         Loading…
       </aside>
     );
+  }
+
+  // Early return while redirecting to avoid touching user when null
   if (!user) {
-    router.push("/");
     return null;
   }
 
@@ -100,11 +111,20 @@ export default function SidebarClient({ initialUser }: Props) {
       const isOpen = !!prev[name];
       return isOpen ? {} : { [name]: true };
     });
+
   const handleSignOut = async () => {
     try {
-      await fetchFromAPI("/dashboardAuth/logout", { method: "POST" });
+      await fetchFromAPI<void>("/dashboardAuth/logout", { method: "POST" });
     } finally {
-      router.push("/");
+      // local cleanups similar to Dropdown.tsx
+      localStorage.removeItem("rememberedAdminEmail");
+      localStorage.removeItem("token_FrontEndAdmin");
+      localStorage.removeItem("adminUserName");
+      // update client auth state
+      await logout();
+      await refresh();
+      // keep push (not replace/refresh)
+      router.push("/dashboard/signin");
     }
   };
 
@@ -210,11 +230,9 @@ export default function SidebarClient({ initialUser }: Props) {
         <div onClick={toggleCollapse} className="fixed inset-0 bg-black/30 z-40 md:hidden" />
       )}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out   
-    ${
-      collapsed ? "-translate-x-full w-[60px]" : "translate-x-0 w-[90%] md:w-[280px]"
-    }
-    md:static md:translate-x-0`}
+        className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out ${
+          collapsed ? "-translate-x-full w-[60px]" : "translate-x-0 w-[90%] md:w-[280px]"
+        } md:static md:translate-x-0`}
       >
         <div className="flex flex-col h-screen relative">
           <div className="flex items-center justify-center h-[80px] border-b-2">

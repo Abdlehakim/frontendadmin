@@ -1,42 +1,89 @@
-// src/hooks/useAuthDashboard.ts
+/* ------------------------------------------------------------------
+   src/hooks/useAuthDashboard.ts
+------------------------------------------------------------------ */
 "use client";
 
-import { useState, useEffect } from 'react';
-import type { User } from '@/lib/getDashboardUser';
-// re‑export the User type
-export type { User };
-// ← add this:
-import { fetchFromAPI } from '@/lib/fetchFromAPI';
+import * as React from "react";
+import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
-export function useAuth(initialUser: User | null = null) {
-  const [user, setUser] = useState<User | null>(initialUser);
-  const [loading, setLoading] = useState<boolean>(initialUser === null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    !!initialUser
+/* ───────── types ───────── */
+export interface User {
+  _id: string;
+  email: string;
+  username?: string;
+  phone?: string;
+  role?: { name: string; permissions: string[] };
+}
+interface AuthContextValue {
+  user: User | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  refresh: () => Promise<void>;
+}
+
+/* ───────── context ───────── */
+const AuthContext = React.createContext<AuthContextValue | null>(null);
+
+/* ───────── provider ───────── */
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = React.useState<User | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  // GET /api/dashboardAuth/me
+  const refresh = React.useCallback(async () => {
+    try {
+      const data = await fetchFromAPI<{ user: User | null }>("/dashboardAuth/me");
+      setUser(data.user ?? null);
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
+  // POST /api/signindashboardadmin
+  const login = React.useCallback(
+    async (email: string, password: string) => {
+      await fetchFromAPI("/signindashboardadmin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      await refresh();
+    },
+    [refresh]
   );
 
-  useEffect(() => {
-    if (!loading) return; // already have initialUser from SSR
+  // POST /api/dashboardAuth/logout
+  const logout = React.useCallback(async () => {
+    await fetchFromAPI("/dashboardAuth/logout", { method: "POST" });
+    setUser(null);
+  }, []);
 
+  // initial cookie check
+  React.useEffect(() => {
     (async () => {
-      try {
-        const data = await fetchFromAPI<{ user: User | null }>('/dashboardAuth/me');
-        if (data.user) {
-          setUser(data.user);
-          setIsAuthenticated(true);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        console.error('Error fetching /dashboardAuth/me:', err);
-        setUser(null);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
+      await refresh();
+      setLoading(false);
     })();
-  }, [loading]);
+  }, [refresh]);
 
-  return { user, isAuthenticated, loading };
+  const ctx: AuthContextValue = {
+    user,
+    isAuthenticated: !!user,
+    loading,
+    login,
+    logout,
+    refresh,
+  };
+
+  // No JSX (file is .ts) → use createElement
+  return React.createElement(AuthContext.Provider, { value: ctx }, children);
+}
+
+/* ───────── consumer hook ───────── */
+export function useAuth(): AuthContextValue {
+  const ctx = React.useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");
+  return ctx;
 }
