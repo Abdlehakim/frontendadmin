@@ -2,36 +2,31 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED = [
-  /^\/dashboard(?:\/|$)/
-];
+const TOKEN_COOKIE = "token_FrontEndAdmin";
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get("token_FrontEnd")?.value;
-  const { pathname, search, searchParams } = request.nextUrl;
+export function middleware(req: NextRequest) {
+  const { pathname, searchParams } = req.nextUrl;
+  const token = req.cookies.get(TOKEN_COOKIE)?.value;
 
-  if (!token && PROTECTED.some((re) => re.test(pathname))) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/";
-    redirectUrl.searchParams.set(
-      "redirectTo",
-      encodeURIComponent(pathname + search)
-    );
-    return NextResponse.redirect(redirectUrl);
+  const isProtected = pathname.startsWith("/dashboard");
+  const isAuthPage = pathname === "/";          // your 
+  if (!token && isProtected) {
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = "/";
+    const original = req.nextUrl.pathname + req.nextUrl.search;
+    loginUrl.searchParams.set("redirectTo", original);
+    return NextResponse.redirect(loginUrl);
   }
-
-  if (token && (pathname === "/signin")) {
-    const hasRedirect = searchParams.has("redirectTo");
-    if (!hasRedirect) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
+  
+  if (token && isAuthPage) {
+    const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+    return NextResponse.redirect(new URL(redirectTo, req.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*"
-  ],
+  // Only run on dashboard and the login page ("/")
+  matcher: ["/", "/dashboard/:path*"],
 };
