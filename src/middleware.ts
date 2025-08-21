@@ -1,35 +1,37 @@
-// src/middleware.ts
-import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
+// frontend/middleware.ts
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export async function middleware(req: NextRequest) {
-  const token = req.cookies.get("token_FrontEndAdmin")?.value;
-  const pathname = req.nextUrl.pathname;
+const PROTECTED = [
+  /^\/dashboard(?:\/|$)/
+];
 
-  const isValid = await (async () => {
-    if (!token) return false;
-    try {
-      await jwtVerify(
-        token,
-        new TextEncoder().encode(process.env.JWT_SECRET!),
-        { algorithms: ["HS256"] }
-      );
-      return true;
-    } catch { return false; }
-  })();
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get("token_FrontEnd")?.value;
+  const { pathname, search, searchParams } = request.nextUrl;
 
-  // Kick unauth’d users out of dashboard
-  if (!isValid && pathname.startsWith("/dashboard")) {
-    const res = NextResponse.redirect(new URL("/", req.url));
-    res.cookies.delete("token_FrontEndAdmin");
-    res.cookies.delete("token_FrontEndAdmin_exp");          // see Next docs :contentReference[oaicite:2]{index=2}
-    return res;
+  if (!token && PROTECTED.some((re) => re.test(pathname))) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/";
+    redirectUrl.searchParams.set(
+      "redirectTo",
+      encodeURIComponent(pathname + search)
+    );
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // Prevent signed-in users from revisiting /
-  if (isValid && pathname === "/") {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+  if (token && (pathname === "/signin")) {
+    const hasRedirect = searchParams.has("redirectTo");
+    if (!hasRedirect) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
+
   return NextResponse.next();
 }
-export const config = { matcher: ["/", "/dashboard/:path*"] };
+
+export const config = {
+  matcher: [
+    "/dashboard/:path*"
+  ],
+};
