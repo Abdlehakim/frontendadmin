@@ -14,6 +14,7 @@ export interface User {
   phone?: string;
   role?: { name: string; permissions: string[] };
 }
+
 interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
@@ -26,41 +27,64 @@ interface AuthContextValue {
 /* ───────── context ───────── */
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
+/* Always send cookies + bypass caches on auth requests */
+const withAuthOpts = <T extends RequestInit | undefined>(opts?: T): RequestInit => ({
+  ...opts,
+  credentials: "include",
+  cache: "no-store",
+  headers: {
+    ...(opts?.headers ?? {}),
+    "Cache-Control": "no-store",
+    Pragma: "no-cache",
+  },
+});
+
 /* ───────── provider ───────── */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  // GET /api/dashboardAuth/me
+  /** GET /api/dashboardAuth/me — force fresh read (avoid 304) */
   const refresh = React.useCallback(async () => {
     try {
-      const data = await fetchFromAPI<{ user: User | null }>("/dashboardAuth/me");
-      setUser(data.user ?? null);
+      const t = Date.now();
+      const data = await fetchFromAPI<{ user: User | null }>(
+        `/dashboardAuth/me?t=${t}`,
+        withAuthOpts()
+      );
+      setUser(data?.user ?? null);
     } catch {
       setUser(null);
     }
   }, []);
 
-  // POST /api/signindashboardadmin
+  /** POST /api/signindashboardadmin */
   const login = React.useCallback(
     async (email: string, password: string) => {
-      await fetchFromAPI("/signindashboardadmin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      await fetchFromAPI(
+        "/signindashboardadmin",
+        withAuthOpts({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        })
+      );
+      // Cookie should be set by the server at this point
       await refresh();
     },
     [refresh]
   );
 
-  // POST /api/dashboardAuth/logout
+  /** POST /api/dashboardAuth/logout */
   const logout = React.useCallback(async () => {
-    await fetchFromAPI("/dashboardAuth/logout", { method: "POST" });
-    setUser(null);
+    try {
+      await fetchFromAPI("/dashboardAuth/logout", withAuthOpts({ method: "POST" }));
+    } finally {
+      setUser(null);
+    }
   }, []);
 
-  // initial cookie check
+  // Initial cookie check
   React.useEffect(() => {
     (async () => {
       await refresh();
