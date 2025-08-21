@@ -9,7 +9,7 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get(TOKEN_COOKIE)?.value;
 
   const isProtected = pathname.startsWith("/dashboard");
-  const isAuthPage = pathname === "/";          // your 
+  const isAuthPage = pathname === "/";          
   if (!token && isProtected) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = "/";

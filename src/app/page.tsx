@@ -1,4 +1,4 @@
-// src/app/dashboard/signin/page.tsx
+// src/app/page.tsx
 import SignInClient from "@/components/SignInClient";
 
 type SP = Record<string, string | string[] | undefined>;

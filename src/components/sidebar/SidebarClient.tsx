@@ -54,7 +54,7 @@ export default function SidebarClient() {
   useEffect(() => {
     if (!loading && !user && !redirecting) {
       setRedirecting(true);
-      router.push("/dashboard/signin");
+      router.push("/");
     }
   }, [loading, user, redirecting, router]);
 
@@ -126,7 +126,7 @@ export default function SidebarClient() {
       localStorage.removeItem("adminUserName");
       await logout();
       await refresh();
-      router.push("/dashboard/signin");
+      router.push("/");
     }
   };
 

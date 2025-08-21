@@ -43,8 +43,7 @@ export default function useAutoLogout() {
       } finally {
         Cookies.remove(TIMER_COOKIE);
         bcRef.current?.postMessage({ type: "logout" });
-        // HARD refresh to ensure fresh state everywhere
-        window.location.replace("/dashboard/signin");
+        window.location.replace("/");
       }
     };
 
