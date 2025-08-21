@@ -132,6 +132,7 @@ export default function UpdateProductPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [subByCat, setSubByCat] = useState<Record<string, SubCategory[]>>({});
 
   const blankForm: ProductForm = {
     name: "",
@@ -212,19 +213,31 @@ export default function UpdateProductPage() {
     })();
   }, [productId]);
 
-  /* Options lists fetch (moved from StepData) */
   useEffect(() => {
     (async () => {
       try {
-        const catsRes = await fetchFromAPI<{ categories?: Category[] }>(
-          "/dashboardadmin/stock/categories"
-        );
-        setCategories(catsRes.categories ?? []);
+        type CateSubcate = {
+          _id: string;
+          name: string;
+          subcategories?: Array<{ _id: string; name: string }>;
+        };
 
-        const subsRes = await fetchFromAPI<{ subCategories?: SubCategory[] }>(
-          "/dashboardadmin/stock/subcategories"
+        const catsRes = await fetchFromAPI<{ categories?: CateSubcate[] }>(
+          "/dashboardadmin/stock/categories/cateSubcate"
         );
-        setSubcategories(subsRes.subCategories ?? []);
+        const list = catsRes.categories ?? [];
+
+        setCategories(list.map(({ _id, name }) => ({ _id, name })));
+
+        const byCat: Record<string, SubCategory[]> = {};
+        const flatSubs: SubCategory[] = [];
+        for (const c of list) {
+          const subs = (c.subcategories ?? []).map((s) => ({ _id: s._id, name: s.name }));
+          byCat[c._id] = subs;
+          flatSubs.push(...subs);
+        }
+        setSubByCat(byCat);
+        setSubcategories(flatSubs);
 
         const boutsRes = await fetchFromAPI<{ magasins?: Magasin[] }>(
           "/dashboardadmin/stock/magasins"
@@ -241,7 +254,6 @@ export default function UpdateProductPage() {
     })();
   }, []);
 
-  /* Lookup maps for StepReview */
   const catMap = useMemo(
     () =>
       categories.reduce<Record<string, string>>((acc, cur) => {
@@ -278,7 +290,15 @@ export default function UpdateProductPage() {
   const onFixed = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm((f) => {
+      const next = { ...f, [name]: value } as ProductForm;
+      if (name === "categorie") {
+        const allowed = (subByCat[value] ?? []).some((s) => s._id === next.subcategorie);
+        if (!allowed) next.subcategorie = "";
+      }
+      return next;
+    });
   };
 
   const handleAttrsAndDetails = useCallback(
@@ -364,34 +384,44 @@ export default function UpdateProductPage() {
       fd.append("remainingExtraUrls", JSON.stringify(existingExtraImagesUrls));
 
       const serverAttrs = attrPayload
-  .map<ServerAttr | null>(({ attributeSelected, value }) => {
-    const cleaned = cleanAttributeValue(value);
-    if (typeof cleaned === "string" && cleaned.trim())
-      return { attributeSelected, value: cleaned };
-    if (Array.isArray(cleaned) && cleaned.length > 0)
-      return { attributeSelected, value: cleaned };
-    return null; // drop empty entries
-  })
-  .filter((e): e is ServerAttr => e !== null);
+        .map<ServerAttr | null>(({ attributeSelected, value }) => {
+          const cleaned = cleanAttributeValue(value);
+          if (typeof cleaned === "string" && cleaned.trim())
+            return { attributeSelected, value: cleaned };
+          if (Array.isArray(cleaned) && cleaned.length > 0)
+            return { attributeSelected, value: cleaned };
+          return null;
+        })
+        .filter((e): e is ServerAttr => e !== null);
 
-fd.append("attributes", JSON.stringify(serverAttrs));
+      fd.append("attributes", JSON.stringify(serverAttrs));
 
       const serverDetails: ServerDetail[] = detailsPayload
         .filter((d) => d.name.trim())
-        .map(({ name, description, image }) => {
-          const detail: ServerDetail = {
-            name: name.trim(),
-            description: description?.trim() ?? "",
-          };
-          if (image !== undefined) detail.image = image;
-          return detail;
-        });
+        .map(({ name, description, image }) => ({
+          name: name.trim(),
+          description: description?.trim() ?? "",
+          image: image ?? "",
+        }));
       fd.append("productDetails", JSON.stringify(serverDetails));
 
-      for (const [key, file] of attributeFiles.entries()) {
-        if (key.startsWith("attributeImages-")) fd.append("attributeImages", file, key);
-        if (key.startsWith("detailsImages-")) fd.append("detailsImages", file, key);
-      }
+      const entries = [...attributeFiles.entries()];
+
+      const attrEntries = entries.filter(([k]) => k.startsWith("attributeImages-"));
+      const detailEntries = entries
+        .filter(([k]) => k.startsWith("detailsImages-"))
+        .sort((a, b) => {
+          const ia = +a[0].split("-")[1]!;
+          const ib = +b[0].split("-")[1]!;
+          return ia - ib;
+        });
+
+      attrEntries.forEach(([key, file]) => {
+        fd.append("attributeImages", file, key);
+      });
+      detailEntries.forEach(([key, file]) => {
+        fd.append("detailsImages", file, key);
+      });
 
       await fetchFromAPI(`/dashboardadmin/stock/products/update/${productId}`, {
         method: "PUT",
@@ -445,7 +475,7 @@ fd.append("attributes", JSON.stringify(serverAttrs));
             PAGE_OPTIONS={PAGE_OPTIONS}
             ADMIN_OPTIONS={ADMIN_OPTIONS}
             categories={categories}
-            subcategories={subcategories}
+            subcategories={subByCat[form.categorie] ?? []}
             magasins={magasins}
             brands={brands}
           />
@@ -506,9 +536,10 @@ fd.append("attributes", JSON.stringify(serverAttrs));
         />
       </form>
 
-     <Overlay
-   show={saving || success}
-   message={success ? "Produit mis à jour avec succès" : "Le produit est en cours de création…"} />
+      <Overlay
+        show={saving || success}
+        message={success ? "Produit mis à jour avec succès" : "Le produit est en cours de création…"}
+      />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
   );

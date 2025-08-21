@@ -126,7 +126,7 @@ export default function CreateProductPage() {
   const [attrPayload, setAttrPayload] = useState<AttributePayload[]>([]);
   const [detailsPayload, setDetailsPayload] = useState<ProductDetailPair[]>([]);
   const [fileMap, setFileMap] = useState<Map<string, File>>(new Map());
-
+  const [subByCat, setSubByCat] = useState<Record<string, SubCategory[]>>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
   const [magasins, setMagasins] = useState<Magasin[]>([]);
@@ -143,15 +143,34 @@ export default function CreateProductPage() {
   useEffect(() => {
     (async () => {
       try {
-        const catsRes = await fetchFromAPI<{ categories?: Category[] }>(
-          "/dashboardadmin/stock/categories"
-        );
-        setCategories(catsRes.categories ?? []);
+        type CateSubcate = {
+          _id: string;
+          name: string;
+          subcategories?: Array<{ _id: string; name: string }>;
+        };
 
-        const subsRes = await fetchFromAPI<{ subCategories?: SubCategory[] }>(
-          "/dashboardadmin/stock/subcategories"
+        const catsRes = await fetchFromAPI<{ categories?: CateSubcate[] }>(
+          "/dashboardadmin/stock/categories/cateSubcate"
         );
-        setSubcategories(subsRes.subCategories ?? []);
+
+        const list = catsRes.categories ?? [];
+
+        // categories
+        setCategories(list.map(({ _id, name }) => ({ _id, name })));
+
+        // build mapping + flat list
+        const byCat: Record<string, SubCategory[]> = {};
+        const flatSubs: SubCategory[] = [];
+        for (const c of list) {
+          const subs = (c.subcategories ?? []).map((s) => ({
+            _id: s._id,
+            name: s.name,
+          }));
+          byCat[c._id] = subs;
+          flatSubs.push(...subs);
+        }
+        setSubByCat(byCat);
+        setSubcategories(flatSubs);
 
         const shopsRes = await fetchFromAPI<{ magasins?: Magasin[] }>(
           "/dashboardadmin/stock/magasins"
@@ -219,7 +238,19 @@ export default function CreateProductPage() {
 
   const onFixed = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  ) =>
+    setForm((f) => {
+      const { name, value } = e.target;
+      const next = { ...f, [name]: value } as ProductForm;
+
+      if (name === "categorie") {
+        const allowed = (subByCat[value] ?? []).some(
+          (s) => s._id === next.subcategorie
+        );
+        if (!allowed) next.subcategorie = ""; // reset if not in the selected category
+      }
+      return next;
+    });
 
   const next = () => {
     setError(null);
@@ -257,24 +288,33 @@ export default function CreateProductPage() {
       fd.append("mainImage", mainImage);
       extraImages.forEach((f) => fd.append("extraImages", f));
 
-      type AttrEither =
-        | { definition: string; value: AttributeRow[] }
-        | { definition: string; value: string };
+type ServerAttr =
+  | { attributeSelected: string; value: AttributeRow[] }
+  | { attributeSelected: string; value: string };
 
-      const serverAttrs = attrPayload
-        .map<AttrEither | null>(({ attributeSelected, value }) => {
-          const cleaned = cleanAttributeValue(value);
-          if (typeof cleaned === "string" && cleaned.trim()) {
-            return { definition: attributeSelected, value: cleaned };
-          }
-          if (Array.isArray(cleaned) && cleaned.length > 0) {
-            return { definition: attributeSelected, value: cleaned };
-          }
-          return null;
-        })
-        .filter((x): x is AttrEither => x !== null);
+const serverAttrs = attrPayload
+  .map<ServerAttr | null>(({ attributeSelected, value }) => {
+    const id = (attributeSelected ?? "").trim();
+    if (!id) return null; // drop rows without a selected attribute
 
-      fd.append("attributes", JSON.stringify(serverAttrs));
+    const cleaned = cleanAttributeValue(value);
+
+    if (typeof cleaned === "string") {
+      const s = cleaned.trim();
+      if (!s) return null;
+      return { attributeSelected: id, value: s };
+    }
+
+    if (Array.isArray(cleaned) && cleaned.length > 0) {
+      return { attributeSelected: id, value: cleaned };
+    }
+
+    return null;
+  })
+  .filter((x): x is ServerAttr => x !== null);
+
+fd.append("attributes", JSON.stringify(serverAttrs));
+
 
       const serverDetails = detailsPayload
         .filter((d) => d.name.trim())
@@ -312,7 +352,9 @@ export default function CreateProductPage() {
       setTimeout(() => router.push("/dashboard/manage-stock/products"), 2000);
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : String(err) || "Échec de création du produit";
+        err instanceof Error
+          ? err.message
+          : String(err) || "Échec de création du produit";
       setError(message);
       setSaving(false);
     }
@@ -335,7 +377,10 @@ export default function CreateProductPage() {
         onStepClick={(s) => setStep(s as 1 | 2 | 3 | 4)}
       />
 
-      <form onSubmit={handleSubmit} className="flex flex-1 flex-col justify-between gap-8 h-fit ">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-1 flex-col justify-between gap-8 h-fit "
+      >
         {step === 1 && (
           <StepDetails
             form={form}
@@ -357,7 +402,7 @@ export default function CreateProductPage() {
             PAGE_OPTIONS={PAGE_OPTIONS}
             ADMIN_OPTIONS={ADMIN_OPTIONS}
             categories={categories}
-            subcategories={subcategories}
+            subcategories={subByCat[form.categorie] ?? []}
             magasins={magasins}
             brands={brands}
           />
@@ -421,7 +466,11 @@ export default function CreateProductPage() {
 
       <Overlay
         show={saving || success}
-        message={success ? "Produit créé avec succès" : "Le produit est en cours de création…"}
+        message={
+          success
+            ? "Produit créé avec succès"
+            : "Le produit est en cours de création…"
+        }
       />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
