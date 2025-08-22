@@ -37,22 +37,19 @@ export default function useAutoLogout() {
 
     const delay = Math.min(Math.max(expMs - Date.now(), 0), MAX_DELAY);
 
-    const doClientLogout = async (callBackend = true) => {
+        const doClientLogout = async (callBackend = true) => {
       try {
         if (callBackend) {
           await fetchFromAPI<void>(LOGOUT_PATH, {
             method: "POST",
             credentials: "include",
-            cache: "no-store",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ confirm: true }), // keep if required by your backend
           }).catch(() => {});
         }
       } finally {
-        Cookies.remove(TIMER_COOKIE, { path: "/" });
+        Cookies.remove(TIMER_COOKIE);
         bcRef.current?.postMessage({ type: "logout" }); // notify other tabs
         // HARD refresh to ensure fresh state everywhere
-        window.location.replace("/"); // homepage is your sign-in page
+        window.location.replace("/signin");
       }
     };
 
