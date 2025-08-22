@@ -7,7 +7,6 @@ interface Props {
   children: ReactNode;
 }
 
-
 export default function DashboardClientShell({ children }: Props) {
   useAutoLogout();
 return <>{children}</>;
