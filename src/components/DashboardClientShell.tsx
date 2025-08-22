@@ -21,7 +21,7 @@ export default function DashboardClientShell({ children }: Props) {
   // If not authenticated once loading finishes, bounce to signin
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.replace(`/signin?redirectTo=${encodeURIComponent(pathname)}`);
+      router.replace(`/`);
     }
   }, [loading, isAuthenticated, pathname, router]);
 
