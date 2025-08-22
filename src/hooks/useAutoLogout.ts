@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   src/hooks/useAutoLogout.ts  (dashboard) — mirror website behavior
+   src/hooks/useAutoLogout.ts
 ------------------------------------------------------------------ */
 "use client";
 
@@ -7,23 +7,30 @@ import { useEffect, useRef } from "react";
 import Cookies from "js-cookie";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
-const TIMER_COOKIE = "token_FrontEndAdmin_exp"; // JS-readable ms timestamp
-const LOGOUT_PATH  = "/dashboardAuth/logout";   // fetchFromAPI adds /api
-const MAX_DELAY    = 2_147_483_647;            // setTimeout max (~24.8 days)
+const TIMER_COOKIE = "token_FrontEndAdmin_exp";
+const LOGOUT_PATH  = "/dashboardAuth/logout";
+const MAX_DELAY    = 2_147_483_647;
 
-export default function useAutoLogout() {
+export default function useAutoLogout(enabled: boolean = false) {
   const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<number | null>(null);
   const bcRef       = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
     const cleanup = () => {
-      if (timerRef.current)   clearTimeout(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
       if (intervalRef.current) clearInterval(intervalRef.current);
       bcRef.current?.close();
+      timerRef.current = null;
+      intervalRef.current = null;
+      bcRef.current = null;
     };
 
-    // clear leftovers on remounts (Strict Mode, hot reload, etc.)
+    if (!enabled) {
+      cleanup();
+      return;
+    }
+
     cleanup();
 
     const raw = Cookies.get(TIMER_COOKIE);
@@ -40,49 +47,41 @@ export default function useAutoLogout() {
           await fetchFromAPI<void>(LOGOUT_PATH, {
             method: "POST",
             credentials: "include",
+            cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ confirm: true }),
           }).catch(() => {});
         }
       } finally {
-        // remove mirror cookie (server will clear HttpOnly on its side)
-        Cookies.remove(TIMER_COOKIE, { path: "/", sameSite: "Lax" });
-        // notify other tabs
+        Cookies.remove(TIMER_COOKIE, { path: "/" });
         bcRef.current?.postMessage({ type: "logout" });
-        // go to your dashboard sign-in (root in your setup)
         window.location.replace("/");
       }
     };
 
-    // Main timeout
-    timerRef.current = setTimeout(() => {
-      void doClientLogout(true);
-    }, delay);
+    timerRef.current = setTimeout(() => doClientLogout(true), delay);
 
-    // Safety interval for throttled/background tabs
     intervalRef.current = window.setInterval(() => {
       const r = Cookies.get(TIMER_COOKIE);
       if (!r) return;
-      if (Date.now() >= Number(r)) {
-        void doClientLogout(true);
-      }
+      if (Date.now() >= Number(r)) doClientLogout(true);
     }, 15_000);
 
-    // Cross-tab sync
     bcRef.current =
       typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("auth") : null;
 
     if (bcRef.current) {
       bcRef.current.onmessage = (e) => {
-        if (e.data?.type === "logout") {
-          void doClientLogout(false);
+        if (e.data?.type === "logout") doClientLogout(false);
+        if (e.data?.type === "refresh-exp" && typeof e.data.exp === "number") {
+          Cookies.set(TIMER_COOKIE, String(e.data.exp), { path: "/", sameSite: "Lax" });
+          window.location.reload();
         }
       };
     }
 
-    // Fallback: some browsers without BroadcastChannel
     const storageHandler = (ev: StorageEvent) => {
-      if (ev.key === TIMER_COOKIE && ev.newValue) {
-        window.location.reload();
-      }
+      if (ev.key === TIMER_COOKIE && ev.newValue) window.location.reload();
     };
     window.addEventListener("storage", storageHandler);
 
@@ -90,5 +89,5 @@ export default function useAutoLogout() {
       window.removeEventListener("storage", storageHandler);
       cleanup();
     };
-  }, []);
+  }, [enabled]);
 }

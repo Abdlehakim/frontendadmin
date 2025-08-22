@@ -1,13 +1,14 @@
+// src/components/DashboardClientShell.tsx
 "use client";
 
 import type { ReactNode } from "react";
+import { useAuth } from "@/hooks/useAuthDashboard";
 import useAutoLogout from "@/hooks/useAutoLogout";
 
-interface Props {
-  children: ReactNode;
-}
+interface Props { children: ReactNode; }
 
 export default function DashboardClientShell({ children }: Props) {
-  useAutoLogout();
-return <>{children}</>;
+  const { isAuthenticated, loading } = useAuth();
+  useAutoLogout(isAuthenticated && !loading);
+  return <>{children}</>;
 }

@@ -57,7 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      await refresh();
+
+
+    // now read a fresh session (server will set new cookies, incl. _exp)
+    await refresh();
     },
     [refresh],
   );
