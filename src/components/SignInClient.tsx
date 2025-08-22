@@ -20,6 +20,26 @@ export default function SignInClient({ redirectTo }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // If already authenticated (cookie present), bounce away from /signin immediately
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const t = Date.now();
+        const data = await fetchFromAPI<{ user: unknown }>(
+          `/dashboardAuth/me?t=${t}`,
+          { cache: "no-store" } // credentials included by fetchFromAPI
+        );
+        if (!cancelled && data?.user) {
+          window.location.replace(redirectTo);
+        }
+      } catch {
+        // ignore: unauth → stay on page
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [redirectTo]);
+
   useEffect(() => {
     const saved = localStorage.getItem("rememberedAdminEmail");
     if (saved) {
@@ -38,7 +58,7 @@ export default function SignInClient({ redirectTo }: Props) {
       await fetchFromAPI("/signindashboardadmin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // credentials: "include" is already set inside fetchFromAPI
+        // credentials: "include" is set inside fetchFromAPI
         body: JSON.stringify({ email, password }),
       });
 
@@ -48,8 +68,8 @@ export default function SignInClient({ redirectTo }: Props) {
         localStorage.removeItem("rememberedAdminEmail");
       }
 
-      // Hard reload so the server reads the HttpOnly cookie
-      window.location.assign(redirectTo);
+      // Hard reload so middleware sees the HttpOnly cookie
+      window.location.replace(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Échec de la connexion");
       setIsSubmitting(false);

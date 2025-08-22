@@ -1,21 +1,18 @@
 // src/app/page.tsx
 import SignInClient from "@/components/SignInClient";
 
-type SP = Record<string, string | string[] | undefined>;
+type SP = { [key: string]: string | string[] | undefined };
 
-export default async function DashboardSignInPage({
+export default function DashboardSignInPage({
   searchParams,
-}: {
-  searchParams?: Promise<SP>;
-}) {
-  const params: SP = await (searchParams ?? Promise.resolve({}));
+}: { searchParams?: SP }) {
+  const raw = Array.isArray(searchParams?.redirectTo)
+    ? searchParams?.redirectTo?.[0]
+    : searchParams?.redirectTo;
 
-  const raw = Array.isArray(params.redirectTo) ? params.redirectTo[0] : params.redirectTo;
-  const decodedOnce  = typeof raw === "string" ? decodeURIComponent(raw) : undefined;
-  const decodedTwice = decodedOnce ? decodeURIComponent(decodedOnce) : undefined;
-
-  const target = decodedTwice || decodedOnce;
-  const redirectTo = target && target.startsWith("/") ? target : "/dashboard";
+  // decode once; sanitize
+  const decoded = typeof raw === "string" ? decodeURIComponent(raw) : undefined;
+  const redirectTo = decoded && decoded.startsWith("/") ? decoded : "/dashboard";
 
   return <SignInClient redirectTo={redirectTo} />;
 }
