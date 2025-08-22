@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   src/hooks/useAutoLogout.ts      (dashboard)
+   src/hooks/useAutoLogout.ts  (dashboard) — mirror website behavior
 ------------------------------------------------------------------ */
 "use client";
 
@@ -7,50 +7,32 @@ import { useEffect, useRef } from "react";
 import Cookies from "js-cookie";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
-const TIMER_COOKIE = "token_FrontEndAdmin_exp";
-const LOGOUT_PATH  = "/dashboardAuth/logout"; // uses fetchFromAPI (adds /api)
-const MAX_DELAY    = 2_147_483_647;
-
-// We'll read server time from headers on this lightweight call.
-// Use a GET so Express always sets a Date header.
-const SERVER_TIME_URL = "/api/dashboardAuth/me";
+const TIMER_COOKIE = "token_FrontEndAdmin_exp"; // JS-readable ms timestamp
+const LOGOUT_PATH  = "/dashboardAuth/logout";   // fetchFromAPI adds /api
+const MAX_DELAY    = 2_147_483_647;            // setTimeout max (~24.8 days)
 
 export default function useAutoLogout() {
   const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<number | null>(null);
   const bcRef       = useRef<BroadcastChannel | null>(null);
-  const offsetRef   = useRef<number>(0); // serverNow - clientNow
 
   useEffect(() => {
     const cleanup = () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef.current)   clearTimeout(timerRef.current);
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (bcRef.current) bcRef.current.close();
-      timerRef.current = null;
-      intervalRef.current = null;
-      bcRef.current = null;
+      bcRef.current?.close();
     };
+
+    // clear leftovers on remounts (Strict Mode, hot reload, etc.)
     cleanup();
 
-    const readExpMs = (): number | null => {
-      const raw = Cookies.get(TIMER_COOKIE);
-      if (!raw) return null;
-      const n = Number(raw);
-      return Number.isFinite(n) ? n : null;
-    };
+    const raw = Cookies.get(TIMER_COOKIE);
+    if (!raw) return;
 
-    const scheduleFromCookie = () => {
-      const expMs = readExpMs();
-      if (!expMs) return;
+    const expMs = Number(raw);
+    if (!Number.isFinite(expMs)) return;
 
-      const nowAdj = Date.now() + offsetRef.current;
-      const delay = Math.min(Math.max(expMs - nowAdj, 0), MAX_DELAY);
-
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        void doClientLogout(true);
-      }, delay);
-    };
+    const delay = Math.min(Math.max(expMs - Date.now(), 0), MAX_DELAY);
 
     const doClientLogout = async (callBackend = true) => {
       try {
@@ -61,79 +43,52 @@ export default function useAutoLogout() {
           }).catch(() => {});
         }
       } finally {
+        // remove mirror cookie (server will clear HttpOnly on its side)
         Cookies.remove(TIMER_COOKIE, { path: "/", sameSite: "Lax" });
+        // notify other tabs
         bcRef.current?.postMessage({ type: "logout" });
+        // go to your dashboard sign-in (root in your setup)
         window.location.replace("/");
       }
     };
 
-    const measureServerOffset = async () => {
-      try {
-        // We only need headers; JSON body is fine to fetch, we just ignore it.
-        const res = await fetch(SERVER_TIME_URL, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        });
-        const dateHeader = res.headers.get("date");
-        if (dateHeader) {
-          const serverNow = new Date(dateHeader).getTime();
-          offsetRef.current = serverNow - Date.now();
-        } else {
-          offsetRef.current = 0; // fallback
+    // Main timeout
+    timerRef.current = setTimeout(() => {
+      void doClientLogout(true);
+    }, delay);
+
+    // Safety interval for throttled/background tabs
+    intervalRef.current = window.setInterval(() => {
+      const r = Cookies.get(TIMER_COOKIE);
+      if (!r) return;
+      if (Date.now() >= Number(r)) {
+        void doClientLogout(true);
+      }
+    }, 15_000);
+
+    // Cross-tab sync
+    bcRef.current =
+      typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("auth") : null;
+
+    if (bcRef.current) {
+      bcRef.current.onmessage = (e) => {
+        if (e.data?.type === "logout") {
+          void doClientLogout(false);
         }
-      } catch {
-        offsetRef.current = 0;
+      };
+    }
+
+    // Fallback: some browsers without BroadcastChannel
+    const storageHandler = (ev: StorageEvent) => {
+      if (ev.key === TIMER_COOKIE && ev.newValue) {
+        window.location.reload();
       }
     };
+    window.addEventListener("storage", storageHandler);
 
-    (async () => {
-      // 1) Measure skew once on mount, then schedule
-      await measureServerOffset();
-      scheduleFromCookie();
-
-      // 2) Safety interval for BG tabs + expiry check using adjusted time
-      intervalRef.current = window.setInterval(() => {
-        const expMs = readExpMs();
-        if (!expMs) return;
-        const nowAdj = Date.now() + offsetRef.current;
-        if (nowAdj >= expMs) {
-          void doClientLogout(true);
-        }
-      }, 15_000);
-
-      // 3) Cross-tab sync
-      bcRef.current =
-        typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("auth") : null;
-
-      if (bcRef.current) {
-        bcRef.current.onmessage = (e) => {
-          if (e.data?.type === "logout") {
-            void doClientLogout(false);
-          }
-          if (e.data?.type === "refresh-exp" && typeof e.data.exp === "number") {
-            Cookies.set(TIMER_COOKIE, String(e.data.exp), {
-              path: "/",
-              sameSite: "Lax",
-            });
-            scheduleFromCookie();
-          }
-        };
-      }
-
-      // 4) When the tab becomes active or refocuses, re-measure offset & reschedule.
-      const onFocus = async () => {
-        await measureServerOffset();
-        scheduleFromCookie();
-      };
-      window.addEventListener("visibilitychange", () => {
-        if (!document.hidden) void onFocus();
-      });
-      window.addEventListener("focus", onFocus);
-
-      // Note: 'storage' does NOT fire for cookie changes, so we don't use it.
-    })();
-
-    return cleanup;
+    return () => {
+      window.removeEventListener("storage", storageHandler);
+      cleanup();
+    };
   }, []);
 }
