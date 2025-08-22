@@ -8,8 +8,8 @@ import Cookies from "js-cookie";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
 const TIMER_COOKIE = "token_FrontEndAdmin_exp"; // JS-readable ms timestamp
-const LOGOUT_PATH  = "/dashboardAuth/logout";   // fetchFromAPI prepends /api
-const MAX_DELAY    = 2_147_483_647;             // setTimeout max (~24.8 days)
+const LOGOUT_PATH  = "/dashboardAuth/logout";
+const MAX_DELAY    = 2_147_483_647;            // setTimeout max (~24.8 days)
 
 export default function useAutoLogout() {
   const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -23,7 +23,7 @@ export default function useAutoLogout() {
       bcRef.current?.close();
     };
 
-    cleanup(); // clear leftovers on remounts (dev/strict mode, etc.)
+    cleanup(); // clear leftovers on remounts (dev/strict mode, HMR, etc.)
 
     const raw = Cookies.get(TIMER_COOKIE);
     if (!raw) return;
@@ -36,13 +36,21 @@ export default function useAutoLogout() {
     const doClientLogout = async (callBackend = true) => {
       try {
         if (callBackend) {
+          // ✅ match backend which requires an explicit confirm flag
           await fetchFromAPI<void>(LOGOUT_PATH, {
             method: "POST",
+            credentials: "include",
+            cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ confirm: true }),
           }).catch(() => {});
         }
       } finally {
-        Cookies.remove(TIMER_COOKIE);
+        // remove the client-side timer cookie
+        Cookies.remove(TIMER_COOKIE, { path: "/" });
+        // notify other tabs
         bcRef.current?.postMessage({ type: "logout" });
+        // go to sign-in
         window.location.replace("/");
       }
     };

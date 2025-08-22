@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   src/hooks/useAuthDashboard.ts
+   src/hooks/useAuthDashboard.ts  (frontend)
 ------------------------------------------------------------------ */
 "use client";
 
@@ -27,12 +27,11 @@ interface AuthContextValue {
 /* ───────── context ───────── */
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
-/* Keep auth requests simple to avoid CORS preflight */
+/* Minimal options: always send cookies, avoid caches; no custom headers */
 const withAuthOpts = <T extends RequestInit | undefined>(opts?: T): RequestInit => ({
   ...opts,
   credentials: "include",
   cache: "no-store",
-  // ⚠️ Don't add custom request headers here; they trigger a preflight.
   headers: {
     ...(opts?.headers ?? {}),
   },
@@ -42,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  /** GET /api/dashboardAuth/me — force fresh read, but no custom headers */
+  /** GET /api/dashboardAuth/me — always fresh */
   const refresh = React.useCallback(async () => {
     try {
       const t = Date.now(); // cache-buster
@@ -63,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         "/signindashboardadmin",
         withAuthOpts({
           method: "POST",
-          headers: { "Content-Type": "application/json" }, // this one is fine; API must allow it
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         })
       );
@@ -72,10 +71,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refresh]
   );
 
-  /** POST /api/dashboardAuth/logout */
+  /** POST /api/dashboardAuth/logout (with confirm) */
   const logout = React.useCallback(async () => {
     try {
-      await fetchFromAPI("/dashboardAuth/logout", withAuthOpts({ method: "POST" }));
+      await fetchFromAPI("/dashboardAuth/logout", withAuthOpts({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: true }),
+      }));
     } finally {
       setUser(null);
     }
