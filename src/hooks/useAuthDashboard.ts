@@ -27,27 +27,25 @@ interface AuthContextValue {
 /* ───────── context ───────── */
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
-/* Always send cookies + bypass caches on auth requests */
+/* Keep auth requests simple to avoid CORS preflight */
 const withAuthOpts = <T extends RequestInit | undefined>(opts?: T): RequestInit => ({
   ...opts,
   credentials: "include",
   cache: "no-store",
+  // ⚠️ Don't add custom request headers here; they trigger a preflight.
   headers: {
     ...(opts?.headers ?? {}),
-    "Cache-Control": "no-store",
-    Pragma: "no-cache",
   },
 });
 
-/* ───────── provider ───────── */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  /** GET /api/dashboardAuth/me — force fresh read (avoid 304) */
+  /** GET /api/dashboardAuth/me — force fresh read, but no custom headers */
   const refresh = React.useCallback(async () => {
     try {
-      const t = Date.now();
+      const t = Date.now(); // cache-buster
       const data = await fetchFromAPI<{ user: User | null }>(
         `/dashboardAuth/me?t=${t}`,
         withAuthOpts()
@@ -65,11 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         "/signindashboardadmin",
         withAuthOpts({
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json" }, // this one is fine; API must allow it
           body: JSON.stringify({ email, password }),
         })
       );
-      // Cookie should be set by the server at this point
       await refresh();
     },
     [refresh]
@@ -84,7 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Initial cookie check
   React.useEffect(() => {
     (async () => {
       await refresh();
@@ -101,7 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refresh,
   };
 
-  // No JSX (file is .ts) → use createElement
   return React.createElement(AuthContext.Provider, { value: ctx }, children);
 }
 
