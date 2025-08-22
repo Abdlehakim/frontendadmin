@@ -21,24 +21,6 @@ export default function SignInClient({ redirectTo }: Props) {
   const [showPassword, setShowPassword] = useState(false);
 
   // If already authenticated (cookie present), bounce away from /signin immediately
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const t = Date.now();
-        const data = await fetchFromAPI<{ user: unknown }>(
-          `/dashboardAuth/me?t=${t}`,
-          { cache: "no-store" } // credentials included by fetchFromAPI
-        );
-        if (!cancelled && data?.user) {
-          window.location.replace(redirectTo);
-        }
-      } catch {
-        // ignore: unauth → stay on page
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [redirectTo]);
 
   useEffect(() => {
     const saved = localStorage.getItem("rememberedAdminEmail");
