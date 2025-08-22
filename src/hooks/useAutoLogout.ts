@@ -9,7 +9,7 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
 const TIMER_COOKIE = "token_FrontEndAdmin_exp";
 const LOGOUT_PATH  = "/dashboardAuth/logout";
-const MAX_DELAY    = 2_147_483_647; // ~24.8 days
+const MAX_DELAY    = 2_147_483_647;
 
 export default function useAutoLogout() {
   const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -25,8 +25,7 @@ export default function useAutoLogout() {
       intervalRef.current = null;
       bcRef.current = null;
     };
-
-    // clear leftovers on remounts (dev/strict mode, route changes)
+    
     cleanup();
 
     const raw = Cookies.get(TIMER_COOKIE);
@@ -47,9 +46,8 @@ export default function useAutoLogout() {
         }
       } finally {
         Cookies.remove(TIMER_COOKIE);
-        bcRef.current?.postMessage({ type: "logout" }); // notify other tabs
-        // HARD refresh to ensure fresh state everywhere
-        window.location.replace("/signin");
+        bcRef.current?.postMessage({ type: "logout" });
+        window.location.replace("/");
       }
     };
 
@@ -74,11 +72,9 @@ export default function useAutoLogout() {
     if (bcRef.current) {
       bcRef.current.onmessage = (e) => {
         if (e.data?.type === "logout") {
-          // Another tab already called backend; just clean up locally
           doClientLogout(false);
         }
         if (e.data?.type === "refresh-exp" && typeof e.data.exp === "number") {
-          // another tab refreshed token; rewrite cookie & re-arm by reloading
           Cookies.set(TIMER_COOKIE, String(e.data.exp), {
             path: "/",
             sameSite: "Lax",
@@ -87,8 +83,6 @@ export default function useAutoLogout() {
         }
       };
     }
-
-    // Fallback for browsers without BroadcastChannel
     const storageHandler = (ev: StorageEvent) => {
       if (ev.key === TIMER_COOKIE && ev.newValue) {
         window.location.reload();

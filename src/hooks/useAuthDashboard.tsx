@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   src/hooks/useAuthDashboard.ts (frontend) — simplified to match useAuth.tsx
+   src/hooks/useAuthDashboard.ts
 ------------------------------------------------------------------ */
 "use client";
 
