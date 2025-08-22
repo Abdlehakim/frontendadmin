@@ -3,26 +3,16 @@ import SignInClient from "@/components/SignInClient";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export default function DashboardSignInPage({
-  // params is required by Next's PageProps even if unused
-  params, // eslint-disable-line @typescript-eslint/no-unused-vars
+export default async function DashboardSignInPage({
   searchParams,
 }: {
-  params: Record<string, string>;
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const raw =
-    Array.isArray(searchParams?.redirectTo)
-      ? searchParams.redirectTo[0]
-      : searchParams?.redirectTo;
+  const sp = await searchParams;
 
-  const decodedOnce =
-    typeof raw === "string" ? decodeURIComponent(raw) : undefined;
-  const decodedTwice =
-    decodedOnce && decodedOnce !== raw ? decodeURIComponent(decodedOnce) : undefined;
-
-  const target = decodedTwice || decodedOnce;
-  const redirectTo = target && target.startsWith("/") ? target : "/dashboard";
+  const raw = Array.isArray(sp.redirectTo) ? sp.redirectTo[0] : sp.redirectTo;
+  const decoded = typeof raw === "string" ? decodeURIComponent(raw) : undefined;
+  const redirectTo = decoded && decoded.startsWith("/") ? decoded : "/dashboard";
 
   return <SignInClient redirectTo={redirectTo} />;
 }
