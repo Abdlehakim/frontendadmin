@@ -11,7 +11,8 @@ const TIMER_COOKIE = "token_FrontEndAdmin_exp"; // JS-readable ms timestamp
 const LOGOUT_PATH  = "/dashboardAuth/logout";
 const MAX_DELAY    = 2_147_483_647;            // setTimeout max (~24.8 days)
 
-export default function useAutoLogout() {
+/** Start auto-logout timers only when `enabled` is true. */
+export default function useAutoLogout(enabled: boolean) {
   const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<number | null>(null);
   const bcRef       = useRef<BroadcastChannel | null>(null);
@@ -21,9 +22,18 @@ export default function useAutoLogout() {
       if (timerRef.current) clearTimeout(timerRef.current);
       if (intervalRef.current) clearInterval(intervalRef.current);
       bcRef.current?.close();
+      timerRef.current = null;
+      intervalRef.current = null;
+      bcRef.current = null;
     };
 
-    cleanup(); // clear leftovers on remounts (dev/strict mode, HMR, etc.)
+    // ⛔ Do nothing until authenticated
+    if (!enabled) {
+      cleanup();
+      return;
+    }
+
+    cleanup(); // clear leftovers on remounts / toggles
 
     const raw = Cookies.get(TIMER_COOKIE);
     if (!raw) return;
@@ -36,22 +46,18 @@ export default function useAutoLogout() {
     const doClientLogout = async (callBackend = true) => {
       try {
         if (callBackend) {
-          // ✅ match backend which requires an explicit confirm flag
           await fetchFromAPI<void>(LOGOUT_PATH, {
             method: "POST",
             credentials: "include",
             cache: "no-store",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ confirm: true }),
+            body: JSON.stringify({ confirm: true }),   // ✅ required by backend
           }).catch(() => {});
         }
       } finally {
-        // remove the client-side timer cookie
         Cookies.remove(TIMER_COOKIE, { path: "/" });
-        // notify other tabs
         bcRef.current?.postMessage({ type: "logout" });
-        // go to sign-in
-        window.location.replace("/");
+        window.location.replace("/"); // or "/signin"
       }
     };
 
@@ -75,16 +81,9 @@ export default function useAutoLogout() {
 
     if (bcRef.current) {
       bcRef.current.onmessage = (e) => {
-        if (e.data?.type === "logout") {
-          // don't call backend twice
-          doClientLogout(false);
-        }
+        if (e.data?.type === "logout") doClientLogout(false); // don't double-call backend
         if (e.data?.type === "refresh-exp" && typeof e.data.exp === "number") {
-          // another tab refreshed token; rewrite cookie & re-arm by reloading
-          Cookies.set(TIMER_COOKIE, String(e.data.exp), {
-            path: "/",
-            sameSite: "Lax",
-          });
+          Cookies.set(TIMER_COOKIE, String(e.data.exp), { path: "/", sameSite: "Lax" });
           window.location.reload();
         }
       };
@@ -92,9 +91,7 @@ export default function useAutoLogout() {
 
     // Fallback for browsers without BroadcastChannel
     const storageHandler = (ev: StorageEvent) => {
-      if (ev.key === TIMER_COOKIE && ev.newValue) {
-        window.location.reload();
-      }
+      if (ev.key === TIMER_COOKIE && ev.newValue) window.location.reload();
     };
     window.addEventListener("storage", storageHandler);
 
@@ -102,5 +99,5 @@ export default function useAutoLogout() {
       window.removeEventListener("storage", storageHandler);
       cleanup();
     };
-  }, []);
+  }, [enabled]);
 }
