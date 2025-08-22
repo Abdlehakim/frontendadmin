@@ -2,31 +2,37 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const TOKEN_COOKIE = "token_FrontEndAdmin";
+const COOKIE_NAME = "token_FrontEndAdmin";
+const PROTECTED = [/^\/dashboard(?:\/|$)/];
 
-export function middleware(req: NextRequest) {
-  const { pathname, searchParams } = req.nextUrl;
-  const token = req.cookies.get(TOKEN_COOKIE)?.value;
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get(COOKIE_NAME)?.value;
+  const { pathname, search, searchParams } = request.nextUrl;
 
-  const isProtected = pathname.startsWith("/dashboard");
-  const isAuthPage = pathname === "/";          
+  const isProtected = PROTECTED.some((re) => re.test(pathname));
+  const isSignIn = pathname === "/";
+
+  // Not logged in → block protected pages
   if (!token && isProtected) {
-    const loginUrl = req.nextUrl.clone();
-    loginUrl.pathname = "/";
-    const original = req.nextUrl.pathname + req.nextUrl.search;
-    loginUrl.searchParams.set("redirectTo", original);
-    return NextResponse.redirect(loginUrl);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/";
+    redirectUrl.searchParams.set(
+      "redirectTo",
+      encodeURIComponent(pathname + (search || ""))
+    );
+    return NextResponse.redirect(redirectUrl);
   }
-  
-  if (token && isAuthPage) {
-    const redirectTo = searchParams.get("redirectTo") || "/dashboard";
-    return NextResponse.redirect(new URL(redirectTo, req.url));
+
+  // Logged in → keep away from the sign-in page
+  if (token && isSignIn) {
+    const to = searchParams.get("redirectTo");
+    const dest = to ? decodeURIComponent(to) : "/dashboard";
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // Only run on dashboard and the login page ("/")
   matcher: ["/", "/dashboard/:path*"],
 };
