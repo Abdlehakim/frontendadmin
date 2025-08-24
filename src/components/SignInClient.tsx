@@ -142,7 +142,7 @@ export default function SignInClient({ redirectTo }: Props) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="mt-2 h-12 w-full text-white text-lg font-semibold rounded-md bg-primary transition hover:bg-secondary disabled:opacity-60"
+                className="mt-2 h-12 w-full text-white text-lg font-semibold rounded-md bg-primary transition hover:bg-secondary disabled:opacity-60 cursor-pointer"
               >
                 {isSubmitting ? "Connexion…" : "Se connecter"}
               </button>
