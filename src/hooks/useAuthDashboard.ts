@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   src/hooks/useAuthDashboard.ts
+   src/hooks/useAuthDashboard.ts  — optimized & de-duplicated
 ------------------------------------------------------------------ */
 "use client";
 
@@ -26,37 +26,43 @@ interface AuthContextValue {
 /* ───────── context ───────── */
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
-/** Make an init that does NOT carry the Next.js `next` property */
+/** RequestInit without Next.js `next` field (avoids prefetch/cache quirks) */
 type APIInit = Omit<RequestInit, "next">;
 
 const withAuthOpts = (opts?: APIInit): APIInit => ({
   ...(opts ?? {}),
   credentials: "include",
   cache: "no-store",
-  headers: {
-    ...(opts?.headers ?? {}),
-  },
+  headers: { ...(opts?.headers ?? {}) },
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  /** GET /api/dashboardAuth/me — force fresh read */
-  const refresh = React.useCallback(async () => {
-    try {
-      const t = Date.now(); // cache-buster
-      const data = await fetchFromAPI<{ user: User | null }>(
-        `/dashboardAuth/me?t=${t}`,
-        withAuthOpts()
-      );
-      setUser(data?.user ?? null);
-    } catch {
-      setUser(null);
-    }
+  /** De-dupe concurrent refresh calls (prevents double `/me`) */
+  const inflightRef = React.useRef<Promise<void> | null>(null);
+
+  const refresh = React.useCallback(async (): Promise<void> => {
+    if (inflightRef.current) return inflightRef.current;
+    inflightRef.current = (async () => {
+      try {
+        const t = Date.now(); // cache-buster
+        const data = await fetchFromAPI<{ user: User | null }>(
+          `/dashboardAuth/me?t=${t}`,
+          withAuthOpts()
+        );
+        setUser(data?.user ?? null);
+      } catch {
+        setUser(null);
+      } finally {
+        inflightRef.current = null;
+      }
+    })();
+    return inflightRef.current;
   }, []);
 
-  /** POST /api/signindashboardadmin */
+  /** POST /api/signindashboardadmin → then single refresh */
   const login = React.useCallback(
     async (email: string, password: string) => {
       await fetchFromAPI(
@@ -67,14 +73,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           body: JSON.stringify({ email, password }),
         })
       );
-      // clear any stale client timer cookie (prevents immediate auto-logout)
+      // Clear any stale client timer cookie (avoids immediate auto-logout)
       document.cookie = "token_FrontEndAdmin_exp=; Max-Age=0; path=/";
       await refresh();
     },
     [refresh]
   );
 
-  /** POST /api/dashboardAuth/logout */
+  /** POST /api/dashboardAuth/logout (guarded on the server) */
   const logout = React.useCallback(async () => {
     try {
       await fetchFromAPI(
@@ -90,11 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  /** Initial refresh (guarded to run once per mount; de-duped anyway) */
+  const didInit = React.useRef(false);
   React.useEffect(() => {
-    (async () => {
-      await refresh();
-      setLoading(false);
-    })();
+    if (didInit.current) return;
+    didInit.current = true;
+    refresh().finally(() => setLoading(false));
   }, [refresh]);
 
   const ctx: AuthContextValue = {

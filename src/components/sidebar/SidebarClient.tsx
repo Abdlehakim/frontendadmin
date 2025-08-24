@@ -6,7 +6,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { useAuth } from "@/hooks/useAuthDashboard";
 import LoadingDots from "@/components/LoadingDots";
 
@@ -41,7 +40,7 @@ const collectHrefs = (items?: SidebarItem[]): string[] => {
 };
 
 export default function SidebarClient() {
-  const { user, loading, logout, refresh } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -49,6 +48,7 @@ export default function SidebarClient() {
   const [collapsed, setCollapsed] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [redirecting, setRedirecting] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   // Redirect AFTER render if unauthenticated
   useEffect(() => {
@@ -118,15 +118,18 @@ export default function SidebarClient() {
     });
 
   const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
     try {
-      await fetchFromAPI<void>("/dashboardAuth/logout", { method: "POST" });
+      // ✅ Use hook (sends {confirm:true} to backend)
+      await logout();
     } finally {
+      // Local clean-up and redirect
       localStorage.removeItem("rememberedAdminEmail");
       localStorage.removeItem("token_FrontEndAdmin");
       localStorage.removeItem("adminUserName");
-      await logout();
-      await refresh();
-      router.push("/");
+      router.replace("/");
+      setSigningOut(false);
     }
   };
 
@@ -262,18 +265,10 @@ export default function SidebarClient() {
             </div>
             <IconButton
               icon={
-                collapsed ? (
-                  <LuArrowBigRight size={20} />
-                ) : (
-                  <LuArrowBigLeft size={20} />
-                )
+                collapsed ? <LuArrowBigRight size={20} /> : <LuArrowBigLeft size={20} />
               }
               onClick={toggleCollapse}
-              ariaLabel={
-                collapsed
-                  ? "Ouvrir la barre latérale"
-                  : "Fermer la barre latérale"
-              }
+              ariaLabel={collapsed ? "Ouvrir la barre latérale" : "Fermer la barre latérale"}
             />
           </div>
 
@@ -284,9 +279,7 @@ export default function SidebarClient() {
           >
             <div className="flex flex-col">
               {sidebarItems
-                .filter(
-                  (item) => !item.permission || hasPermission(item.permission)
-                )
+                .filter((item) => !item.permission || hasPermission(item.permission))
                 .map((item) => {
                   const isOpen = !!expanded[item.name];
 
@@ -320,9 +313,7 @@ export default function SidebarClient() {
                           </div>
                           <ul
                             className={`ml-8 flex flex-col md:gap-2 text-xs overflow-hidden transition-all duration-500 ease-in-out gap-2 ${
-                              isOpen
-                                ? "max-h-60 opacity-100"
-                                : "max-h-0 opacity-0"
+                              isOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
                             }`}
                           >
                             {item.children.map((child) => {
@@ -334,26 +325,20 @@ export default function SidebarClient() {
                                     </div>
                                     <ul className="ml-4 flex flex-col gap-1 text-xs h-fit">
                                       {child.children?.map((subChild) => {
-                                        const active = isHrefActive(
-                                          subChild.href
-                                        );
+                                        const active = isHrefActive(subChild.href);
                                         return (
                                           <li key={subChild.name}>
                                             <Link
                                               href={subChild.href!}
                                               onClick={closeIfMobile}
-                                              aria-current={
-                                                active ? "page" : undefined
-                                              }
+                                              aria-current={active ? "page" : undefined}
                                               className={`flex items-center px-8 h-8 ${
                                                 active
                                                   ? "bg-white text-black"
                                                   : "hover:bg-white hover:text-hoverText"
                                               }`}
                                             >
-                                              <span className="ml-5">
-                                                {subChild.name}
-                                              </span>
+                                              <span className="ml-5">{subChild.name}</span>
                                             </Link>
                                           </li>
                                         );
@@ -419,16 +404,18 @@ export default function SidebarClient() {
             >
               <button
                 onClick={handleSignOut}
+                disabled={signingOut}
+                aria-busy={signingOut}
                 className={`flex items-center justify-center transition-colors duration-200 ease-in-out cursor-pointer ${
                   collapsed
                     ? ""
-                    : "gap-2 h-10 w-fit p-2 border-y-2 border-2 rounded-md border-gray-200 hover:bg-white hover:text-hoverText"
+                    : "gap-2 h-10 w-fit p-2 border-y-2 border-2 rounded-md border-gray-200 hover:bg-white hover:text-hoverText disabled:opacity-60"
                 }`}
               >
                 <VscSignOut size={20} />
                 {!collapsed && (
                   <span className="ml-2 duration-200 transition-all whitespace-nowrap text-sm w-fit">
-                    SE DÉCONNECTER
+                    {signingOut ? "Déconnexion..." : "SE DÉCONNECTER"}
                   </span>
                 )}
               </button>
