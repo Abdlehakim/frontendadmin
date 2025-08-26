@@ -273,10 +273,26 @@ export default function SidebarClient() {
           </div>
 
           <nav
-            className={`flex flex-col md:select-none overflow-y-auto py-4 ${
-              collapsed ? "overflow-y-visible" : "overflow-hidden"
-            } gap-2 flex-grow`}
-          >
+  className={`flex flex-col md:select-none py-4 gap-2 flex-grow
+    ${collapsed ? "overflow-visible" : "overflow-y-auto"}
+    [&::-webkit-scrollbar]:w-[4px]
+    [&::-webkit-scrollbar-track]:bg-transparent
+    [&::-webkit-scrollbar-thumb]:bg-white/10
+    hover:[&::-webkit-scrollbar-thumb]:bg-white/10
+    active:[&::-webkit-scrollbar-thumb]:bg-white/10
+    [&::-webkit-scrollbar-thumb]:rounded-full
+    [scrollbar-width:thin]
+    [scrollbar-color:rgba(255,255,255,0.2)_transparent]
+
+    /* hide arrows (all cases) */
+    [&::-webkit-scrollbar-button]:hidden
+    [&::-webkit-scrollbar-button]:w-0
+    [&::-webkit-scrollbar-button]:h-0
+    [&::-webkit-scrollbar-button:single-button]:hidden
+    [&::-webkit-scrollbar-button:start:decrement]:hidden
+    [&::-webkit-scrollbar-button:end:increment]:hidden
+  `}
+>
             <div className="flex flex-col">
               {sidebarItems
                 .filter((item) => !item.permission || hasPermission(item.permission))

@@ -316,14 +316,6 @@ h1 {
   list-style-type: none;
 }
 
-pre::-webkit-scrollbar {
-  background: transparent;
-  width: 10px;
-}
-
-pre::-webkit-scrollbar-thumb {
-  background: #999;
-}
 
 .debug-timetravel-panel {
   overflow: hidden;
