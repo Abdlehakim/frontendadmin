@@ -122,9 +122,9 @@ export default function TopBar() {
           ref={btnRef}
           onClick={() => setOpen((s) => !s)}
           aria-label="Notifications"
-          className="relative p-2 rounded-lg hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
+          className="relative p-2 rounded-lg hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
         >
-          <FiBell size={24} />
+          <FiBell size={30} />
           {unseen > 0 && (
             <span
               className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1
@@ -208,7 +208,7 @@ export default function TopBar() {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={curPage === 1}
                   className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded-md
-                             hover:bg-gray-100 disabled:opacity-40 cursor-pointer"
+                            hover:text-primary  disabled:opacity-40 cursor-pointer"
                 >
                   <FiChevronLeft /> Précedent
                 </button>
@@ -219,7 +219,7 @@ export default function TopBar() {
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={curPage === totalPages}
                   className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded-md
-                             hover:bg-gray-100 disabled:opacity-40 cursor-pointer"
+                          hover:text-primary   disabled:opacity-40 cursor-pointer"
                 >
                   Suivant <FiChevronRight />
                 </button>
