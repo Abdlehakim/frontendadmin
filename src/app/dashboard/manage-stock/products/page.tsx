@@ -41,7 +41,7 @@ interface Product {
 }
 
 const DEFAULT_PAGE_SIZE = 10;
-const BREAKPOINT_QUERY = "(max-width: 1535px)";
+const BREAKPOINT_QUERY = "(max-width: 1990px)";
 
 /* ---------- Sélecteur stylé rendu dans un portail ---------- */
 type StringUnion = string;
