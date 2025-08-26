@@ -243,7 +243,7 @@ export default function SidebarClient() {
         className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out ${
           collapsed
             ? "-translate-x-full w-[60px]"
-            : "translate-x-0 w-[90%] md:w-[280px]"
+            : "translate-x-0 w-[70%] md:w-[280px]"
         } md:static md:translate-x-0`}
       >
         <div className="flex flex-col h-screen relative">
