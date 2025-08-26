@@ -192,16 +192,15 @@ export default function ProductsClientPage() {
   const [deleteName, setDeleteName] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  useEffect(() => {
-    const mql = window.matchMedia(BREAKPOINT_QUERY);
-    const handleMediaChange = (e: MediaQueryListEvent) => {
-      setPageSize(e.matches ? 7 : DEFAULT_PAGE_SIZE);
-      setCurrentPage(7);
-    };
-    setPageSize(mql.matches ? 7 : DEFAULT_PAGE_SIZE);
-    mql.addEventListener("change", handleMediaChange);
-    return () => mql.removeEventListener("change", handleMediaChange);
-  }, []);
+useEffect(() => {
+  const mql = window.matchMedia(BREAKPOINT_QUERY);
+  const onChange = (e: MediaQueryListEvent) =>
+    setPageSize(e.matches ? 7 : DEFAULT_PAGE_SIZE);
+
+  setPageSize(mql.matches ? 7 : DEFAULT_PAGE_SIZE);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}, []);
 
   useEffect(() => {
     (async () => {
@@ -226,11 +225,19 @@ export default function ProductsClientPage() {
       ),
     [products, searchTerm]
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const displayed = useMemo(
-    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [filtered, currentPage, pageSize]
-  );
+const totalPages = useMemo(
+  () => Math.max(1, Math.ceil(filtered.length / pageSize)),
+  [filtered.length, pageSize]
+);
+
+useEffect(() => {
+  setCurrentPage((p) => Math.min(p, totalPages));
+}, [totalPages]);
+const safePage = Math.min(currentPage, totalPages);
+const displayed = useMemo(
+  () => filtered.slice((safePage - 1) * pageSize, safePage * pageSize),
+  [filtered, safePage, pageSize]
+);
 
   async function updateField<K extends keyof Product>(
     id: string,
@@ -272,6 +279,8 @@ export default function ProductsClientPage() {
     setDeleteLoading(false);
     closeDelete();
   };
+
+
 
   return (
     <div className="mx-auto w-[95%] flex-1 min-h-0 py-4 flex flex-col justify-between overflow-y-auto">

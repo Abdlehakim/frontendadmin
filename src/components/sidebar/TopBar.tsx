@@ -9,7 +9,7 @@ export default function TopBar() {
 <div className='flex justify-end w-full'>
       <button
         aria-label="Notifications"
-        className="relative p-2 rounded-lg hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="relative p-2 rounded-lg hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
       >
         <FiBell size={30} />
       </button></div>
