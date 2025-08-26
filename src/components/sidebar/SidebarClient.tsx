@@ -329,7 +329,7 @@ export default function SidebarClient() {
                           </div>
                           <ul
                             className={`ml-8 flex flex-col md:gap-2 text-xs overflow-hidden transition-all duration-500 ease-in-out gap-2 ${
-                              isOpen ? "max-h-60 opacity-100 py-2" : "max-h-0 opacity-0"
+                              isOpen ? "max-h-fit opacity-100 py-2" : "max-h-0 opacity-0"
                             }`}
                           >
                             {item.children.map((child) => {

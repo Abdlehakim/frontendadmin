@@ -2,15 +2,20 @@
 import type { ReactNode } from "react";
 import Sidebar from "@/components/sidebar/SidebarClient";
 import DashboardClientShell from "@/components/DashboardClientShell";
-import Providers from "./providers"
+import Providers from "./providers";
+import TopBar from "@/components/sidebar/TopBar";
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-          <Providers>
-    <DashboardClientShell>
-      <div className="flex h-screen">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto">{children}</main>
-      </div>
-    </DashboardClientShell></Providers>
+    <Providers>
+      <DashboardClientShell>
+        <div className="flex h-screen">
+          <Sidebar />
+          <main className="flex-1 flex min-h-0 flex-col">
+            <TopBar />
+            {children}
+          </main>
+        </div>
+      </DashboardClientShell>
+    </Providers>
   );
 }

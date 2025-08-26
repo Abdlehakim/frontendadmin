@@ -49,7 +49,7 @@ const PaginationAdmin: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="flex justify-center items-center gap-2 w-full h-[60px] my-6">
+    <div className="flex justify-center items-center gap-2 w-full h-[60px] my-6 select-none">
       {/* Previous button */}
       <div
         className={`flex items-center gap-1 cursor-pointer ${

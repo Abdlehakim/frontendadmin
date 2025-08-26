@@ -274,7 +274,7 @@ export default function ProductsClientPage() {
   };
 
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col justify-between h-fit min-h-screen md:h-screen">
+    <div className="mx-auto w-[95%] flex-1 min-h-0 py-4 flex flex-col justify-between overflow-y-auto">
       <div className="flex flex-col gap-4 h-full">
         <div className="flex h-fit mx-auto w-full justify-between items-center select-none">
           <h1 className="text-3xl font-bold uppercase">Produits</h1>
