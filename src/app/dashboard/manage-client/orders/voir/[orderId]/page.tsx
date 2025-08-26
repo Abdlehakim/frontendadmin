@@ -202,15 +202,16 @@ export default function OrderDetailsPage() {
       </div>
 
 
-      <div className="">
-        <table className="w-full text-sm border border-gray-200">
-          <thead className="bg-gray-100">
+      <div className="flex flex-col gap-4 items-end">
+        <div className='border-2 border-primary rounded-md w-full p-1'>
+        <table className="w-full text-sm">
+          <thead className="bg-primary text-white">
             <tr>
-              <th className="py-1 px-2 text-left">Produit</th>
-              <th className="py-1 px-2 text-right">Qté</th>
-              <th className="py-1 px-2 text-right">PU TTC</th>
-              <th className="py-1 px-2 text-right">Remise</th>
-              <th className="py-1 px-2 text-right">TVA</th>
+              <th className="py-1 px-2 text-left border-r-4">Produit</th>
+              <th className="py-1 px-2 text-right border-r-4">Qté</th>
+              <th className="py-1 px-2 text-right border-r-4">PU TTC</th>
+              <th className="py-1 px-2 text-right border-r-4">Remise</th>
+              <th className="py-1 px-2 text-right border-r-4">TVA</th>
               <th className="py-1 px-2 text-right">Total TTC</th>
             </tr>
           </thead>
@@ -252,30 +253,31 @@ export default function OrderDetailsPage() {
             })}
           </tbody>
         </table>
-
+</div>
         {/* Totaux séparés */}
-        <table className="w-fit text-sm border border-gray-200 border-t-0 ">
+        <div className='border-2 border-primary rounded-md w-[30%] p-1'>
+        <table className="text-sm rounded-xl w-full">
           <tbody>
-            <tr className="bg-primary">
-              <td colSpan={5} className="py-1 px-2 text-right text-gray-600">
+            <tr className="bg-primary text-white">
+              <td colSpan={5} className="py-1 px-2 text-left border-r-4">
                 Sous-total articles
               </td>
               <td className="py-1 px-2 text-right">{frFmt(totalLinesTTC)}</td>
             </tr>
             <tr className="">
-              <td colSpan={5} className="py-1 px-2 text-right text-gray-600">
+              <td colSpan={5} className="py-1 px-2 text-left text-gray-600">
                 Frais de livraison
               </td>
               <td className="py-1 px-2 text-right">{frFmt(deliveryCostTotal)}</td>
             </tr>
-            <tr className="font-semibold">
-              <td colSpan={5} className="py-1 px-2 text-right">
+            <tr className="font-semibold bg-primary text-white "> 
+              <td colSpan={5} className="py-1 px-2 text-left border-r-4">
                 Total
               </td>
               <td className="py-1 px-2 text-right">{frFmt(totalTTC)}</td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );
