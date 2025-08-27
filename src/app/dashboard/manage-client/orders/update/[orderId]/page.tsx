@@ -3,7 +3,7 @@
 ------------------------------------------------------------------ */
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
@@ -20,14 +20,8 @@ import LoadingDots from "@/components/LoadingDots";
 const MIN_CHARS = 2;
 type DeliveryFilter = "all" | "deliveryOnly" | "pickupOnly" | null;
 
-type DO = DeliveryOption & {
-  _id?: string;
-  id?: string;
-  price?: number;
-  isPickup?: boolean;
-  description?: string;
-};
-
+type PM = PaymentMethod & { _id?: string; payOnline?: boolean; requireAddress?: boolean };
+type DO = DeliveryOption & { _id?: string; id?: string; price?: number; isPickup?: boolean; description?: string };
 type DeliveryOptionAPI = {
   _id?: string;
   id?: string;
@@ -49,15 +43,8 @@ interface OrderResponse {
     _id: string;
     client: Client;
     clientName: string;
-    paymentMethod:
-      | Array<{ PaymentMethodID: string; PaymentMethodLabel: string }>
-      | string; // legacy tolerance
-    deliveryMethod: Array<{
-      deliveryMethodID: string;
-      deliveryMethodName?: string;
-      Cost: string;
-      expectedDeliveryDate?: string;
-    }>;
+    paymentMethod: Array<{ PaymentMethodID: string; PaymentMethodLabel: string }>;
+    deliveryMethod: Array<{ deliveryMethodID: string; deliveryMethodName?: string; Cost: string; expectedDeliveryDate?: string }>;
     pickupMagasin: Array<{ MagasinID: string; MagasinName?: string; MagasinAddress: string }>;
     DeliveryAddress: Array<{ AddressID: string; DeliverToAddress: string }>;
     orderItems: Array<{
@@ -80,15 +67,16 @@ export default function UpdateOrderPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const prevClientIdRef = useRef<string | null>(null); // ← track real client changes
+
   const [basket, setBasket] = useState<BasketItem[]>([]);
 
   const [deliveryOpt, setDeliveryOpt] = useState<DO | null>(null);
   const [deliveryOptions, setDeliveryOptions] = useState<DO[]>([]);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
 
-  // ⬇️ Payment (same concept as create page: use name as key, label for display)
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [paymentMethodKey, setPaymentMethodKey] = useState<string | null>(null); // <- name
+  const [paymentMethods, setPaymentMethods] = useState<PM[]>([]);
+  const [paymentMethodKey, setPaymentMethodKey] = useState<string | null>(null);
   const [paymentMethodLabel, setPaymentMethodLabel] = useState<string | null>(null);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
 
@@ -104,9 +92,6 @@ export default function UpdateOrderPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
-
-  // hold raw PM from the order so we can resolve to an active method
-  const [orderPM, setOrderPM] = useState<{ id?: string; label?: string } | null>(null);
 
   const searchClients = useCallback(async (q: string): Promise<Client[]> => {
     if (q.trim().length < MIN_CHARS) return [];
@@ -131,7 +116,6 @@ export default function UpdateOrderPage() {
     []
   );
 
-  // magasins
   useEffect(() => {
     setLoadingMagasins(true);
     fetchFromAPI<{ magasins: Magasin[] }>("/dashboardadmin/stock/magasins/approved")
@@ -146,16 +130,15 @@ export default function UpdateOrderPage() {
     if (full) setSelectedMagasin(full);
   }, [magasins, selectedMagasinId]);
 
-  // payment methods (same as create page)
   useEffect(() => {
     setLoadingPaymentMethods(true);
-    fetchFromAPI<{ activePaymentMethods: PaymentMethod[] }>("/dashboardadmin/payment/payment-settings/active")
+    fetchFromAPI<{ activePaymentMethods: PM[] }>("/dashboardadmin/payment/payment-settings/active")
       .then(({ activePaymentMethods }) => setPaymentMethods(activePaymentMethods ?? []))
       .catch((e) => console.error("Load payment methods error:", e))
       .finally(() => setLoadingPaymentMethods(false));
   }, []);
 
-  // delivery options
+  // Delivery options
   useEffect(() => {
     setLoadingDelivery(true);
     fetchFromAPI<DeliveryOptionAPI[]>("/dashboardadmin/delivery-options")
@@ -175,12 +158,13 @@ export default function UpdateOrderPage() {
       .finally(() => setLoadingDelivery(false));
   }, []);
 
-  // load order
+  // Load order
   useEffect(() => {
     (async () => {
       try {
         const { order } = await fetchFromAPI<OrderResponse>(`/dashboardadmin/orders/${orderId}`);
         setSelectedClient(order.client);
+        prevClientIdRef.current = order.client?._id ?? null; // mark initial id (prevents clearing on first mount)
 
         const productsDefs = await Promise.all(
           order.orderItems.map((it) =>
@@ -231,27 +215,22 @@ export default function UpdateOrderPage() {
           setSelectedMagasin(null);
         }
 
-        // store raw payment method (works for array or legacy string)
-        if (Array.isArray(order.paymentMethod) && order.paymentMethod.length) {
-          setOrderPM({
-            id: order.paymentMethod[0].PaymentMethodID,
-            label: order.paymentMethod[0].PaymentMethodLabel,
-          });
-          setPaymentMethodLabel(order.paymentMethod[0].PaymentMethodLabel ?? null);
-        } else if (typeof order.paymentMethod === "string") {
-          setOrderPM({ label: order.paymentMethod });
-          setPaymentMethodLabel(order.paymentMethod);
+        const pmRow = order.paymentMethod?.[0];
+        if (pmRow) {
+          setPaymentMethodKey(pmRow.PaymentMethodID);
+          setPaymentMethodLabel(pmRow.PaymentMethodLabel);
         } else {
-          setOrderPM(null);
+          setPaymentMethodKey(null);
           setPaymentMethodLabel(null);
         }
 
         const dmRow = order.deliveryMethod?.[0];
         if (dmRow) {
-          const byId = (opts: DO[]) =>
-            opts.find((d) => d._id === dmRow.deliveryMethodID || d.id === dmRow.deliveryMethodID) ?? null;
-          const byName = (opts: DO[]) => opts.find((d) => d.name === dmRow.deliveryMethodName) ?? null;
-          const pick = (opts: DO[]) => byId(opts) || byName(opts);
+          // will be matched once deliveryOptions are there (next effect handles it too)
+          const pick = (opts: DO[]) =>
+            opts.find((d) => d._id === dmRow.deliveryMethodID || d.id === dmRow.deliveryMethodID) ||
+            opts.find((d) => d.name === dmRow.deliveryMethodName) ||
+            null;
           setDeliveryOpt((prev) => prev || pick(deliveryOptions) || null);
         } else {
           setDeliveryOpt(null);
@@ -264,36 +243,25 @@ export default function UpdateOrderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
-  // once active methods are loaded, resolve orderPM -> set paymentMethodKey (name) and label
+  // Late bind delivery method after options arrive
   useEffect(() => {
-    if (!orderPM || !paymentMethods.length) return;
+    if (deliveryOpt || !deliveryOptions.length) return;
+    (async () => {
+      try {
+        const { order } = await fetchFromAPI<OrderResponse>(`/dashboardadmin/orders/${orderId}`);
+        const dmRow = order.deliveryMethod?.[0];
+        if (!dmRow) return;
+        const found =
+          deliveryOptions.find((d) => d._id === dmRow.deliveryMethodID || d.id === dmRow.deliveryMethodID) ||
+          deliveryOptions.find((d) => d.name === dmRow.deliveryMethodName);
+        if (found) setDeliveryOpt(found);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [deliveryOptions, deliveryOpt, orderId]);
 
-    const norm = (s?: string) =>
-      (s ?? "")
-        .toLowerCase()
-        .normalize("NFKD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-
-    const wantLabel = norm(orderPM.label);
-    const wantId = orderPM.id;
-
-    const byLabel = paymentMethods.find((m) => norm(m.label) === wantLabel);
-    const byName = paymentMethods.find((m) => norm(m.name) === wantLabel);
-    const byIdEqName = paymentMethods.find((m) => m.name === wantId);
-
-    const found = byLabel || byName || byIdEqName;
-    if (found) {
-      setPaymentMethodKey(found.name); // SelectPaymentMethod expects method "name" as value
-      setPaymentMethodLabel(found.label);
-    } else {
-      // leave empty; user can re-choose if method was renamed/disabled
-      setPaymentMethodKey(null);
-    }
-  }, [orderPM, paymentMethods]);
-
-  // load addresses for selected client
+  // Load addresses for selected client
   useEffect(() => {
     if (!selectedClient) {
       setAddresses([]);
@@ -305,18 +273,38 @@ export default function UpdateOrderPage() {
       .finally(() => setLoadingAddresses(false));
   }, [selectedClient]);
 
+  // 🔒 If the client REALLY changed (not initial mount), reset address/magasin selection
+  useEffect(() => {
+    const cur = selectedClient?._id ?? null;
+    if (cur === null) return;
+
+    if (prevClientIdRef.current === null) {
+      prevClientIdRef.current = cur;
+      return; // initial mount
+    }
+
+    if (prevClientIdRef.current !== cur) {
+      // user changed client ➜ clear dependent selections
+      setSelectedAddressId(null);
+      setSelectedAddressLbl(null);
+      setSelectedMagasinId(null);
+      setSelectedMagasin(null);
+    }
+
+    prevClientIdRef.current = cur;
+  }, [selectedClient?._id]);
+
   const cancel = () => router.back();
 
-  // same delivery filter logic as create page (we cast optional flags)
   const selectedPaymentMeta = useMemo(
-    () => paymentMethods.find((m) => m.label === paymentMethodLabel) || null,
-    [paymentMethods, paymentMethodLabel]
+    () => paymentMethods.find((m) => m._id === paymentMethodKey) || null,
+    [paymentMethods, paymentMethodKey]
   );
 
   const deliveryFilter: DeliveryFilter = useMemo(() => {
     if (!selectedPaymentMeta) return null;
-    const payOnline = (selectedPaymentMeta as { payOnline?: boolean }).payOnline ?? false;
-    const requireAddress = (selectedPaymentMeta as { requireAddress?: boolean }).requireAddress ?? false;
+    const payOnline = selectedPaymentMeta.payOnline ?? false;
+    const requireAddress = selectedPaymentMeta.requireAddress ?? false;
     if (payOnline && requireAddress) return "all";
     if (requireAddress) return "deliveryOnly";
     return "pickupOnly";
@@ -329,13 +317,27 @@ export default function UpdateOrderPage() {
     return deliveryOptions.filter((o) => o.isPickup);
   }, [deliveryFilter, deliveryOptions]);
 
+  // ✅ Strong validation: selected id must exist in current list
+  const hasValidAddressSelection = useMemo(() => {
+    if (!deliveryOpt || deliveryOpt.isPickup) return true;
+    if (!selectedAddressId) return false;
+    return addresses.some((a) => a._id === selectedAddressId);
+  }, [deliveryOpt, selectedAddressId, addresses]);
+
+  const hasValidMagasinSelection = useMemo(() => {
+    if (!deliveryOpt || !deliveryOpt.isPickup) return true;
+    if (!selectedMagasinId) return false;
+    return magasins.some((m) => m._id === selectedMagasinId);
+  }, [deliveryOpt, selectedMagasinId, magasins]);
+
   const paymentOK = Boolean(paymentMethodKey);
   const canGoStep2 = basket.length > 0;
   const canGoStep3 =
     canGoStep2 &&
-    deliveryOpt &&
     paymentOK &&
-    ((deliveryOpt.isPickup && selectedMagasinId) || (!deliveryOpt.isPickup && selectedAddressId));
+    !!deliveryOpt &&
+    hasValidAddressSelection &&
+    hasValidMagasinSelection;
 
   const save = async () => {
     if (isSaving) return;
@@ -359,7 +361,6 @@ export default function UpdateOrderPage() {
           ? [{ AddressID: selectedAddressId, DeliverToAddress: selectedAddressLbl }]
           : [];
 
-      // keep sending name + label (same concept as create page)
       const paymentArray =
         paymentMethodKey && paymentMethodLabel
           ? [{ PaymentMethodID: paymentMethodKey, PaymentMethodLabel: paymentMethodLabel }]
@@ -467,8 +468,8 @@ export default function UpdateOrderPage() {
                 value={paymentMethodKey}
                 methods={paymentMethods}
                 loading={loadingPaymentMethods}
-                onChange={(name, method) => {
-                  setPaymentMethodKey(name);
+                onChange={(id, method) => {
+                  setPaymentMethodKey(id);
                   setPaymentMethodLabel(method?.label ?? null);
                   setDeliveryOpt(null);
                   setSelectedAddressId(null);
