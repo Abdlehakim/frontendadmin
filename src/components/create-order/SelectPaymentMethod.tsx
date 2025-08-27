@@ -13,16 +13,20 @@ import { AiOutlineDown, AiOutlineUp } from "react-icons/ai";
 
 /* ---------- types ---------- */
 export interface PaymentMethod {
+  _id?: string;            // <— add: backend ObjectId
   name: string;
   label: string;
   help?: string;
+  // optional flags if your API provides them (lets parent avoid casts)
+  payOnline?: boolean;
+  requireAddress?: boolean;
 }
 
 interface SelectPaymentMethodProps {
-  value: string | null;
+  value: string | null; // holds _id
   methods: PaymentMethod[];
   loading: boolean;
-  onChange(methodKey: string | null, method: PaymentMethod | null): void;
+  onChange(id: string | null, method: PaymentMethod | null): void; // <— return _id
 }
 
 /* ---------- helpers ---------- */
@@ -36,10 +40,9 @@ export default function SelectPaymentMethod({
   loading,
   onChange,
 }: SelectPaymentMethodProps) {
-  const [open, setOpen]       = useState(false);
-  const dropdownRef           = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /* close dropdown on outside click */
   useEffect(() => {
     const handleClick = (e: MouseEvent | ReactMouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -50,8 +53,8 @@ export default function SelectPaymentMethod({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const selected =
-    value ? methods.find((m) => m.name === value) ?? null : null;
+  // value now matches the method _id
+  const selected = value ? methods.find((m) => m._id === value) ?? null : null;
 
   return (
     <div className="py-4 bg-white space-y-4 mt-6">
@@ -66,13 +69,7 @@ export default function SelectPaymentMethod({
                      focus:ring-2 focus:ring-primary/50 max-lg:text-xs disabled:opacity-50"
           disabled={loading}
         >
-          <span
-            className={
-              selected
-                ? "block w-full truncate"
-                : "text-gray-400 block w-full truncate"
-            }
-          >
+          <span className={selected ? "block w-full truncate" : "text-gray-400 block w-full truncate"}>
             {selected
               ? fmt(selected)
               : loading
@@ -94,19 +91,17 @@ export default function SelectPaymentMethod({
             {!loading &&
               methods.map((m) => (
                 <li
-                  key={m.name}
+                  key={m._id ?? m.name}
                   onClick={() => {
-                    onChange(m.name, m);
+                    onChange(m._id ?? null, m); // <— send ObjectId
                     setOpen(false);
                   }}
                   className={`cursor-pointer select-none px-4 py-2 hover:bg-primary hover:text-white ${
-                    m.name === value ? "bg-primary/5 font-medium" : ""
+                    m._id === value ? "bg-primary/5 font-medium" : ""
                   }`}
                 >
                   <p>{fmt(m)}</p>
-                  {m.help && (
-                    <p className="text-xs text-gray-500 mt-1">{m.help}</p>
-                  )}
+                  {m.help && <p className="text-xs text-gray-500 mt-1">{m.help}</p>}
                 </li>
               ))}
           </ul>

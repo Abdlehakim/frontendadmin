@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
+import LoadingDots from "@/components/LoadingDots";
 
 /* ---------- types (mirror backend model) ---------- */
 interface OrderItemAttribute {
@@ -96,7 +97,14 @@ export default function OrderDetailsPage() {
     })();
   }, [orderId]);
 
-  if (loading) return <div className="p-8">Loading…</div>;
+  if (loading)
+    return (
+
+        <div className="relative h-full w-full flex items-center justify-center">
+          <LoadingDots loadingMessage="Chargement de la commande…" />
+        </div>
+    );
+
   if (!order) return <div className="p-8">Order not found.</div>;
 
   /* delivery cost (sum all selected delivery methods) */
@@ -169,10 +177,12 @@ export default function OrderDetailsPage() {
         <div className="flex-1 px-4 py-2">
           <p className="text-xs text-gray-400">Date</p>
           <p className="text-sm font-medium">
-            {new Date(order.createdAt).toLocaleDateString("fr-FR", {
+            {new Date(order.createdAt).toLocaleString("fr-FR", {
               day: "numeric",
               month: "long",
               year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
             })}
           </p>
         </div>
@@ -201,83 +211,84 @@ export default function OrderDetailsPage() {
         </div>
       </div>
 
+      <div className="flex flex-col gap-4 items-end min-h-42">
+        <div className="border-2 border-primary rounded-md w-full p-1">
+          <table className="w-full text-sm">
+            <thead className="bg-primary text-white">
+              <tr>
+                <th className="py-1 px-2 text-left border-r-4">Produit</th>
+                <th className="py-1 px-2 text-right border-r-4">Qté</th>
+                <th className="py-1 px-2 text-right border-r-4">PU TTC</th>
+                <th className="py-1 px-2 text-right border-r-4">Remise</th>
+                <th className="py-1 px-2 text-right border-r-4">TVA</th>
+                <th className="py-1 px-2 text-right">Total TTC</th>
+              </tr>
+            </thead>
 
-      <div className="flex flex-col gap-4 items-end">
-        <div className='border-2 border-primary rounded-md w-full p-1'>
-        <table className="w-full text-sm">
-          <thead className="bg-primary text-white">
-            <tr>
-              <th className="py-1 px-2 text-left border-r-4">Produit</th>
-              <th className="py-1 px-2 text-right border-r-4">Qté</th>
-              <th className="py-1 px-2 text-right border-r-4">PU TTC</th>
-              <th className="py-1 px-2 text-right border-r-4">Remise</th>
-              <th className="py-1 px-2 text-right border-r-4">TVA</th>
-              <th className="py-1 px-2 text-right">Total TTC</th>
-            </tr>
-          </thead>
+            <tbody>
+              {order.orderItems.map((it) => {
+                const puRemise = it.price * (1 - it.discount / 100);
+                const lineTTC = puRemise * it.quantity;
 
-          <tbody>
-            {order.orderItems.map((it) => {
-              const puRemise = it.price * (1 - it.discount / 100);
-              const lineTTC = puRemise * it.quantity;
+                const attrLine = it.attributes?.length
+                  ? it.attributes.map((row) => `${row.name} : ${row.value}`).join(", ")
+                  : "";
 
-              const attrLine = it.attributes?.length
-                ? it.attributes.map((row) => `${row.name} : ${row.value}`).join(", ")
-                : "";
+                return (
+                  <tr key={it.product} className="border-t align-top">
+                    <td className="py-1 px-2">
+                      <div>{it.name}</div>
+                      <div className="text-xs text-gray-500">{it.reference}</div>
+                      {attrLine && (
+                        <div className="text-xs text-gray-500">{attrLine}</div>
+                      )}
+                    </td>
+                    <td className="py-1 px-2 text-right">{it.quantity}</td>
+                    <td className="py-1 px-2 text-right">
+                      {frFmt(puRemise)}
+                      {it.discount > 0 && (
+                        <span className="ml-1 line-through text-xs text-gray-500">
+                          {frFmt(it.price)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-1 px-2 text-right">
+                      {it.discount > 0 ? `${it.discount}%` : "—"}
+                    </td>
+                    <td className="py-1 px-2 text-right">{it.tva}%</td>
+                    <td className="py-1 px-2 text-right">{frFmt(lineTTC)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-              return (
-                <tr key={it.product} className="border-t align-top">
-                  <td className="py-1 px-2">
-                    <div>{it.name}</div>
-                    <div className="text-xs text-gray-500">{it.reference}</div>
-                    {attrLine && (
-                      <div className="text-xs text-gray-500">{attrLine}</div>
-                    )}
-                  </td>
-                  <td className="py-1 px-2 text-right">{it.quantity}</td>
-                  <td className="py-1 px-2 text-right">
-                    {frFmt(puRemise)}
-                    {it.discount > 0 && (
-                      <span className="ml-1 line-through text-xs text-gray-500">
-                        {frFmt(it.price)}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-1 px-2 text-right">
-                    {it.discount > 0 ? `${it.discount}%` : "—"}
-                  </td>
-                  <td className="py-1 px-2 text-right">{it.tva}%</td>
-                  <td className="py-1 px-2 text-right">{frFmt(lineTTC)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-</div>
         {/* Totaux séparés */}
-        <div className='border-2 border-primary rounded-md w-[30%] p-1'>
-        <table className="text-sm rounded-xl w-full">
-          <tbody>
-            <tr className="bg-primary text-white">
-              <td colSpan={5} className="py-1 px-2 text-left border-r-4">
-                Sous-total articles
-              </td>
-              <td className="py-1 px-2 text-right">{frFmt(totalLinesTTC)}</td>
-            </tr>
-            <tr className="">
-              <td colSpan={5} className="py-1 px-2 text-left text-gray-600">
-                Frais de livraison
-              </td>
-              <td className="py-1 px-2 text-right">{frFmt(deliveryCostTotal)}</td>
-            </tr>
-            <tr className="font-semibold bg-primary text-white "> 
-              <td colSpan={5} className="py-1 px-2 text-left border-r-4">
-                Total
-              </td>
-              <td className="py-1 px-2 text-right">{frFmt(totalTTC)}</td>
-            </tr>
-          </tbody>
-        </table></div>
+        <div className="border-2 border-primary rounded-md w-[30%] p-1">
+          <table className="text-sm rounded-xl w-full">
+            <tbody>
+              <tr className="bg-primary text-white">
+                <td colSpan={5} className="py-1 px-2 text-left border-r-4">
+                  Sous-total articles
+                </td>
+                <td className="py-1 px-2 text-right">{frFmt(totalLinesTTC)}</td>
+              </tr>
+              <tr className="">
+                <td colSpan={5} className="py-1 px-2 text-left text-gray-600">
+                  Frais de livraison
+                </td>
+                <td className="py-1 px-2 text-right">{frFmt(deliveryCostTotal)}</td>
+              </tr>
+              <tr className="font-semibold bg-primary text-white ">
+                <td colSpan={5} className="py-1 px-2 text-left border-r-4">
+                  Total
+                </td>
+                <td className="py-1 px-2 text-right">{frFmt(totalTTC)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

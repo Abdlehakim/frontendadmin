@@ -21,6 +21,11 @@ import AddAddress from "@/components/create-order/AddAddress";
 import ManageAddresses from "@/components/create-order/ManageAddresses";
 import type { Client } from "@/components/create-order/selectClient";
 
+/* ---------- tiny skeleton helper (parité avec checkout) ---------- */
+const Skel = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
+);
+
 /* ---------- types ---------- */
 export interface Address {
   _id: string;
@@ -34,18 +39,26 @@ export interface Address {
 }
 
 interface SelectAddressProps {
-  client:    Client | null;
+  client: Client | null;
   addresses: Address[];
-  value:     string | null;
+  value: string | null;
   onChange(id: string | null, label: string | null): void;
-  loading?:  boolean;
-  refreshAddresses?: () => void | Promise<void>; // 👈 NEW
+  loading?: boolean;
+  refreshAddresses?: () => void | Promise<void>;
 }
 
-
 /* ---------- helpers ---------- */
-const fmt = (a: Address) =>
-  [a.Name, a.StreetAddress, `${a.City} ${a.PostalCode}`.trim(), a.Country]
+/** Format complet (inclut le téléphone comme dans le checkout) */
+const formatAddress = (a: Address) =>
+  [
+    a.Name,
+    a.StreetAddress,
+    a.City,
+    a.Province,
+    a.PostalCode,
+    a.Country,
+    a.Phone && `Tel: ${a.Phone}`,
+  ]
     .filter(Boolean)
     .join(", ");
 
@@ -56,119 +69,127 @@ export default function SelectAddress({
   value,
   onChange,
   loading = false,
-   refreshAddresses, 
+  refreshAddresses,
 }: SelectAddressProps) {
-  /* ---------- state local ---------- */
-  const [open,          setOpen]         = useState(false);
-  const [showForm,      setShowForm]     = useState(false);
+  const [open, setOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
-  const [showManage,    setShowManage]   = useState(false);
+  const [showManage, setShowManage] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /* fermer dropdown sur clic extérieur */
+  /* close dropdown on outside click + ESC (aligné avec checkout) */
   useEffect(() => {
-    const close = (e: MouseEvent | ReactMouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
+    const onDocClick = (e: MouseEvent | ReactMouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false);
+      }
     };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
   }, []);
 
-  /* ---------- early return ---------- */
   if (!client) return null;
 
-  /* ---------- selected address ---------- */
-  const selected =
-    value ? addresses.find((a) => a._id === value) || null : null;
+  const selected = value ? addresses.find((a) => a._id === value) ?? null : null;
 
-  /* ---------- modal helpers ---------- */
-  const openAddForm  = () => { setAddressToEdit(null); setShowForm(true); };
-  const openEditForm = () => { if (selected) { setAddressToEdit(selected); setShowForm(true); } };
-  const closeForm    = () => setShowForm(false);
+  const buttonText = selected
+    ? formatAddress(selected)
+    : loading
+    ? "Chargement des adresses…"
+    : addresses.length
+    ? "-- Choisir une adresse --"
+    : "Aucune adresse enregistrée pour ce client.";
 
-  const openManage   = () => setShowManage(true);
-  const closeManage  = () => setShowManage(false);
+  const openAddForm = () => {
+    setAddressToEdit(null);
+    setShowForm(true);
+  };
+  const openEditForm = () => {
+    if (selected) {
+      setAddressToEdit(selected);
+      setShowForm(true);
+    }
+  };
 
-  /* ---------- UI ---------- */
   return (
     <>
-      {/* Dropdown select */}
+      {/* Select dropdown (parité visuelle avec checkout) */}
       <div className="relative w-full py-4 bg-white space-y-4 mt-6">
         <h2 className="font-bold">Adresse de livraison</h2>
-        <div className="relative w-full" ref={dropdownRef}>
-          <button
-            type="button"
-            onClick={() => setOpen((p) => !p)}
-            className="flex h-12 w-full items-center justify-between rounded-md border
-                       border-gray-300 bg-white px-4 text-sm shadow-sm focus:outline-none
-                       focus:ring-2 focus:ring-primary/50 max-lg:text-xs disabled:opacity-50"
-            disabled={loading}
-          >
-            <span
-              className={
-                selected
-                  ? "block w-full truncate"
-                  : "text-gray-400 block w-full truncate"
-              }
-            >
-              {selected
-                ? fmt(selected)
-                : loading
-                ? "Chargement des adresses…"
-                : addresses.length === 0
-                ? "Aucune adresse enregistrée pour ce client."
-                : "-- Choisir une adresse --"}
-            </span>
-            {open ? (
-              <AiOutlineUp className="h-4 w-4 text-gray-500 shrink-0" />
-            ) : (
-              <AiOutlineDown className="h-4 w-4 text-gray-500 shrink-0" />
-            )}
-          </button>
 
-          {open && (
-            <ul
-              className="absolute left-0 right-0 z-20 mt-1 max-h-60 overflow-auto rounded-md
-                         bg-white py-1 text-sm shadow-lg ring-1 ring-black/5"
+        {loading ? (
+          <Skel className="h-12 w-full" />
+        ) : (
+          <div className="relative w-full" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => !loading && addresses.length && setOpen((p) => !p)}
+              className="flex h-12 w-full items-center justify-between rounded-md border
+                         border-gray-300 bg-white px-4 text-sm shadow-sm focus:outline-none
+                         focus:ring-2 focus:ring-primary/50 max-lg:text-xs disabled:opacity-50"
+              disabled={loading || !addresses.length}
+              aria-haspopup="listbox"
+              aria-expanded={open}
             >
-              {!loading &&
-                addresses.map((a) => (
-                  <li
-                    key={a._id}
-                    onClick={() => {
-                      onChange(a._id, fmt(a));
-                      setOpen(false);
-                    }}
-                    className={`cursor-pointer select-none px-4 py-2 hover:bg-primary hover:text-white ${
-                      a._id === value ? "bg-primary/5 font-medium" : ""
-                    }`}
-                  >
-                    {fmt(a)}
-                    {(a.StreetAddress || a.Phone) && (
-                      <p className="text-xs text-gray-500">
-                        {a.StreetAddress ?? ""}{" "}
-                        {a.Phone ? "• " + a.Phone : ""}
-                      </p>
-                    )}
-                  </li>
-                ))}
-
-              {/* Message quand aucune adresse n’est disponible */}
-              {!loading && addresses.length === 0 && (
-                <li className="px-4 py-2 text-gray-500 italic select-none cursor-default">
-                  Aucune adresse enregistrée pour ce client.
-                </li>
+              <span className={selected ? "block w-full truncate" : "text-gray-400 block w-full truncate"}>
+                {buttonText}
+              </span>
+              {open ? (
+                <AiOutlineUp className="h-4 w-4 text-gray-500 shrink-0" />
+              ) : (
+                <AiOutlineDown className="h-4 w-4 text-gray-500 shrink-0" />
               )}
-            </ul>
-          )}
-        </div>
+            </button>
+
+            {open && (
+              <ul
+                role="listbox"
+                className="absolute left-0 right-0 z-20 mt-1 max-h-60 overflow-auto rounded-md
+                           bg-white py-1 text-sm shadow-lg ring-1 ring-black/5"
+              >
+                {addresses.map((a) => {
+                  const isSelected = a._id === value;
+                  return (
+                    <li
+                      key={a._id}
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => {
+                        onChange(a._id, formatAddress(a));
+                        setOpen(false);
+                      }}
+                      className={`cursor-pointer select-none px-4 py-2 transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white"
+                          : "hover:bg-secondary hover:text-white"
+                      }`}
+                    >
+                      <div className="truncate">{formatAddress(a)}</div>
+                    </li>
+                  );
+                })}
+
+                {!addresses.length && (
+                  <li className="px-4 py-2 text-gray-500">
+                    Aucune adresse enregistrée pour ce client.
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Action buttons */}
+      {/* Actions alignées à droite (on garde Edit / Gérer spécifiques admin) */}
       <div className="flex justify-end gap-3">
-        {/* Add */}
         <button
           type="button"
           onClick={openAddForm}
@@ -179,15 +200,14 @@ export default function SelectAddress({
           Ajouter une nouvelle adresse
         </button>
 
-        {/* Edit */}
         <button
           type="button"
           onClick={openEditForm}
           disabled={!selected}
           className={`w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm
-                      flex items-center gap-4 cursor-pointer ${
+                      flex items-center gap-4 ${
                         selected
-                          ? "hover:bg-primary hover:text-white"
+                          ? "hover:bg-primary hover:text-white cursor-pointer"
                           : "opacity-50 cursor-not-allowed"
                       }`}
         >
@@ -195,10 +215,9 @@ export default function SelectAddress({
           Modifier l’adresse sélectionnée
         </button>
 
-        {/* Manage / delete */}
         <button
           type="button"
-          onClick={openManage}
+          onClick={() => setShowManage(true)}
           className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm
                      flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
         >
@@ -209,25 +228,25 @@ export default function SelectAddress({
 
       {/* Modal Add / Edit */}
       <AddAddress
-    isFormVisible={showForm}
-    getAddress={async () => {     
-      await refreshAddresses?.();
-    }}
-    toggleForminVisibility={closeForm}
-    clientId={client._id}
-    editAddress={addressToEdit || undefined}
-  />
+        isFormVisible={showForm}
+        toggleForminVisibility={() => setShowForm(false)}
+        clientId={client._id}
+        editAddress={addressToEdit || undefined}
+        getAddress={async () => {
+          await refreshAddresses?.();
+        }}
+      />
 
       {/* Modal Manage / Delete */}
       <ManageAddresses
-    isVisible={showManage}
-    addresses={addresses}
-    fetched={true}
-    onClose={closeManage}
-    refresh={async () => {         
-      await refreshAddresses?.();
-    }}
-  />
+        isVisible={showManage}
+        addresses={addresses}
+        fetched={true}
+        onClose={() => setShowManage(false)}
+        refresh={async () => {
+          await refreshAddresses?.();
+        }}
+      />
     </>
   );
 }

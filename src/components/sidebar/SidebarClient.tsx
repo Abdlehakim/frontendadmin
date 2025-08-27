@@ -240,12 +240,11 @@ export default function SidebarClient() {
       ) : null}
 
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen bg-primary text-white transition-all duration-300 ease-in-out ${
-          collapsed
-            ? "-translate-x-full w-[60px]"
-            : "translate-x-0 w-[70%] md:w-[280px]"
-        } md:static md:translate-x-0`}
-      >
+  className={`fixed top-0 left-0 z-50 h-[100dvh] bg-primary text-white
+    transition-all duration-300 ease-in-out
+    ${collapsed ? "-translate-x-full w-[60px]" : "translate-x-0 w-[70%] md:w-[280px]"}
+    md:sticky md:top-0 md:self-start md:translate-x-0`}
+>
         <div className="flex flex-col h-screen relative">
           <div className="flex items-center justify-center h-[80px] border-b-2">
             <div className="flex items-center gap-2">
