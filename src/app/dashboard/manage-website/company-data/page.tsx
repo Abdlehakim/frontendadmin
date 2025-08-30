@@ -15,7 +15,8 @@ interface CompanyData {
   logoImageUrl?: string;
   contactBannerUrl?: string;
   email: string;
-  phone?: number;
+  phone?: string;   // téléphone affiché en texte
+  vat?: string;     // Matricule fiscale
   address: string;
   city: string;
   zipcode: string;
@@ -33,16 +34,16 @@ export default function CompanyDataAdminPage() {
   useEffect(() => {
     (async () => {
       try {
-        const { companyInfo } = await fetchFromAPI<{
-          companyInfo: CompanyData;
-        }>("/dashboardadmin/website/company-info/getCompanyInfo");
+        const { companyInfo } = await fetchFromAPI<{ companyInfo: CompanyData }>(
+          "/dashboardadmin/website/company-info/getCompanyInfo"
+        );
         setItem(companyInfo ?? null);
       } catch (err: unknown) {
         if (err instanceof Error && /not found/i.test(err.message)) {
           setItem(null);
         } else {
-          console.error("Fetch Company Data Error:", err);
-          setError("Failed to load company data.");
+          console.error("Erreur de chargement des données société :", err);
+          setError("Échec du chargement des données de l’entreprise.");
         }
       } finally {
         setLoading(false);
@@ -52,25 +53,25 @@ export default function CompanyDataAdminPage() {
 
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* Header */}
+      {/* En-tête */}
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Company Data</h1>
+        <h1 className="text-3xl font-bold uppercase">Données de l’entreprise</h1>
         {item ? (
           <Link href={`/dashboard/manage-website/company-data/update/${item._id}`}>
-            <button className="px-4 py-2 bg-tertiary text-white rounded hover:opacity-90">
-              Update
+            <button className="px-4 py-2 bg-tertiaire bg-tertiary text-white rounded hover:opacity-90">
+              Modifier
             </button>
           </Link>
         ) : (
           <Link href="/dashboard/manage-website/company-data/create">
-            <button className="px-4 py-2 bg-tertiary text-white rounded hover:opacity-90">
-              Create
+            <button className="px-4 py-2 bg-tertiaire bg-tertiary text-white rounded hover:opacity-90">
+              Créer
             </button>
           </Link>
         )}
       </div>
 
-      {/* Loading / Error */}
+      {/* Chargement / Erreur */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <FaSpinner className="animate-spin text-3xl text-gray-600" />
@@ -79,63 +80,62 @@ export default function CompanyDataAdminPage() {
         <div className="text-red-600 text-center">{error}</div>
       ) : (
         <div className="flex flex-col gap-4 py-6">
-          {/* Logo, Banner & Contact Banner */}
+          {/* Logo, bannières */}
           <div className="flex flex-col md:flex-row gap-4">
             {/* Logo */}
             <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/5 overflow-hidden">
               {item?.logoImageUrl ? (
                 <Image
                   src={item.logoImageUrl}
-                  alt="Company Logo"
+                  alt="Logo de l’entreprise"
                   fill
                   className="object-contain p-4"
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
-                  No logo uploaded
+                  Aucun logo téléversé
                 </div>
               )}
             </div>
 
-            {/* Main Banner */}
+            {/* Bannière principale */}
             <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-2/5 overflow-hidden">
               {item?.bannerImageUrl ? (
                 <Image
                   src={item.bannerImageUrl}
-                  alt="Company Banner"
+                  alt="Bannière de l’entreprise"
                   fill
                   className="object-cover"
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
-                  No banner uploaded
+                  Aucune bannière téléversée
                 </div>
               )}
             </div>
 
-            {/* Contact Banner */}
+            {/* Bannière de contact */}
             <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-2/5 overflow-hidden">
               {item?.contactBannerUrl ? (
                 <Image
                   src={item.contactBannerUrl}
-                  alt="Contact Banner"
+                  alt="Bannière de contact"
                   fill
                   className="object-cover"
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
-                  No contact banner uploaded
+                  Aucune bannière de contact téléversée
                 </div>
               )}
             </div>
           </div>
 
-
-          {/* Basic Info */}
+          {/* Infos de base */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Name */}
+            {/* Nom */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="name" className="text-sm font-medium">Name</label>
+              <label htmlFor="name" className="text-sm font-medium">Nom</label>
               <input
                 id="name"
                 type="text"
@@ -144,9 +144,9 @@ export default function CompanyDataAdminPage() {
                 className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
               />
             </div>
-            {/* Email */}
+            {/* E-mail */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="email" className="text-sm font-medium">Email</label>
+              <label htmlFor="email" className="text-sm font-medium">E-mail</label>
               <input
                 id="email"
                 type="email"
@@ -155,13 +155,24 @@ export default function CompanyDataAdminPage() {
                 className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
               />
             </div>
-            {/* Phone */}
+            {/* Téléphone */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="phone" className="text-sm font-medium">Phone</label>
+              <label htmlFor="phone" className="text-sm font-medium">Téléphone</label>
               <input
                 id="phone"
                 type="text"
-                value={item?.phone?.toString() ?? ""}
+                value={item?.phone ?? ""}
+                disabled
+                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
+              />
+            </div>
+            {/* Matricule fiscale */}
+            <div className="flex flex-col gap-2">
+              <label htmlFor="vat" className="text-sm font-medium">Matricule fiscale</label>
+              <input
+                id="vat"
+                type="text"
+                value={item?.vat ?? ""}
                 disabled
                 className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
               />
@@ -182,13 +193,13 @@ export default function CompanyDataAdminPage() {
 
           <hr className="border-t border-gray-300 mb-4" />
 
-          {/* Address Info */}
-          <h2 className="text-xl font-semibold uppercase">Address Info</h2>
+          {/* Adresse */}
+          <h2 className="text-xl font-semibold uppercase">Informations d’adresse</h2>
           <hr className="border-t border-gray-300 mb-4" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Address */}
+            {/* Adresse */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="address" className="text-sm font-medium">Address</label>
+              <label htmlFor="address" className="text-sm font-medium">Adresse</label>
               <input
                 id="address"
                 type="text"
@@ -197,9 +208,9 @@ export default function CompanyDataAdminPage() {
                 className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
               />
             </div>
-            {/* City */}
+            {/* Ville */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="city" className="text-sm font-medium">City</label>
+              <label htmlFor="city" className="text-sm font-medium">Ville</label>
               <input
                 id="city"
                 type="text"
@@ -208,9 +219,9 @@ export default function CompanyDataAdminPage() {
                 className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
               />
             </div>
-            {/* Zipcode */}
+            {/* Code postal */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="zipcode" className="text-sm font-medium">Zipcode</label>
+              <label htmlFor="zipcode" className="text-sm font-medium">Code postal</label>
               <input
                 id="zipcode"
                 type="text"
@@ -219,9 +230,9 @@ export default function CompanyDataAdminPage() {
                 className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
               />
             </div>
-            {/* Governorate */}
+            {/* Gouvernorat */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="governorate" className="text-sm font-medium">Governorate</label>
+              <label htmlFor="governorate" className="text-sm font-medium">Gouvernorat</label>
               <input
                 id="governorate"
                 type="text"
@@ -234,8 +245,8 @@ export default function CompanyDataAdminPage() {
 
           <hr className="border-t border-gray-300 mb-4" />
 
-          {/* Social Media */}
-          <h2 className="text-xl font-semibold uppercase">Social Media</h2>
+          {/* Réseaux sociaux */}
+          <h2 className="text-xl font-semibold uppercase">Réseaux sociaux</h2>
           <hr className="border-t border-gray-300 mb-4" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-8">
             {/* Facebook */}

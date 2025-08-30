@@ -43,24 +43,24 @@ export const sidebarItems: SidebarItem[] = [
     name: "Gestion du site",
     icon: <CgWebsite size={20} />,
     children: [
+            {
+        name: "Données de l'Entreprise",
+        href: "/dashboard/manage-website/company-data",
+        icon: <LuCircleParking size={20} />,
+      },
       {
         name: "Données page d'accueil",
         href: "/dashboard/manage-website/home-page",
         icon: <LuCircleParking size={20} />,
       },
       {
-        name: "Données page produit",
-        href: "/dashboard/manage-website/product-page",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
-        name: "Entreprise",
-        href: "/dashboard/manage-website/company-data",
-        icon: <LuCircleParking size={20} />,
-      },
-      {
         name: "Bannières",
         href: "/dashboard/manage-website/banners",
+        icon: <LuCircleParking size={20} />,
+      },
+      {
+        name: "Titres et sous-titres",
+        href: "/dashboard/manage-website/titres-soustitres",
         icon: <LuCircleParking size={20} />,
       },
     ],

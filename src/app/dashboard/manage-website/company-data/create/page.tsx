@@ -15,6 +15,7 @@ interface FormFields {
   description: string;
   email: string;
   phone: string;
+  vat: string;          // ← NEW: Matricule fiscale
   address: string;
   city: string;
   zipcode: string;
@@ -30,6 +31,7 @@ export default function CreateCompanyDataPage() {
     description: "",
     email: "",
     phone: "",
+    vat: "",            // ← NEW
     address: "",
     city: "",
     zipcode: "",
@@ -50,10 +52,12 @@ export default function CreateCompanyDataPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const basicFields: Array<keyof Pick<FormFields, "name" | "email" | "phone">> = [
+  // include "vat" in the basic fields
+  const basicFields: Array<keyof Pick<FormFields, "name" | "email" | "phone" | "vat">> = [
     "name",
     "email",
     "phone",
+    "vat", // ← NEW
   ];
   const addressFields: Array<
     keyof Pick<FormFields, "address" | "city" | "zipcode" | "governorate">
@@ -63,6 +67,12 @@ export default function CreateCompanyDataPage() {
     "linkedin",
     "instagram",
   ];
+
+  // nice label for vat
+  const labelFor = (field: string) =>
+    field === "vat"
+      ? "Matricule fiscale"
+      : field.charAt(0).toUpperCase() + field.slice(1);
 
   /* ----------------- handlers ----------------- */
   const handleInputChange = (
@@ -203,7 +213,7 @@ export default function CreateCompanyDataPage() {
             {basicFields.map((field) => (
               <div key={field} className="flex flex-col gap-2">
                 <label htmlFor={field} className="text-sm font-medium">
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                  {labelFor(field)}
                 </label>
                 <input
                   id={field}
@@ -241,7 +251,7 @@ export default function CreateCompanyDataPage() {
             {addressFields.map((field) => (
               <div key={field} className="flex flex-col gap-2">
                 <label htmlFor={field} className="text-sm font-medium">
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                  {labelFor(field)}
                 </label>
                 <input
                   id={field}
@@ -264,7 +274,7 @@ export default function CreateCompanyDataPage() {
             {socialFields.map((field) => (
               <div key={field} className="flex flex-col gap-2">
                 <label htmlFor={field} className="text-sm font-medium">
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                  {labelFor(field)}
                 </label>
                 <input
                   id={field}

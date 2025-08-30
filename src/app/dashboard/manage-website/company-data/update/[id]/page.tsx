@@ -22,6 +22,7 @@ interface FormFields {
   description: string;
   email: string;
   phone: string;
+  vat: string;            // ← NEW: Matricule fiscale
   address: string;
   city: string;
   zipcode: string;
@@ -48,6 +49,7 @@ export default function UpdateCompanyDataPage() {
     description: "",
     email: "",
     phone: "",
+    vat: "",             // ← NEW
     address: "",
     city: "",
     zipcode: "",
@@ -66,10 +68,11 @@ export default function UpdateCompanyDataPage() {
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
 
   /* ------------------ constants ------------------ */
-  const basicFields: Array<keyof Pick<FormFields, "name" | "email" | "phone">> = [
+  const basicFields: Array<keyof Pick<FormFields, "name" | "email" | "phone" | "vat">> = [
     "name",
     "email",
     "phone",
+    "vat",               // ← NEW: include in basic section
   ];
   const addressFields: Array<
     keyof Pick<FormFields, "address" | "city" | "zipcode" | "governorate">
@@ -89,7 +92,8 @@ export default function UpdateCompanyDataPage() {
             name: string;
             description: string;
             email: string;
-            phone: number;
+            phone: string | number;
+            vat?: string;              // ← NEW
             address: string;
             city: string;
             zipcode: string;
@@ -108,7 +112,8 @@ export default function UpdateCompanyDataPage() {
             name: companyInfo.name,
             description: companyInfo.description,
             email: companyInfo.email,
-            phone: companyInfo.phone.toString(),
+            phone: companyInfo.phone?.toString?.() ?? String(companyInfo.phone ?? ""),
+            vat: companyInfo.vat ?? "",                         // ← NEW
             address: companyInfo.address,
             city: companyInfo.city,
             zipcode: companyInfo.zipcode,
@@ -237,12 +242,14 @@ export default function UpdateCompanyDataPage() {
           ))}
         </div>
 
-        {/* Basic Info */}
+        {/* Basic Info (now includes VAT) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {basicFields.map((field) => (
             <div key={field} className="flex flex-col gap-2">
               <label htmlFor={field} className="text-sm font-medium">
-                {field.charAt(0).toUpperCase() + field.slice(1)}
+                {field === "vat"
+                  ? "VAT / Matricule fiscale"
+                  : field.charAt(0).toUpperCase() + field.slice(1)}
               </label>
               <input
                 id={field}

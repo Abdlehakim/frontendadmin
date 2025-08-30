@@ -1,7 +1,6 @@
-// src/app/dashboard/manage-website/product-page/create/page.tsx
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
+import React, { useState, useEffect, FormEvent, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Overlay from "@/components/Overlay";
@@ -9,33 +8,38 @@ import ErrorPopup from "@/components/Popup/ErrorPopup";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
 interface FormFields {
-  SPTitle: string;
-  SPSubTitle: string;
+  SimilarProductTitre: string;
+  SimilarProductSubTitre: string;
 }
 
-export default function CreateProductPageData() {
+export default function CreateWebsiteTitres() {
   const router = useRouter();
-  const [form, setForm] = useState<FormFields>({ SPTitle: "", SPSubTitle: "" });
+
+  const [form, setForm] = useState<FormFields>({
+    SimilarProductTitre: "",
+    SimilarProductSubTitre: "",
+  });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect if data exists
+  // Redirect if data already exists
   useEffect(() => {
     (async () => {
       try {
-        const { productPageData } = await fetchFromAPI<{ productPageData: { _id: string }[] }>(
-          "/dashboardadmin/website/productpage/getProductPageData"
-        );
-        if (productPageData.length > 0) {
+        const { websiteTitres } =
+          await fetchFromAPI<{ websiteTitres: { _id: string }[] }>(
+            "/api/dashboardadmin/website/getWebsiteTitres"
+          );
+        if (websiteTitres.length > 0) {
           router.replace(
-            `/dashboard/manage-website/product-page/update/${productPageData[0]._id}`
+            `/dashboard/manage-website/titres-soustitres/update/${websiteTitres[0]._id}`
           );
           return;
         }
       } catch (e) {
-        console.error("Error checking existing data:", e);
+        console.error("Error checking existing WebsiteTitres:", e);
       } finally {
         setLoading(false);
       }
@@ -56,24 +60,32 @@ export default function CreateProductPageData() {
     setSubmitting(true);
     setError(null);
 
-    if (!form.SPTitle.trim() || !form.SPSubTitle.trim()) {
-      setError("All fields are required.");
-      setSubmitting(false);
-      return;
+    for (const [key, val] of Object.entries(form)) {
+      if (!val.trim()) {
+        setError(`Field "${key}" is required.`);
+        setSubmitting(false);
+        return;
+      }
     }
 
     try {
-      const fd = new FormData();
-      fd.append("SPTitle", form.SPTitle.trim());
-      fd.append("SPSubTitle", form.SPSubTitle.trim());
-
       await fetchFromAPI<{ message: string }>(
-        "/dashboardadmin/website/productpage/createProductPageData",
-        { method: "POST", body: fd }
+        "/dashboardadmin/website/createWebsiteTitres",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            SimilarProductTitre: form.SimilarProductTitre.trim(),
+            SimilarProductSubTitre: form.SimilarProductSubTitre.trim(),
+          }),
+        }
       );
 
       setShowSuccess(true);
-      setTimeout(() => router.push("/dashboard/manage-website/product-page"), 1500);
+      setTimeout(
+        () => router.push("/dashboard/manage-website/titres-soustitres"),
+        1200
+      );
     } catch (err: unknown) {
       console.error("Creation failed:", err);
       setError(err instanceof Error ? err.message : "Failed to create entry.");
@@ -85,8 +97,8 @@ export default function CreateProductPageData() {
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
       {/* Header */}
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Create Product Page</h1>
-        <Link href="/dashboard/manage-website/product-page">
+        <h1 className="text-3xl font-bold uppercase">Create Titres &amp; Sous-titres</h1>
+        <Link href="/dashboard/manage-website/titres-soustitres">
           <button className="px-4 py-2 bg-quaternary text-white rounded hover:opacity-90">
             All Entries
           </button>
@@ -94,28 +106,32 @@ export default function CreateProductPageData() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        {/* SP Title */}
+        {/* Similar Product Title */}
         <div className="flex flex-col gap-2">
-          <label htmlFor="SPTitle" className="text-sm font-medium">Section Title*</label>
+          <label htmlFor="SimilarProductTitre" className="text-sm font-medium">
+            Similar Product Title*
+          </label>
           <input
-            id="SPTitle"
-            name="SPTitle"
+            id="SimilarProductTitre"
+            name="SimilarProductTitre"
             type="text"
-            value={form.SPTitle}
+            value={form.SimilarProductTitre}
             onChange={handleInputChange}
             required
             className="border-2 border-gray-300 rounded px-3 py-2"
           />
         </div>
 
-        {/* SP Sub Title */}
+        {/* Similar Product Sub Title */}
         <div className="flex flex-col gap-2">
-          <label htmlFor="SPSubTitle" className="text-sm font-medium">Section Sub Title*</label>
+          <label htmlFor="SimilarProductSubTitre" className="text-sm font-medium">
+            Similar Product Sub Title*
+          </label>
           <input
-            id="SPSubTitle"
-            name="SPSubTitle"
+            id="SimilarProductSubTitre"
+            name="SimilarProductSubTitre"
             type="text"
-            value={form.SPSubTitle}
+            value={form.SimilarProductSubTitre}
             onChange={handleInputChange}
             required
             className="border-2 border-gray-300 rounded px-3 py-2"
@@ -124,7 +140,7 @@ export default function CreateProductPageData() {
 
         {/* Actions */}
         <div className="flex justify-center gap-8">
-          <Link href="/dashboard/manage-website/product-page">
+          <Link href="/dashboard/manage-website/titres-soustitres">
             <button
               type="button"
               disabled={submitting}
