@@ -131,6 +131,11 @@ export const sidebarItems: SidebarItem[] = [
         href: "/dashboard/manage-client/orders",
         icon: <LuCircleParking size={20} />,
       },
+      {
+        name: "Factures",
+        href: "/dashboard/manage-client/factures",
+        icon: <LuCircleParking size={20} />,
+      },
     ],
   },
   {
