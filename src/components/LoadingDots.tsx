@@ -27,7 +27,7 @@ const LoadingDots: React.FC<LoadingDotsProps> = ({
   if (isSuccess && successMessage) {
     return (
       <div className="w-full h-full bg-white bg-opacity-50 flex justify-center items-center rounded-xl">
-        <p className="text-center text-sm text-green-500">
+        <p className="text-center text-lg text-green-500">
           {successMessage}
         </p>
       </div>
@@ -48,7 +48,7 @@ const LoadingDots: React.FC<LoadingDotsProps> = ({
         />
       </div>
       {loadingMessage && (
-        <p className="text-center text-sm text-gray-800">
+        <p className="text-center text-lg text-gray-800">
           {loadingMessage}
         </p>
       )}

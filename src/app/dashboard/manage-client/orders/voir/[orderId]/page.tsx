@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import LoadingDots from "@/components/LoadingDots";
+import { generatePdf } from "@/lib/generatePdf";
 
 /* ---------- types (mirror backend model) ---------- */
 interface OrderItemAttribute {
@@ -81,6 +82,10 @@ export default function OrderDetailsPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /* download overlay state */
+  const [downloading, setDownloading] = useState<false | "bl" | "invoice">(false);
+  const [dlSuccess, setDlSuccess] = useState(false);
+
   /* fetch order */
   useEffect(() => {
     (async () => {
@@ -99,11 +104,12 @@ export default function OrderDetailsPage() {
 
   if (loading)
     return (
-
-        <div className="relative h-full w-full flex items-center justify-center">
-          <LoadingDots loadingMessage="Chargement de la commande…" />
-        </div>
+      <div className="relative h-full w-full flex items-center justify-center">
+        <LoadingDots loadingMessage="Chargement de la commande…" />
+      </div>
     );
+
+
 
   if (!order) return <div className="p-8">Order not found.</div>;
 
@@ -151,7 +157,90 @@ export default function OrderDetailsPage() {
           .join("\n")
       : "—";
 
+  /* ---------- Status progress (En cours → Expédiée → Livrée) + bullets ---------- */
+  const STATUS_LABELS: Record<string, string> = {
+    Processing: "En cours",
+    Shipped: "Expédiée",
+    Delivered: "Livrée",
+    Cancelled: "Annulée",
+    Refunded: "Remboursée",
+  };
+
+  const FLOW: Array<keyof typeof STATUS_LABELS> = [
+    "Processing",
+    "Shipped",
+    "Delivered",
+  ];
+
+  const statusRaw = order.orderStatus ?? "Processing";
+  const isTerminal = statusRaw === "Cancelled" || statusRaw === "Refunded";
+  const currentIndexInFlow = FLOW.indexOf(
+    statusRaw as keyof typeof STATUS_LABELS
+  );
+  const safeIndex = currentIndexInFlow === -1 ? 0 : currentIndexInFlow;
+  const progressPercent = isTerminal
+    ? 0
+    : (safeIndex / (FLOW.length - 1)) * 100;
+
+  /* ---------- download handlers ---------- */
+  const numberFromRef = String(order.ref ?? order._id).replace(/^ORDER-/, "");
+  const canDownloadInvoice = statusRaw === "Delivered";
+
+  const withOverlay = async (mode: "bl" | "invoice", action: () => Promise<void>) => {
+    try {
+      setDownloading(mode);
+      setDlSuccess(false);
+      await action();
+      setDlSuccess(true);
+    } catch (e) {
+      console.error(e);
+      // show a quick failure note via the same overlay
+      setDlSuccess(true);
+    } finally {
+      // brief success flash, then close
+      setTimeout(() => {
+        setDownloading(false);
+        setDlSuccess(false);
+      }, 1200);
+    }
+  };
+
+  const handleDownloadBL = async () => {
+    if (!order?.ref) return;
+    await withOverlay("bl", () =>
+      generatePdf(`/pdf/invoice/${order.ref}?doc=bl`, `BL-${numberFromRef}.pdf`)
+    );
+  };
+
+  const handleDownloadInvoice = async () => {
+    if (!order?.ref || !canDownloadInvoice) return;
+    await withOverlay("invoice", () =>
+      generatePdf(`/pdf/invoice/${order.ref}`, `FACTURE-${numberFromRef}.pdf`)
+    );
+  };
+
+  const overlayMsg =
+    downloading === "bl"
+      ? "Génération du bon de livraison…"
+      : "Génération de la facture…";
+      if (downloading) return (
+        <div
+          className="relative h-full w-full flex items-center justify-center"
+          aria-live="polite"
+          role="status"
+        >
+            <LoadingDots
+              loadingMessage={overlayMsg}
+              successMessage="Téléchargement démarré"
+              isSuccess={dlSuccess}
+            />
+  
+        </div>
+      )
+      
+
   return (
+    
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-6">
       {/* header */}
       <div className="flex items-center justify-between">
@@ -165,6 +254,99 @@ export default function OrderDetailsPage() {
         >
           ← Retour
         </Link>
+      </div>
+
+      {/* Status progress & bullets */}
+      <div className="p-4">
+        <div className="flex items-center justify-between gap-6">
+          {/* progress */}
+          <div className="flex-1">
+            <div className="relative mb-3">
+              {/* base line */}
+              <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2 h-1 bg-gray-200 rounded" />
+              {/* active line */}
+              {!isTerminal && (
+                <div
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-1 bg-secondary rounded"
+                  style={{ width: `calc(${progressPercent}% - 0.75rem)` }}
+                />
+              )}
+              {/* dots */}
+              <div className="relative flex justify-between">
+                {FLOW.map((k, i) => {
+                  const active = !isTerminal && i <= safeIndex;
+                  return (
+                    <div
+                      key={k}
+                      className={[
+                        "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium",
+                        active
+                          ? "bg-secondary text-white"
+                          : "bg-white border border-gray-300 text-gray-600",
+                      ].join(" ")}
+                      title={STATUS_LABELS[k]}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+            {/* labels under dots */}
+            <div className="flex justify-between text-xs text-gray-700">
+              {FLOW.map((k) => (
+                <span
+                  key={k}
+                  className={
+                    !isTerminal && FLOW.indexOf(k) <= safeIndex
+                      ? "font-medium"
+                      : ""
+                  }
+                >
+                  {STATUS_LABELS[k]}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* divider */}
+          <div className="w-px self-stretch bg-gray-200 hidden md:block" />
+
+          {/* bullets */}
+          <div className="md:w-56 w-full flex flex-col gap-2">
+            <div
+              className={[
+                "flex items-center gap-2 text-sm",
+                statusRaw === "Cancelled"
+                  ? "text-red-600 font-medium"
+                  : "text-gray-600",
+              ].join(" ")}
+            >
+              <span
+                className={[
+                  "inline-block w-2.5 h-2.5 rounded-full",
+                  statusRaw === "Cancelled" ? "bg-red-600" : "bg-gray-300",
+                ].join(" ")}
+              />
+              Annulée
+            </div>
+
+            <div
+              className={[
+                "flex items-center gap-2 text-sm",
+                statusRaw === "Refunded"
+                  ? "text-emerald-600 font-medium"
+                  : "text-gray-600",
+              ].join(" ")}
+            >
+              <span
+                className={[
+                  "inline-block w-2.5 h-2.5 rounded-full",
+                  statusRaw === "Refunded" ? "bg-emerald-600" : "bg-gray-300",
+                ].join(" ")}
+              />
+              Remboursée
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* section méta */}
@@ -288,6 +470,31 @@ export default function OrderDetailsPage() {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* ---------- Download buttons ---------- */}
+        <div className="mt-2 flex items-center gap-3">
+          <button
+            onClick={handleDownloadBL}
+            disabled={downloading !== false}
+            className="rounded-md border border-primary px-4 py-2.5 text-sm text-primary hover:bg-primary hover:text-white cursor-pointer"
+            title="Télécharger le bon de livraison"
+          >
+            Télécharger bon de livraison
+          </button>
+
+          <button
+  onClick={handleDownloadInvoice}
+  disabled={!canDownloadInvoice || downloading !== false}
+  className="rounded-md border border-primary px-4 py-2.5 text-sm text-primary hover:bg-primary hover:text-white disabled:opacity-10 disabled:hover:bg-transparent disabled:hover:text-primary disabled:cursor-not-allowed cursor-pointer"
+  title={
+    canDownloadInvoice
+      ? "Télécharger la facture"
+      : "La facture est disponible une fois la commande livrée"
+  }
+>
+  Télécharger facture
+</button>
         </div>
       </div>
     </div>

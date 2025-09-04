@@ -51,9 +51,10 @@ const pageSize = 8;
 const statusOptions = [
   { value: "Processing", label: "En cours" },
   { value: "Shipped", label: "Expédiée" },
+  { value: "Delivered", label: "Livrée" },
   { value: "Cancelled", label: "Annulée" },
   { value: "Refunded", label: "Remboursée" },
-  { value: "Delivered", label: "Livrée" },
+  
 ] as const;
 type StatusVal = (typeof statusOptions)[number]["value"];
 
