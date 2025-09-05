@@ -47,11 +47,12 @@ export default function IconButton({
       : pathname === normHref
     : false;
 
+  // Hidden on mobile by default; visible on md+
   const base =
-    "inline-flex items-center justify-center h-12 w-12 rounded-md border-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/70 cursor-pointer z-50";
+    "hidden md:inline-flex items-center justify-center h-12 w-12 rounded-md border-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/70 cursor-pointer z-50";
   const float = floating
-  ? "absolute bottom-[10%] -right-8 md:top-auto md:-right-8 md:bottom-6"
-  : "";
+    ? "absolute bottom-[10%] -right-8 md:top-auto md:-right-8 md:bottom-6"
+    : "";
   const colors = active
     ? "bg-secondary text-primary"
     : "bg-primary text-white hover:bg-secondary hover:scale-105";
