@@ -285,7 +285,7 @@ export default function SidebarClient() {
       )}
 
       {!collapsed ? (
-        <div onClick={toggleCollapse} className="md:hidden" />
+        <div onClick={toggleCollapse}   className="fixed inset-0 bg-black/30 z-40 md:hidden" />
       ) : null}
 
       <aside
@@ -371,7 +371,7 @@ export default function SidebarClient() {
           {/* NAV + Scroll hints */}
           <nav
             ref={navRef}
-            className={`flex-1 flex-col h-[40%]
+            className={`flex-1 flex-col h-[40%] py-4
     ${collapsed ? "overflow-visible" : "overflow-y-auto"}
     [&::-webkit-scrollbar]:w-[4px]
     [&::-webkit-scrollbar-track]:bg-transparent
