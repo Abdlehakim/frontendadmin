@@ -580,9 +580,9 @@ export default function SidebarClient() {
                 onClick={handleSignOut}
                 disabled={signingOut}
                 aria-busy={signingOut}
-                className={`flex justify-center items-start transition-colors duration-200 ease-in-out cursor-pointer ${
+                className={`flex justify-center items-start transition-colors duration-200 ease-in-out cursor-pointer w-full ${
                   collapsed
-                    ? ""
+                    ? "gap-2 h-10 p-2 rounded hover:bg-white hover:text-hoverText disabled:opacity-60"
                     : "gap-2 h-10 w-fit p-2 border-y-2 border-2 rounded-md border-gray-200 hover:bg-white hover:text-hoverText disabled:opacity-60"
                 }`}
               >
