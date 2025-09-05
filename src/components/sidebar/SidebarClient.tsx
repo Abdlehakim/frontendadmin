@@ -355,15 +355,15 @@ export default function SidebarClient() {
                 bg-gradient-to-b from-black/50 to-transparent
                 ${
                   showTopShadow ? "opacity-100" : "opacity-0"
-                } top-[80px] md:top-[160px]`}
+                } top-[80px]`}
             />
           )}
 
           {/* Optional tiny top chip when not at top (desktop only) */}
           {!collapsed && showTopShadow && (
-            <div className="pointer-events-none hidden md:block absolute top-3 right-3">
-              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 text-[10px] uppercase tracking-wide">
-                <BiChevronUp size={14} />
+            <div className="pointer-events-none hidden md:block absolute right-3 top-[85px]">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 text-[8px] uppercase tracking-wide ">
+                <BiChevronUp size={8} />
                 <span>Top</span>
               </div>
             </div>
@@ -552,7 +552,7 @@ export default function SidebarClient() {
 
           {/* Scroll chip (only when at top and more below) */}
           {!collapsed && atTop && showBottomShadow && (
-            <div className="pointer-events-none absolute right-3 bottom-[110px] md:bottom-[160px]">
+            <div className="pointer-events-none absolute right-3 bottom-[110px] md:bottom-[165px]">
               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/25 text-[8px] uppercase tracking-wide">
                 <span>Scroll</span>
                 <BiChevronDown size={8} />
