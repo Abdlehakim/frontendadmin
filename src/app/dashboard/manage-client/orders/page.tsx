@@ -39,7 +39,7 @@ interface Order {
   deliveryMethod: string;
   deliveryCost?: number;
   DeliveryAddress: Array<{ Address: string; DeliverToAddress: string }>;
-  Invoice?: boolean; // server sends this; default false
+  Invoice?: boolean;
 }
 
 const pageSize = 8;
@@ -181,7 +181,6 @@ export default function OrdersPage() {
   const [deleteOrderRef, setDeleteOrderRef] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Track orders we're polling for invoice creation
   const [pendingInvoice, setPendingInvoice] = useState<Record<string, boolean>>({});
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -233,7 +232,6 @@ export default function OrdersPage() {
     setOrders((prev) => prev.filter((o) => o._id !== id));
   };
 
-  // Poll for Invoice flag to flip true (exponential backoff)
   const pollInvoice = async (orderId: string) => {
     setPendingInvoice((prev) => ({ ...prev, [orderId]: true }));
     try {
@@ -263,30 +261,24 @@ export default function OrdersPage() {
     }
   };
 
-  // NEW: use the new backend route /api/dashboardadmin/factures/from-order/:orderId
-  // Only triggered when status transitions to "Pickup" (Retrait en magasin)
   const createInvoiceFromOrder = async (orderId: string) => {
     setPendingInvoice((prev) => ({ ...prev, [orderId]: true }));
     try {
-      // fetchFromAPI prefixes with /api, so we pass the route without /api here
       const res = await fetchFromAPI<{ facture?: unknown; message?: string }>(
         `/dashboardadmin/factures/from-order/${orderId}`,
         { method: "POST" }
       );
 
       if (res?.facture) {
-        // Optimistic: mark as invoiced
         setOrders((prev) =>
           prev.map((o) => (o._id === orderId ? { ...o, Invoice: true } : o))
         );
       } else {
-        // If no payload (or 2xx without facture), rely on DB flag via post-save hook
         await pollInvoice(orderId);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("Create facture (Pickup) failed:", msg);
-      // In case the server created it but client errored, poll to reconcile
       await pollInvoice(orderId);
     } finally {
       setPendingInvoice((prev) => {
@@ -298,39 +290,37 @@ export default function OrdersPage() {
   };
 
   const updateStatus = async (id: string, status: string) => {
-  const current = orders.find((x) => x._id === id);
-  try {
-    await fetchFromAPI(`/dashboardadmin/orders/updateStatus/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderStatus: status }),
-    });
+    const current = orders.find((x) => x._id === id);
+    try {
+      await fetchFromAPI(`/dashboardadmin/orders/updateStatus/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderStatus: status }),
+      });
 
-    setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o)));
+      setOrders((prev) =>
+        prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o))
+      );
 
-    // 🔽 broaden the trigger:
-    const shouldCreateOrPoll = status === "Pickup" || status === "Delivered";
+      const shouldCreateOrPoll = status === "Pickup" || status === "Delivered";
 
-    if (shouldCreateOrPoll && current) {
-      if (current.Invoice) {
-        setErrorMsg("Une facture a déjà été créée pour cette commande.");
-      } else {
-        if (status === "Pickup") {
-          // keep your existing behavior for Pickup (call the API to create immediately)
-          await createInvoiceFromOrder(id);
+      if (shouldCreateOrPoll && current) {
+        if (current.Invoice) {
+          setErrorMsg("Une facture a déjà été créée pour cette commande.");
         } else {
-          // for Delivered, the worker will create it → just poll until Invoice flips true
-          await pollInvoice(id);
+          if (status === "Pickup") {
+            await createInvoiceFromOrder(id);
+          } else {
+            await pollInvoice(id);
+          }
         }
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("Update status error ▶", msg);
+      alert("Échec de la mise à jour du statut.");
     }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("Update status error ▶", msg);
-    alert("Échec de la mise à jour du statut.");
-  }
-};
-
+  };
 
   const openDelete = (id: string, ref: string) => {
     setDeleteOrderId(id);
@@ -465,7 +455,6 @@ export default function OrdersPage() {
                         />
                       </td>
 
-                      {/* Facture status dot: pulsing while pending, green when created */}
                       <td className="px-4 text-center">
                         <span
                           className={`inline-block h-3 w-3 rounded-full ${
