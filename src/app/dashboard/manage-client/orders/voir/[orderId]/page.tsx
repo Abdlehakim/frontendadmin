@@ -160,6 +160,7 @@ export default function OrderDetailsPage() {
     Processing: "En cours",
     Shipped: "Expédiée",
     Delivered: "Livrée",
+    Pickup: "Retrait en magasin",
     Cancelled: "Annulée",
     Refunded: "Remboursée",
   };

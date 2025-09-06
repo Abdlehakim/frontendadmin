@@ -18,6 +18,7 @@ import { FaSpinner } from "react-icons/fa6";
 import { FiChevronDown, FiCheck } from "react-icons/fi";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import Popup from "@/components/Popup/DeletePopup";
+import ErrorPopup from "@/components/Popup/ErrorPopup";
 import DateFilter, { DateRange } from "@/components/DateFilter";
 
 const fmtDate = (iso: string) =>
@@ -32,18 +33,13 @@ interface Order {
   ref: string;
   clientName: string;
   user: { _id: string; username?: string; email: string } | null;
-  pickupMagasin: Array<{
-    Magasin: string;
-    MagasinAddress: string;
-  }>;
+  pickupMagasin: Array<{ Magasin: string; MagasinAddress: string }>;
   createdAt: string;
   orderStatus: string;
   deliveryMethod: string;
   deliveryCost?: number;
-  DeliveryAddress: Array<{
-    Address: string;
-    DeliverToAddress: string;
-  }>;
+  DeliveryAddress: Array<{ Address: string; DeliverToAddress: string }>;
+  Invoice?: boolean; // server sends this; default false
 }
 
 const pageSize = 8;
@@ -52,10 +48,11 @@ const statusOptions = [
   { value: "Processing", label: "En cours" },
   { value: "Shipped", label: "Expédiée" },
   { value: "Delivered", label: "Livrée" },
+  { value: "Pickup", label: "Retrait en magasin" },
   { value: "Cancelled", label: "Annulée" },
   { value: "Refunded", label: "Remboursée" },
-  
 ] as const;
+
 type StatusVal = (typeof statusOptions)[number]["value"];
 
 type StringUnion = string;
@@ -66,6 +63,7 @@ interface NiceSelectProps<T extends StringUnion> {
   display?: (v: T) => string;
   className?: string;
 }
+
 function NiceSelect<T extends StringUnion>({
   value,
   options,
@@ -91,8 +89,8 @@ function NiceSelect<T extends StringUnion>({
 
   useEffect(() => {
     if (!open) return;
-    const onDocClick = (e: MouseEvent) => {
-      const t = e.target as Node;
+    const onDocClick = (evt: MouseEvent) => {
+      const t = evt.target as Node;
       if (btnRef.current?.contains(t)) return;
       if ((t as HTMLElement).closest("[data-nice-select-root]")) return;
       setOpen(false);
@@ -148,9 +146,7 @@ function NiceSelect<T extends StringUnion>({
                     className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2
                       ${isActive ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
                       hover:bg-emerald-100 hover:text-emerald-800`}
-                    onClick={() => {
-                      onChange(opt);
-                    }}
+                    onClick={() => onChange(opt)}
                     role="option"
                     aria-selected={isActive}
                   >
@@ -185,6 +181,13 @@ export default function OrdersPage() {
   const [deleteOrderRef, setDeleteOrderRef] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Track orders we're polling for invoice creation
+  const [pendingInvoice, setPendingInvoice] = useState<Record<string, boolean>>({});
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const aliveRef = useRef(true);
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
   const filteredOrders = useMemo(
     () =>
       orders
@@ -199,50 +202,135 @@ export default function OrdersPage() {
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
-
   const displayedOrders = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredOrders.slice(start, start + pageSize);
   }, [filteredOrders, currentPage]);
 
   useEffect(() => {
-    async function fetchData() {
+    aliveRef.current = true;
+    (async () => {
       try {
         const { orders } = await fetchFromAPI<{ orders: Order[] }>(
           "/dashboardadmin/orders"
         );
+        if (!aliveRef.current) return;
         setOrders(orders);
-      } catch (err) {
-        console.error(err);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("Fetch orders failed:", msg);
       } finally {
-        setLoading(false);
+        if (aliveRef.current) setLoading(false);
       }
-    }
-    fetchData();
+    })();
+    return () => {
+      aliveRef.current = false;
+    };
   }, []);
 
   const deleteOrder = async (id: string) => {
-    await fetchFromAPI(`/dashboardadmin/orders/${id}`, {
-      method: "DELETE",
-    });
+    await fetchFromAPI(`/dashboardadmin/orders/${id}`, { method: "DELETE" });
     setOrders((prev) => prev.filter((o) => o._id !== id));
   };
 
-  const updateStatus = async (id: string, status: string) => {
+  // Poll for Invoice flag to flip true (exponential backoff)
+  const pollInvoice = async (orderId: string) => {
+    setPendingInvoice((prev) => ({ ...prev, [orderId]: true }));
     try {
-      await fetchFromAPI(`/dashboardadmin/orders/updateStatus/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderStatus: status }),
+      let delay = 1000;
+      for (let i = 0; i < 10 && aliveRef.current; i++) {
+        const { order } = await fetchFromAPI<{ order: Pick<Order, "_id" | "Invoice"> }>(
+          `/dashboardadmin/orders/getOne/${orderId}`
+        );
+        if (order?.Invoice) {
+          setOrders((prev) =>
+            prev.map((o) => (o._id === orderId ? { ...o, Invoice: true } : o))
+          );
+          break;
+        }
+        await sleep(delay);
+        delay = Math.min(8000, Math.round(delay * 1.5));
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("Polling invoice failed:", msg);
+    } finally {
+      setPendingInvoice((prev) => {
+        const copy = { ...prev };
+        delete copy[orderId];
+        return copy;
       });
-      setOrders((prev) =>
-        prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o))
-      );
-    } catch (err) {
-      console.error("Update status error ▶", err);
-      alert("Échec de la mise à jour du statut.");
     }
   };
+
+  // NEW: use the new backend route /api/dashboardadmin/factures/from-order/:orderId
+  // Only triggered when status transitions to "Pickup" (Retrait en magasin)
+  const createInvoiceFromOrder = async (orderId: string) => {
+    setPendingInvoice((prev) => ({ ...prev, [orderId]: true }));
+    try {
+      // fetchFromAPI prefixes with /api, so we pass the route without /api here
+      const res = await fetchFromAPI<{ facture?: unknown; message?: string }>(
+        `/dashboardadmin/factures/from-order/${orderId}`,
+        { method: "POST" }
+      );
+
+      if (res?.facture) {
+        // Optimistic: mark as invoiced
+        setOrders((prev) =>
+          prev.map((o) => (o._id === orderId ? { ...o, Invoice: true } : o))
+        );
+      } else {
+        // If no payload (or 2xx without facture), rely on DB flag via post-save hook
+        await pollInvoice(orderId);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("Create facture (Pickup) failed:", msg);
+      // In case the server created it but client errored, poll to reconcile
+      await pollInvoice(orderId);
+    } finally {
+      setPendingInvoice((prev) => {
+        const copy = { ...prev };
+        delete copy[orderId];
+        return copy;
+      });
+    }
+  };
+
+  const updateStatus = async (id: string, status: string) => {
+  const current = orders.find((x) => x._id === id);
+  try {
+    await fetchFromAPI(`/dashboardadmin/orders/updateStatus/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderStatus: status }),
+    });
+
+    setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o)));
+
+    // 🔽 broaden the trigger:
+    const shouldCreateOrPoll = status === "Pickup" || status === "Delivered";
+
+    if (shouldCreateOrPoll && current) {
+      if (current.Invoice) {
+        setErrorMsg("Une facture a déjà été créée pour cette commande.");
+      } else {
+        if (status === "Pickup") {
+          // keep your existing behavior for Pickup (call the API to create immediately)
+          await createInvoiceFromOrder(id);
+        } else {
+          // for Delivered, the worker will create it → just poll until Invoice flips true
+          await pollInvoice(id);
+        }
+      }
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Update status error ▶", msg);
+    alert("Échec de la mise à jour du statut.");
+  }
+};
+
 
   const openDelete = (id: string, ref: string) => {
     setDeleteOrderId(id);
@@ -283,8 +371,8 @@ export default function OrdersPage() {
             className="border border-gray-300 rounded px-2 py-1"
             placeholder="Entrer la référence"
             value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
+            onChange={(ev) => {
+              setSearchTerm(ev.target.value);
               setCurrentPage(1);
             }}
           />
@@ -307,8 +395,8 @@ export default function OrdersPage() {
               id="statusFilter"
               className="border border-gray-300 rounded px-2 py-1"
               value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value);
+              onChange={(ev) => {
+                setFilterStatus(ev.target.value);
                 setCurrentPage(1);
               }}
             >
@@ -333,6 +421,7 @@ export default function OrdersPage() {
               <th className="px-4 py-2 text-center">Adresse de livraison</th>
               <th className="px-4 py-2 text-center">Retrait magasin</th>
               <th className="px-4 py-2 text-center">Statut</th>
+              <th className="px-4 py-2 text-center">Facture</th>
               <th className="px-4 py-2 text-center">Action</th>
             </tr>
           </thead>
@@ -343,64 +432,90 @@ export default function OrdersPage() {
             {displayedOrders.length === 0 && !loading ? (
               <tbody>
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-gray-600">
+                  <td colSpan={8} className="py-6 text-center text-gray-600">
                     Aucune commande trouvée.
                   </td>
                 </tr>
               </tbody>
             ) : (
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
-                {displayedOrders.map((o) => (
-                  <tr key={o._id} className="even:bg-gray-100 odd:bg-white">
-                    <td className="px-4 text-center">{fmtDate(o.createdAt)}</td>
-                    <td className="px-4 text-center truncate font-semibold">
-                      {o.ref}
-                    </td>
-                    <td className="px-4 text-center">{o.clientName}</td>
-                    <td className="px-4 text-center truncate">
-                      {o.DeliveryAddress[0]?.DeliverToAddress ?? "—"}
-                    </td>
-                    <td className="px-4 text-center truncate">
-                      {o.pickupMagasin.length > 0
-                        ? o.pickupMagasin[0].MagasinAddress
-                        : "—"}
-                    </td>
-                    <td className="px-4 text-center">
-                      <NiceSelect<StatusVal>
-                        value={o.orderStatus as StatusVal}
-                        options={statusOptions.map((s) => s.value)}
-                        onChange={(v) => updateStatus(o._id, v)}
-                        display={(v) =>
-                          statusOptions.find((s) => s.value === v)?.label ?? v
-                        }
-                        className="mx-auto"
-                      />
-                    </td>
-                    <td className="px-4 text-center">
-                      <div className="flex justify-center items-center gap-2">
-                        <Link
-                          href={`/dashboard/manage-client/orders/update/${o._id}`}
-                        >
-                          <button className="ButtonSquare">
-                            <FaRegEdit size={14} />
+                {displayedOrders.map((o) => {
+                  const hasInvoice = !!o.Invoice;
+                  const isPending = !!pendingInvoice[o._id] && !hasInvoice;
+                  return (
+                    <tr key={o._id} className="even:bg-gray-100 odd:bg-white">
+                      <td className="px-4 text-center">{fmtDate(o.createdAt)}</td>
+                      <td className="px-4 text-center truncate font-semibold">{o.ref}</td>
+                      <td className="px-4 text-center">{o.clientName}</td>
+                      <td className="px-4 text-center truncate">
+                        {o.DeliveryAddress[0]?.DeliverToAddress ?? "—"}
+                      </td>
+                      <td className="px-4 text-center truncate">
+                        {o.pickupMagasin.length > 0 ? o.pickupMagasin[0].MagasinAddress : "—"}
+                      </td>
+                      <td className="px-4 text-center">
+                        <NiceSelect<StatusVal>
+                          value={o.orderStatus as StatusVal}
+                          options={statusOptions.map((s) => s.value)}
+                          onChange={(v) => updateStatus(o._id, v)}
+                          display={(v) =>
+                            statusOptions.find((s) => s.value === v)?.label ?? v
+                          }
+                          className="mx-auto"
+                        />
+                      </td>
+
+                      {/* Facture status dot: pulsing while pending, green when created */}
+                      <td className="px-4 text-center">
+                        <span
+                          className={`inline-block h-3 w-3 rounded-full ${
+                            hasInvoice
+                              ? "bg-emerald-500"
+                              : isPending
+                              ? "bg-gray-300 animate-pulse"
+                              : "bg-gray-300"
+                          }`}
+                          title={
+                            hasInvoice
+                              ? "Facture créée"
+                              : isPending
+                              ? "Création en cours..."
+                              : "Aucune facture"
+                          }
+                          aria-label={
+                            hasInvoice
+                              ? "Facture créée"
+                              : isPending
+                              ? "Création en cours..."
+                              : "Aucune facture"
+                          }
+                        />
+                      </td>
+
+                      <td className="px-4 text-center">
+                        <div className="flex justify-center items-center gap-2">
+                          <Link href={`/dashboard/manage-client/orders/update/${o._id}`}>
+                            <button className="ButtonSquare">
+                              <FaRegEdit size={14} />
+                            </button>
+                          </Link>
+                          <Link href={`/dashboard/manage-client/orders/voir/${o._id}`}>
+                            <button className="ButtonSquare">
+                              <FaRegEye size={14} />
+                            </button>
+                          </Link>
+                          <button
+                            onClick={() => openDelete(o._id, o.ref)}
+                            className="ButtonSquare"
+                            aria-label="Supprimer la commande"
+                          >
+                            <FaTrashAlt size={14} />
                           </button>
-                        </Link>
-                        <Link href={`/dashboard/manage-client/orders/voir/${o._id}`}>
-                          <button className="ButtonSquare">
-                            <FaRegEye size={14} />
-                          </button>
-                        </Link>
-                        <button
-                          onClick={() => openDelete(o._id, o.ref)}
-                          className="ButtonSquare"
-                          aria-label="Supprimer la commande"
-                        >
-                          <FaTrashAlt size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             )}
           </table>
@@ -430,6 +545,8 @@ export default function OrdersPage() {
           Delete={confirmDelete}
         />
       )}
+
+      {errorMsg && <ErrorPopup message={errorMsg} onClose={() => setErrorMsg(null)} />}
     </div>
   );
 }

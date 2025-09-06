@@ -1,4 +1,4 @@
-// src/components/ErrorPopup.tsx
+// src/components/Popup/ErrorPopup.tsx
 import React from "react";
 
 interface ErrorPopupProps {
