@@ -301,7 +301,7 @@ export default function SidebarClient() {
         <div className="flex flex-col justify-between h-screen">
           <div className="flex items-center justify-center h-[80px] border-b-2 z-50">
             <div className="flex items-center gap-2">
-              <div className="bg-white px-2 rounded-sm text-2xl text-primary flex items-center justify-center font-bold">
+              <div className=" text-3xl text-white flex items-center justify-center font-bold border-y-2">
                 {initials}
               </div>
 
@@ -311,7 +311,7 @@ export default function SidebarClient() {
                     <span className="capitalize">
                       {user.username ?? user.email}
                     </span>
-                    <span className="text-xs font-light">
+                    <span className="text-[8px] font-light">
                       Role: {user.role?.name ?? "—"}
                     </span>
                   </div>
