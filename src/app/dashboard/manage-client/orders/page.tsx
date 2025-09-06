@@ -62,6 +62,8 @@ interface NiceSelectProps<T extends StringUnion> {
   onChange: (v: T) => void;
   display?: (v: T) => string;
   className?: string;
+  disabled?: boolean;
+  loading?: boolean;
 }
 
 function NiceSelect<T extends StringUnion>({
@@ -70,6 +72,8 @@ function NiceSelect<T extends StringUnion>({
   onChange,
   display,
   className = "",
+  disabled = false,
+  loading = false,
 }: NiceSelectProps<T>) {
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -106,6 +110,10 @@ function NiceSelect<T extends StringUnion>({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (disabled || loading) setOpen(false);
+  }, [disabled, loading]);
+
   const label = display ? display(value) : String(value);
 
   return (
@@ -113,15 +121,27 @@ function NiceSelect<T extends StringUnion>({
       <button
         ref={btnRef}
         type="button"
-        onClick={() => setOpen((s) => !s)}
-        className={`min-w-[150px] inline-flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-medium
-                    bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100
-                    focus:outline-none focus:ring-2 focus:ring-emerald-400 ${className}`}
+        onClick={() => {
+          if (disabled || loading) return;
+          setOpen((s) => !s);
+        }}
+        className={`min-w-[200px] inline-flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-medium
+                    border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 ${className} ${
+                      disabled || loading
+                        ? "bg-emerald-50 text-emerald-800 opacity-60 cursor-not-allowed"
+                        : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                    }`}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-disabled={disabled || loading}
+        disabled={disabled || loading}
       >
         <span className="truncate">{label}</span>
-        <FiChevronDown className="shrink-0" />
+        {loading ? (
+          <FaSpinner className="animate-spin shrink-0" />
+        ) : (
+          <FiChevronDown className="shrink-0" />
+        )}
       </button>
 
       {open &&
@@ -133,7 +153,7 @@ function NiceSelect<T extends StringUnion>({
             style={{ top: pos.top, left: pos.left, width: pos.width }}
           >
             <div
-              className="rounded-md border bg-white shadow-lg max-h-60 overflow-auto"
+              className="rounded-md border bg-white shadow-lg max-h-60 overflow-auto border-emerald-200"
               role="listbox"
             >
               {options.map((opt) => {
@@ -146,7 +166,10 @@ function NiceSelect<T extends StringUnion>({
                     className={`w-full px-3 py-2 text-sm text-left flex items-center gap-2
                       ${isActive ? "bg-emerald-50 text-emerald-700" : "text-slate-700"}
                       hover:bg-emerald-100 hover:text-emerald-800`}
-                    onClick={() => onChange(opt)}
+                    onClick={() => {
+                      setOpen(false); // close immediately on selection
+                      onChange(opt);
+                    }}
                     role="option"
                     aria-selected={isActive}
                   >
@@ -183,6 +206,7 @@ export default function OrdersPage() {
 
   const [pendingInvoice, setPendingInvoice] = useState<Record<string, boolean>>({});
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [savingStatus, setSavingStatus] = useState<Record<string, boolean>>({});
 
   const aliveRef = useRef(true);
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -291,6 +315,10 @@ export default function OrdersPage() {
 
   const updateStatus = async (id: string, status: string) => {
     const current = orders.find((x) => x._id === id);
+    if (!current) return;
+    if (current.orderStatus === status) return; // no-op if unchanged
+
+    setSavingStatus((p) => ({ ...p, [id]: true }));
     try {
       await fetchFromAPI(`/dashboardadmin/orders/updateStatus/${id}`, {
         method: "PUT",
@@ -304,7 +332,7 @@ export default function OrdersPage() {
 
       const shouldCreateOrPoll = status === "Pickup" || status === "Delivered";
 
-      if (shouldCreateOrPoll && current) {
+      if (shouldCreateOrPoll) {
         if (current.Invoice) {
           setErrorMsg("Une facture a déjà été créée pour cette commande.");
         } else {
@@ -319,6 +347,12 @@ export default function OrdersPage() {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("Update status error ▶", msg);
       alert("Échec de la mise à jour du statut.");
+    } finally {
+      setSavingStatus((p) => {
+        const c = { ...p };
+        delete c[id];
+        return c;
+      });
     }
   };
 
@@ -432,6 +466,7 @@ export default function OrdersPage() {
                 {displayedOrders.map((o) => {
                   const hasInvoice = !!o.Invoice;
                   const isPending = !!pendingInvoice[o._id] && !hasInvoice;
+                  const isSaving = !!savingStatus[o._id];
                   return (
                     <tr key={o._id} className="even:bg-gray-100 odd:bg-white">
                       <td className="px-4 text-center">{fmtDate(o.createdAt)}</td>
@@ -452,6 +487,8 @@ export default function OrdersPage() {
                             statusOptions.find((s) => s.value === v)?.label ?? v
                           }
                           className="mx-auto"
+                          disabled={isSaving}
+                          loading={isSaving}
                         />
                       </td>
 
@@ -484,12 +521,12 @@ export default function OrdersPage() {
                       <td className="px-4 text-center">
                         <div className="flex justify-center items-center gap-2">
                           <Link href={`/dashboard/manage-client/orders/update/${o._id}`}>
-                            <button className="ButtonSquare">
+                            <button className="ButtonSquare" disabled={isSaving}>
                               <FaRegEdit size={14} />
                             </button>
                           </Link>
                           <Link href={`/dashboard/manage-client/orders/voir/${o._id}`}>
-                            <button className="ButtonSquare">
+                            <button className="ButtonSquare" disabled={isSaving}>
                               <FaRegEye size={14} />
                             </button>
                           </Link>
@@ -497,6 +534,7 @@ export default function OrdersPage() {
                             onClick={() => openDelete(o._id, o.ref)}
                             className="ButtonSquare"
                             aria-label="Supprimer la commande"
+                            disabled={isSaving}
                           >
                             <FaTrashAlt size={14} />
                           </button>
