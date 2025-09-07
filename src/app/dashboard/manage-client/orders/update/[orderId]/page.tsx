@@ -402,7 +402,6 @@ export default function UpdateOrderPage() {
           })),
         }),
       });
-
       router.push(`/dashboard/manage-client/orders/voir/${orderId}`);
     } catch (e) {
       console.error(e);

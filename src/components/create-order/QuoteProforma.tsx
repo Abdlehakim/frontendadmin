@@ -28,8 +28,8 @@ interface QuoteProformaProps {
   magasin: Magasin | null;
   delivery: DeliveryOption | null;
   basket: BasketItem[];
-  paymentMethod?: string | null;         
-  date: string;                        
+  paymentMethod?: string | null;
+  date: string;
 }
 
 /* ---------- helpers ---------- */
@@ -89,6 +89,16 @@ const InlineOrImg: React.FC<{
   );
 };
 
+/** Build a unique, stable key from product id/reference + chosen attributes + index */
+const lineKey = (it: BasketItem, idx: number) => {
+  const sig = Object.entries(it.chosen ?? {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}:${v}`)
+    .join("|");
+  const base = it._id || it.reference || "item";
+  return `${base}|${sig}|${idx}`;
+};
+
 /* ---------- component ---------- */
 const QuoteProforma: React.FC<QuoteProformaProps> = ({
   quoteRef,
@@ -98,24 +108,24 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
   magasin,
   delivery,
   basket,
-  paymentMethod,          // ← NEW
+  paymentMethod,
   date,
 }) => {
   const { fmt } = useCurrency();
 
   /* ----- per-item + global totals ----- */
   const lines = basket.map((it) => {
-    const unitTTC  = it.discount > 0 ? it.price * (1 - it.discount / 100) : it.price;
-    const unitHT   = unitTTC / (1 + it.tva / 100);
-    const lineHT   = unitHT * it.quantity;
-    const lineTVA  = unitTTC * it.quantity - lineHT;
-    const lineTTC  = unitTTC * it.quantity;
+    const unitTTC = it.discount > 0 ? it.price * (1 - it.discount / 100) : it.price;
+    const unitHT = unitTTC / (1 + it.tva / 100);
+    const lineHT = unitHT * it.quantity;
+    const lineTVA = unitTTC * it.quantity - lineHT;
+    const lineTTC = unitTTC * it.quantity;
     return { ...it, unitHT, lineHT, lineTVA, lineTTC };
   });
 
-  const totalHT   = lines.reduce((s, l) => s + l.lineHT, 0);
-  const totalTVA  = lines.reduce((s, l) => s + l.lineTVA, 0);
-  const totalTTC  = lines.reduce((s, l) => s + l.lineTTC, 0) + (delivery ? delivery.price : 0);
+  const totalHT = lines.reduce((s, l) => s + l.lineHT, 0);
+  const totalTVA = lines.reduce((s, l) => s + l.lineTVA, 0);
+  const totalTTC = lines.reduce((s, l) => s + l.lineTTC, 0) + (delivery ? delivery.price : 0);
 
   /* ---------- UI ---------- */
   return (
@@ -239,8 +249,8 @@ const QuoteProforma: React.FC<QuoteProformaProps> = ({
             </tr>
           </thead>
           <tbody>
-            {lines.map((l) => (
-              <tr key={l._id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+            {lines.map((l, idx) => (
+              <tr key={lineKey(l, idx)} style={{ borderBottom: "1px solid #e5e7eb" }}>
                 <td style={{ padding: "0.5rem", textAlign: "left" }}>
                   {l.name}
                   {l.attributes?.length ? (

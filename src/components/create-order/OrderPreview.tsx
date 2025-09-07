@@ -46,6 +46,16 @@ const todayForPdf = new Date().toLocaleDateString("fr-FR", {
   year: "numeric",
 });
 
+/** unique, stable key for a basket row */
+const itemKey = (it: BasketItem, idx: number) => {
+  const sig = Object.entries(it.chosen ?? {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}:${v}`)
+    .join("|");
+  const base = it._id || it.reference || "item";
+  return `${base}|${sig}|${idx}`;
+};
+
 const OrderPreview: React.FC<OrderPreviewProps> = ({
   client,
   addressLabel,
@@ -76,9 +86,7 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
   const paymentLabel = paymentMethod ?? "—";
 
   // Aligné au rendu de la page de détails : "Nom – coût"
-  const deliveryLabel = delivery
-    ? `${delivery.name} – ${frFmt(delivery.price)}`
-    : "—";
+  const deliveryLabel = delivery ? `${delivery.name} – ${frFmt(delivery.price)}` : "—";
 
   /* ---------- génération PDF ---------- */
   const handleDownloadQuote = useCallback(async () => {
@@ -157,7 +165,7 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {basket.map((item) => {
+              {basket.map((item, idx) => {
                 const puRemise =
                   item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price;
                 const lineTTC = puRemise * item.quantity;
@@ -175,7 +183,7 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
                     : "";
 
                 return (
-                  <tr key={item._id} className="border-t align-top">
+                  <tr key={itemKey(item, idx)} className="border-t align-top">
                     <td className="py-1 px-2">
                       <div>{item.name}</div>
                       <div className="text-xs text-gray-500">{item.reference}</div>
@@ -239,7 +247,7 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
         </button>
       </div>
 
-      {/* Élément caché (PDF) — rendu seulement si les données nécessaires sont présentes */}
+      {/* Élément caché (PDF) */}
       {company &&
         basket.length > 0 &&
         delivery &&

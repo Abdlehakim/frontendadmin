@@ -13,14 +13,14 @@ export default function ErrorPopup({ message, onClose }: ErrorPopupProps) {
                  backdrop-filter backdrop-brightness-75"
     >
       <div className="w-full max-w-md p-6 mx-auto bg-white rounded-xl shadow-lg flex flex-col gap-4">
-        <h2 className="text-xl font-bold text-center text-red-600">Error</h2>
+        <h2 className="text-xl font-bold text-center text-red-600">Notification !</h2>
         <p className="text-center text-gray-800">{message}</p>
         <div className="flex justify-center">
           <button
             onClick={onClose}
             className="px-5 py-2 bg-tertiary text-white rounded hover:bg-hoverButton transition"
           >
-            Close
+            fermer
           </button>
         </div>
       </div>

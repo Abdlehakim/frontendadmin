@@ -81,6 +81,15 @@ const toNumber = (v: unknown) => {
 const frFmt = (n: number, currency = "TND") =>
   `${n.toFixed(2).replace(".", ",")} ${currency}`;
 
+/** Unique, stable key for a line: product + reference + attributes + index */
+const rowKey = (it: FactureItem, idx: number) => {
+  const attrSig = (it.attributes ?? [])
+    .map((a) => `${a.attribute}:${a.value}`)
+    .sort()
+    .join("|");
+  return `${it.product}|${it.reference}|${attrSig}|${idx}`;
+};
+
 export default function FactureDetailsPage() {
   const { fcid } = useParams() as { fcid: string };
 
@@ -167,7 +176,6 @@ export default function FactureDetailsPage() {
   };
 
   const handleDownloadInvoice = async () => {
-    // Backend accepts FC-… or ORDER-…; prefer facture.ref
     const refForPdf = facture?.ref || facture?.orderRef;
     if (!refForPdf) {
       console.error("Missing facture.ref and orderRef; cannot generate invoice PDF.");
@@ -283,7 +291,7 @@ export default function FactureDetailsPage() {
             </thead>
 
             <tbody>
-              {facture.items.map((it) => {
+              {facture.items.map((it, idx) => {
                 const uTTC = unitTTC(it);
                 const lineTTC = uTTC * it.quantity;
 
@@ -298,7 +306,7 @@ export default function FactureDetailsPage() {
                   : "";
 
                 return (
-                  <tr key={`${it.product}-${it.reference}`} className="border-t align-top">
+                  <tr key={rowKey(it, idx)} className="border-t align-top">
                     <td className="py-1 px-2">
                       <div>{it.name}</div>
                       <div className="text-xs text-gray-500">{it.reference}</div>

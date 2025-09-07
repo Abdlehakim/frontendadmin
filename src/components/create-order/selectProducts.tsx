@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-selectProducts.tsx
+   selectProducts.tsx
 ------------------------------------------------------------------ */
 "use client";
 
@@ -9,7 +9,7 @@ import type { Client } from "./selectClient";
 
 /* ---------- constants ---------- */
 const MIN_CHARS = 2;
-const DEBOUNCE  = 300;
+const DEBOUNCE = 300;
 
 /* ---------- types ---------- */
 interface AttributeRow {
@@ -19,7 +19,6 @@ interface AttributeRow {
     | Array<{ name: string; value?: string; hex?: string; image?: string }>;
 }
 
-/** subset returned by /stock/products/find */
 export interface ProductLite {
   _id: string;
   name: string;
@@ -31,7 +30,6 @@ export interface ProductLite {
   attributes?: AttributeRow[];
 }
 
-/** item stored in basket with qty & chosen attrs */
 export interface BasketItem extends ProductLite {
   quantity: number;
   chosen: Record<string, string>;
@@ -41,7 +39,6 @@ interface SelectProductsProps {
   client: Client | null;
   basket: BasketItem[];
   setBasket: React.Dispatch<React.SetStateAction<BasketItem[]>>;
-  /** fonction de recherche injectée par la page parente */
   searchProducts: (query: string) => Promise<ProductLite[]>;
 }
 
@@ -49,18 +46,93 @@ interface SelectProductsProps {
 const unitPrice = (p: ProductLite) =>
   p.discount > 0 ? p.price * (1 - p.discount / 100) : p.price;
 
-/* ---------- component ---------- */
+/** signature of chosen attributes (sorted) */
+const chosenSig = (chosen: Record<string, string> | undefined) =>
+  Object.entries(chosen ?? {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}:${v}`)
+    .join("|");
+
+/** stable unique key for a basket line (handles duplicate product ids) */
+const basketKey = (it: BasketItem, idx: number) =>
+  `${it._id}__${it.reference}__${chosenSig(it.chosen)}__${idx}`;
+
+/** merge lines that have same product id/reference and identical chosen attrs */
+function mergeDuplicates(list: BasketItem[]): BasketItem[] {
+  const map = new Map<string, BasketItem>();
+  for (const it of list) {
+    const key = `${it._id}__${it.reference}__${chosenSig(it.chosen)}`;
+    const prev = map.get(key);
+    if (prev) map.set(key, { ...prev, quantity: prev.quantity + it.quantity });
+    else map.set(key, { ...it });
+  }
+  return Array.from(map.values());
+}
+
+/** Build options per attribute id (only names), preserving attribute order */
+function buildOptionsIndex(p: ProductLite): { order: string[]; options: Record<string, string[]> } {
+  const order: string[] = [];
+  const options: Record<string, string[]> = {};
+  (p.attributes ?? []).forEach((row) => {
+    const id = row.attributeSelected._id;
+    if (!id) return;
+    let opts: string[] = [];
+    if (typeof row.value === "string") opts = [row.value];
+    else if (Array.isArray(row.value)) opts = row.value.map((o) => o.name);
+    // ignore attributes with no options (robustness)
+    if (opts.length > 0) {
+      order.push(id);
+      options[id] = opts;
+    }
+  });
+  return { order, options };
+}
+
+/** Create a normalized signature from a partial choice using the given order */
+function sigFromChoice(order: string[], choice: Record<string, string>): string {
+  return order.map((id) => `${id}:${choice[id] ?? ""}`).join("|");
+}
+
+/** Find the first attribute combination not used yet; null if none available */
+function findUnusedChoice(
+  order: string[],
+  options: Record<string, string[]>,
+  usedSignatures: Set<string>,
+): Record<string, string> | null {
+  if (order.length === 0) {
+    // no attributes — only a single "combo"
+    return usedSignatures.size === 0 ? {} : null;
+  }
+
+  // Iterate cartesian product but stop at first unseen combo
+  const dfs = (idx: number, cur: Record<string, string>): Record<string, string> | null => {
+    if (idx === order.length) {
+      const sig = sigFromChoice(order, cur);
+      return usedSignatures.has(sig) ? null : { ...cur };
+    }
+    const attrId = order[idx];
+    for (const val of options[attrId]) {
+      cur[attrId] = val;
+      const hit = dfs(idx + 1, cur);
+      if (hit) return hit;
+    }
+    return null;
+  };
+
+  return dfs(0, {});
+}
+
 export default function SelectProducts({
   client,
   basket,
   setBasket,
   searchProducts,
 }: SelectProductsProps) {
-  const [query, setQuery]       = useState("");
-  const [results, setResults]   = useState<ProductLite[]>([]);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
-  const boxRef                  = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ProductLite[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const boxRef = useRef<HTMLDivElement>(null);
 
   /* ───────── product autocomplete effect ───────── */
   useEffect(() => {
@@ -89,8 +161,7 @@ export default function SelectProducts({
   /* ───────── close dropdown on outside click ───────── */
   useEffect(() => {
     const close = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node))
-        setResults([]);
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setResults([]);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
@@ -99,63 +170,65 @@ export default function SelectProducts({
   /* ───────── basket helpers ───────── */
   const decrement = (index: number) =>
     setBasket((prev) =>
-      prev.map((it, i) =>
-        i === index ? { ...it, quantity: Math.max(1, it.quantity - 1) } : it,
-      ),
+      prev.map((it, i) => (i === index ? { ...it, quantity: Math.max(1, it.quantity - 1) } : it)),
     );
 
   const increment = (index: number) =>
-    setBasket((prev) =>
-      prev.map((it, i) =>
-        i === index ? { ...it, quantity: it.quantity + 1 } : it,
-      ),
-    );
+    setBasket((prev) => prev.map((it, i) => (i === index ? { ...it, quantity: it.quantity + 1 } : it)));
 
   const addProduct = (p: ProductLite) => {
-    if (basket.some((b) => b._id === p._id)) return;
-    const chosen: Record<string, string> = {};
-    p.attributes?.forEach((row) => {
-      const id  = row.attributeSelected._id;
-      const val = row.value;
-      if (!id) return;
-      if (typeof val === "string") chosen[id] = val;
-      else if (Array.isArray(val) && val.length) chosen[id] = val[0].name;
-    });
-    setBasket((b) => [...b, { ...p, quantity: 1, chosen }]);
+    const { order, options } = buildOptionsIndex(p);
+
+    // signatures already present for this product
+    const used = new Set(
+      basket
+        .filter((b) => b._id === p._id && b.reference === p.reference)
+        .map((b) => sigFromChoice(order, b.chosen)),
+    );
+
+    // choose an unused combination (or {} if no attributes and no existing line)
+    const choice = findUnusedChoice(order, options, used);
+
+    if (!choice) {
+      // nothing new to add (all combos already present)
+      setError("Aucune autre variante disponible pour ce produit.");
+      // auto-hide message after a moment
+      setTimeout(() => setError(""), 1800);
+      return;
+    }
+
+    setBasket((prev) => [...prev, { ...p, quantity: 1, chosen: choice }]);
     setQuery("");
     setResults([]);
   };
 
-  const removeProduct = (id: string) =>
-    setBasket((b) => b.filter((it) => it._id !== id));
+  const removeProduct = (index: number) => setBasket((b) => b.filter((_, i) => i !== index));
 
   /* ---------- attribute selector ---------- */
-  const renderAttrSelector = (
-    itemIdx: number,
-    attrRow: NonNullable<ProductLite["attributes"]>[number],
-  ) => {
-    const id            = attrRow.attributeSelected._id;
+  const renderAttrSelector = (itemIdx: number, attrRow: NonNullable<ProductLite["attributes"]>[number]) => {
+    const id = attrRow.attributeSelected._id;
     const attributeName = attrRow.attributeSelected.name;
-    const value         = attrRow.value;
+    const value = attrRow.value;
     const opts: string[] = [];
     if (typeof value === "string") opts.push(value);
     else if (Array.isArray(value)) opts.push(...value.map((o) => o.name));
-
     if (opts.length === 0) return null;
 
     return (
-      <div key={id} className="flex items-center gap-1">
+      <div key={`${itemIdx}-${id}`} className="flex items-center gap-1">
         <span className="text-sm">{attributeName}:</span>
         <select
           className="border rounded px-1 text-sm"
           value={basket[itemIdx].chosen[id]}
           onChange={(e) => {
             const val = e.target.value;
-            setBasket((prev) =>
-              prev.map((it, i) =>
+            setBasket((prev) => {
+              // apply the change, then merge if identical to another line
+              const updated = prev.map((it, i) =>
                 i === itemIdx ? { ...it, chosen: { ...it.chosen, [id]: val } } : it,
-              ),
-            );
+              );
+              return mergeDuplicates(updated);
+            });
           }}
         >
           {opts.map((o) => (
@@ -172,7 +245,7 @@ export default function SelectProducts({
       {/* ---------- Product picker ---------- */}
       {client && (
         <div ref={boxRef} className="relative">
-          <label className="font-semibold">Ajouter un produit :</label>
+          <label className="font-semibold">Ajouter un produit : {error && !loading && <span className="text-red-600 mt-1 text-sm">{error}</span>} </label>
           <div className="flex gap-2 mt-1">
             <input
               value={query}
@@ -196,26 +269,14 @@ export default function SelectProducts({
                   className="cursor-pointer px-3 py-2 hover:bg-gray-100 flex justify-between"
                 >
                   <span>
-                    {p.name}{" "}
-                    <span className="text-xs text-gray-500">
-                      ({p.reference})
-                    </span>
+                    {p.name} <span className="text-xs text-gray-500">({p.reference})</span>
                   </span>
-                  <span
-                    className={`text-xs ${
-                      p.stockStatus === "in stock"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
+                  <span className={`text-xs ${p.stockStatus === "in stock" ? "text-green-600" : "text-red-600"}`}>
                     {p.stockStatus}
                   </span>
                 </li>
               ))}
             </ul>
-          )}
-          {error && !loading && (
-            <p className="text-red-600 mt-1 text-sm">{error}</p>
           )}
         </div>
       )}
@@ -226,19 +287,13 @@ export default function SelectProducts({
           <h2 className="font-bold">Produits sélectionnés</h2>
 
           {basket.map((item, idx) => (
-            <div key={item._id} className="border rounded p-3 bg-gray-50 space-y-3">
+            <div key={basketKey(item, idx)} className="border rounded p-3 bg-gray-50 space-y-3">
               {/* header row */}
               <div className="flex justify-between items-center">
                 <div className="font-medium">
-                  {item.name}{" "}
-                  <span className="text-xs text-gray-500">
-                    ({item.reference})
-                  </span>
+                  {item.name} <span className="text-xs text-gray-500">({item.reference})</span>
                 </div>
-                <button
-                  onClick={() => removeProduct(item._id)}
-                  className="text-red-600 text-sm hover:underline"
-                >
+                <button onClick={() => removeProduct(idx)} className="text-red-600 text-sm hover:underline">
                   Retirer
                 </button>
               </div>
@@ -275,9 +330,7 @@ export default function SelectProducts({
                 <div className="text-sm">
                   Prix TTC : <strong>{unitPrice(item).toFixed(2)}</strong>
                   {item.discount > 0 && (
-                    <span className="ml-2 line-through text-xs text-gray-500">
-                      {item.price.toFixed(2)}
-                    </span>
+                    <span className="ml-2 line-through text-xs text-gray-500">{item.price.toFixed(2)}</span>
                   )}
                 </div>
 

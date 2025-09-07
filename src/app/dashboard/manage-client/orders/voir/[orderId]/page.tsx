@@ -76,6 +76,15 @@ const toNumber = (v: unknown) => {
 };
 const frFmt = (n: number) => `${n.toFixed(2).replace(".", ",")} TND`;
 
+/** Build a unique, stable key for a row from product + reference + attributes + index */
+const rowKey = (it: OrderItem, idx: number) => {
+  const attrSig = (it.attributes ?? [])
+    .map((a) => `${a.attribute}:${a.value}`)
+    .sort()
+    .join("|");
+  return `${it.product}|${it.reference}|${attrSig}|${idx}`;
+};
+
 export default function OrderDetailsPage() {
   const { orderId } = useParams() as { orderId: string };
 
@@ -392,7 +401,7 @@ export default function OrderDetailsPage() {
             </thead>
 
             <tbody>
-              {order.orderItems.map((it) => {
+              {order.orderItems.map((it, idx) => {
                 const puRemise = it.price * (1 - it.discount / 100);
                 const lineTTC = puRemise * it.quantity;
 
@@ -401,7 +410,7 @@ export default function OrderDetailsPage() {
                   : "";
 
                 return (
-                  <tr key={it.product} className="border-t align-top">
+                  <tr key={rowKey(it, idx)} className="border-t align-top">
                     <td className="py-1 px-2">
                       <div>{it.name}</div>
                       <div className="text-xs text-gray-500">{it.reference}</div>
