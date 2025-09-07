@@ -301,7 +301,7 @@ export default function SidebarClient() {
         <div className="flex flex-col justify-between h-screen">
           <div className="flex items-center justify-center h-[80px] border-b-2 z-50">
             <div className="flex items-center gap-2">
-              <div className=" text-3xl text-white flex items-center justify-center font-semibold border-y-2">
+              <div className=" text-xl text-white flex items-center justify-center font-semibold border-y-2">
                 {initials}
               </div>
 

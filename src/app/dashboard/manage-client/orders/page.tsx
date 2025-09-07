@@ -375,11 +375,11 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Commandes</h1>
         <Link href="/dashboard/manage-client/orders/create">
-          <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
+          <button className="bg-white w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
             Créer une commande
           </button>
         </Link>
@@ -439,13 +439,13 @@ export default function OrdersPage() {
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr className="text-sm">
-              <th className="px-4 py-2 text-center">Date</th>
-              <th className="px-4 py-2 text-center">Référence</th>
-              <th className="px-4 py-2 text-center">Nom client</th>
-              <th className="px-4 py-2 text-center">Adresse de livraison</th>
-              <th className="px-4 py-2 text-center">Retrait magasin</th>
-              <th className="px-4 py-2 text-center">Statut</th>
-              <th className="px-4 py-2 text-center">Facture</th>
+              <th className="px-4 py-2 text-center border-r-4">Date</th>
+              <th className="px-4 py-2 text-center border-r-4">Référence</th>
+              <th className="px-4 py-2 text-center border-r-4">Nom client</th>
+              <th className="px-4 py-2 text-center border-r-4">Adresse de livraison</th>
+              <th className="px-4 py-2 text-center border-r-4">Retrait magasin</th>
+              <th className="px-4 py-2 text-center border-r-4">Statut</th>
+              <th className="px-4 py-2 text-center border-r-4">Facture</th>
               <th className="px-4 py-2 text-center">Action</th>
             </tr>
           </thead>
@@ -468,7 +468,7 @@ export default function OrdersPage() {
                   const isPending = !!pendingInvoice[o._id] && !hasInvoice;
                   const isSaving = !!savingStatus[o._id];
                   return (
-                    <tr key={o._id} className="even:bg-gray-100 odd:bg-white">
+                    <tr key={o._id} className="even:bg-green-50 odd:bg-white">
                       <td className="px-4 text-center">{fmtDate(o.createdAt)}</td>
                       <td className="px-4 text-center truncate font-semibold">{o.ref}</td>
                       <td className="px-4 text-center">{o.clientName}</td>
