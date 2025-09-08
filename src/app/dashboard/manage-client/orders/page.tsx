@@ -264,7 +264,7 @@ export default function OrdersPage() {
   // Scheduled jobs (BullMQ delayed) with ETA for countdown (merge optimistic+server)
   const [pendingMap, setPendingMap] = useState<Record<string, PendingInfo>>({});
   const [canceling, setCanceling] = useState<Record<string, boolean>>({});
-const [confirming, setConfirming] = useState<Record<string, boolean>>({});
+  const [confirming, setConfirming] = useState<Record<string, boolean>>({});
 
   const [now, setNow] = useState<number>(() => Date.now());
 
@@ -685,7 +685,7 @@ const [confirming, setConfirming] = useState<Record<string, boolean>>({});
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Commandes</h1>
         <Link href="/dashboard/manage-client/orders/create">
-          <button className="bg-white w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
+          <button className="btn-fit-white-outline">
             Créer une commande
           </button>
         </Link>
@@ -699,7 +699,7 @@ const [confirming, setConfirming] = useState<Record<string, boolean>>({});
           </label>
           <input
             id="searchOrder"
-            className="border border-gray-300 rounded px-2 py-1"
+            className="FilterInput"
             placeholder="Entrer la référence"
             value={searchTerm}
             onChange={(ev) => {
@@ -724,7 +724,7 @@ const [confirming, setConfirming] = useState<Record<string, boolean>>({});
             </label>
             <select
               id="statusFilter"
-              className="border border-gray-300 rounded px-2 py-1"
+              className="FilterInput"
               value={filterStatus}
               onChange={(ev) => {
                 setFilterStatus(ev.target.value);
@@ -791,7 +791,7 @@ const [confirming, setConfirming] = useState<Record<string, boolean>>({});
                   );
 
                   return (
-                    <tr key={o._id} className="even:bg-purple-50 odd:bg-white">
+                    <tr key={o._id} className="even:bg-green-50 odd:bg-white">
                       <td className="px-4 text-center">
                         {fmtDate(o.createdAt)}
                       </td>
@@ -946,7 +946,7 @@ const [confirming, setConfirming] = useState<Record<string, boolean>>({});
           </table>
 
           {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-green-50">
               <FaSpinner className="animate-spin text-3xl" />
             </div>
           )}

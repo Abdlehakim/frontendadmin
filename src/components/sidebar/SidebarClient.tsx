@@ -372,7 +372,7 @@ export default function SidebarClient() {
           <nav
             ref={navRef}
             className={`flex-1 flex-col h-[40%] py-4
-    ${collapsed ? "overflow-visible" : "overflow-y-auto"}
+    ${collapsed ? "overflow-y-auto overflow-x-hidden" : "overflow-y-auto overflow-x-hidden"}
     [&::-webkit-scrollbar]:w-[4px]
     [&::-webkit-scrollbar-track]:bg-transparent
     [&::-webkit-scrollbar-thumb]:bg-white/10
@@ -482,7 +482,7 @@ export default function SidebarClient() {
                                                   : "hover:bg-white hover:text-hoverText active:bg-white active:text-black focus:bg-white focus:text-hoverText",
                                               ].join(" ")}
                                             >
-                                              <span>{subChild.name}</span>
+                                              <span className="whitespace-nowrap overflow-hidden">{subChild.name}</span>
                                             </Link>
                                           </li>
                                         );
@@ -504,13 +504,13 @@ export default function SidebarClient() {
                                     onTouchStart={() => {}}
                                     aria-current={active ? "page" : undefined}
                                     className={[
-                                      "flex items-center px-8 h-8 mx-2 rounded",
+                                      "flex items-center px-8 h-8 mx-2 rounded duration-200 transition-opacity",
                                       active
                                         ? "bg-white text-black"
                                         : "hover:bg-white hover:text-hoverText active:bg-white active:text-black focus:bg-white focus:text-hoverText",
                                     ].join(" ")}
                                   >
-                                    <span>{child.name}</span>
+                                    <span className="whitespace-nowrap overflow-hidden">{child.name}</span>
                                   </Link>
                                 </li>
                               );
@@ -588,7 +588,7 @@ export default function SidebarClient() {
               >
                 <VscSignOut size={20} />
                 {!collapsed && (
-                  <span className="ml-2 duration-200 transition-all whitespace-nowrap text-sm w-fit">
+                  <span className="ml-2 duration-200 transition-opacity whitespace-nowrap text-sm w-fit">
                     {signingOut ? "Déconnexion..." : "SE DÉCONNECTER"}
                   </span>
                 )}

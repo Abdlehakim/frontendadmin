@@ -89,13 +89,13 @@ export default function ClientCompanyPage() {
   };
 
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">
           Toutes les entreprises clientes
         </h1>
         <Link href="/dashboard/manage-client/client-company/create">
-          <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
+          <button className="btn-fit-white-outline">
             Créer une nouvelle entreprise
           </button>
         </Link>
@@ -108,7 +108,7 @@ export default function ClientCompanyPage() {
           </label>
           <input
             id="searchCompany"
-            className="border border-gray-300 rounded px-2 py-1"
+            className="FilterInput"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -123,9 +123,9 @@ export default function ClientCompanyPage() {
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr className="text-sm">
-              <th className="px-4 py-2 text-center">Entreprise</th>
-              <th className="px-4 py-2 text-center">Téléphone</th>
-              <th className="px-4 py-2 text-center">Courriel</th>
+              <th className="px-4 py-2 text-center border-r-4">Entreprise</th>
+              <th className="px-4 py-2 text-center border-r-4">Téléphone</th>
+              <th className="px-4 py-2 text-center border-r-4">Courriel</th>
               <th className="px-4 py-2 text-center">Action</th>
             </tr>
           </thead>

@@ -131,7 +131,7 @@ export default function DateFilter({ onChange, initialRange }: Props) {
     <div ref={ref} className="relative inline-block">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50"
+        className="flex items-center gap-2 border border-gray-300 rounded px-3 py-2 text-sm hover:bg-green-50 bg-white"
       >
         <FaCalendarAlt />
         <span>{label}</span>

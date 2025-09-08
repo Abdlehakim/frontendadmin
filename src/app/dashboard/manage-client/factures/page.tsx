@@ -202,7 +202,7 @@ function MonthPopup({
         createPortal(
           <div
             data-month-popover
-            className="z-[1000] rounded-md border bg-white shadow-lg p-2"
+            className="z-[1000] rounded-md border border-gray-300 bg-white shadow-lg p-2"
             style={{
               position: "fixed",
               top: pos.top,
@@ -363,7 +363,7 @@ function NiceSelect<T extends StringUnion>({
             style={{ top: pos.top, left: pos.left, width: pos.width }}
           >
             <div
-              className="rounded-md border bg-white shadow-lg max-h-60 overflow-auto"
+              className="rounded-md border border-emerald-200 bg-white shadow-lg max-h-60 overflow-auto"
               role="listbox"
             >
               {options.map((opt) => {
@@ -604,7 +604,7 @@ export default function FacturesPage() {
   return (
     <div className="mx-auto px-4 py-4 w-[95%] flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       {/* Header with month selector + ZIP button (factures only) */}
-      <div className="flex flex-wrap gap-3 items-start justify-between">
+      <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Factures</h1>
 
         <div className="flex items-end gap-2">
@@ -618,7 +618,7 @@ export default function FacturesPage() {
             disabled={running}
             className="inline-grid grid-cols-1 grid-rows-1 place-items-center whitespace-nowrap tabular-nums
                        rounded-md border border-primary px-3 py-2 text-sm text-primary
-                       hover:bg-primary hover:text-white disabled:opacity-60 cursor-pointer"
+                       hover:bg-primary hover:text-white disabled:opacity-60 cursor-pointer bg-white"
             title="Télécharger un ZIP avec toutes les factures du mois"
             aria-busy={running}
           >
@@ -665,7 +665,7 @@ export default function FacturesPage() {
           </label>
           <input
             id="searchFacture"
-            className="border border-gray-300 rounded px-2 py-1"
+            className="FilterInput"
             placeholder="Réf, commande ou client"
             value={searchTerm}
             onChange={(e) => {
@@ -692,7 +692,7 @@ export default function FacturesPage() {
             </label>
             <select
               id="statusFilter"
-              className="border border-gray-300 rounded px-2 py-1"
+              className="FilterInput"
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value);
@@ -715,12 +715,12 @@ export default function FacturesPage() {
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr className="text-sm">
-              <th className="px-4 py-2 text-center">Date</th>
-              <th className="px-4 py-2 text-center">Référence</th>
-              <th className="px-4 py-2 text-center">Commande</th>
-              <th className="px-4 py-2 text-center">Client</th>
-              <th className="px-4 py-2 text-center">Total TTC</th>
-              <th className="px-4 py-2 text-center">Statut</th>
+              <th className="px-4 py-2 text-center border-r-4">Date</th>
+              <th className="px-4 py-2 text-center border-r-4">Référence</th>
+              <th className="px-4 py-2 text-center border-r-4">Commande</th>
+              <th className="px-4 py-2 text-center border-r-4">Client</th>
+              <th className="px-4 py-2 text-center border-r-4">Total TTC</th>
+              <th className="px-4 py-2 text-center border-r-4">Statut</th>
               <th className="px-4 py-2 text-center">Action</th>
             </tr>
           </thead>
@@ -805,7 +805,7 @@ export default function FacturesPage() {
           </table>
 
           {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/75">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-green-50">
               <FaSpinner className="animate-spin text-3xl" />
             </div>
           )}
