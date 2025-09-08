@@ -930,7 +930,7 @@ export default function OrdersPage() {
                           </Link>
                           <button
                             onClick={() => openDelete(o._id, o.ref)}
-                            className="ButtonSquare"
+                            className="ButtonSquareDelete"
                             aria-label="Supprimer la commande"
                             disabled={isSaving}
                           >

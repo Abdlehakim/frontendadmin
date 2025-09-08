@@ -54,6 +54,31 @@ body {
   color: #ffffff;
 }
 
+
+.ButtonSquareDelete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #dc2626;            /* red-600 */
+  background-color: transparent;
+  border: 1px solid #ef4444; /* red-500 */
+  border-radius: 5px;
+
+  width: 32px;
+  height: 32px;
+
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.ButtonSquareDelete:hover {
+  background-color: #ef4444; /* red-500 */
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+
 .ButtonRectangle {
   background-color: var(--secondary);
   color: #ffffff;

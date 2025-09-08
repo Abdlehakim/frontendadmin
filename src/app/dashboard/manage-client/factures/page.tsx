@@ -13,7 +13,7 @@ import React, {
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
-import { FaRegEye } from "react-icons/fa";
+import { FaRegEye, FaTrashAlt } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import {
   FiChevronDown,
@@ -110,7 +110,11 @@ function MonthPopup({
   const btnRef = useRef<HTMLButtonElement | null>(null);
 
   // position under the trigger and keep within viewport
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [pos, setPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
   const updatePos = () => {
     const b = btnRef.current?.getBoundingClientRect();
     if (!b) return;
@@ -172,7 +176,9 @@ function MonthPopup({
 
   const thisMonth = () => {
     const now = new Date();
-    onChange(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+    onChange(
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+    );
     setYear(now.getFullYear());
     setOpen(false);
   };
@@ -193,12 +199,24 @@ function MonthPopup({
           <FiCalendar className="opacity-70" />
           {formatMonthLabel(value)}
         </span>
-        <svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true" className="opacity-60">
-          <path d="M6 8l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" />
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 20 20"
+          aria-hidden="true"
+          className="opacity-60"
+        >
+          <path
+            d="M6 8l4 4 4-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
         </svg>
       </button>
 
-      {open && pos &&
+      {open &&
+        pos &&
         createPortal(
           <div
             data-month-popover
@@ -235,29 +253,40 @@ function MonthPopup({
 
             {/* Grid of FR months */}
             <div className="grid grid-cols-4 gap-2 px-1 py-2">
-              {["janv","févr","mars","avr","mai","juin","juil","août","sept","oct","nov","déc"].map(
-                (m, idx) => {
-                  const isSelected =
-                    idx === selectedMonthIndex &&
-                    year === Number(value.slice(0, 4));
-                  return (
-                    <button
-                      key={m}
-                      type="button"
-                      className={`px-2 py-1 text-sm rounded border text-center
+              {[
+                "janv",
+                "févr",
+                "mars",
+                "avr",
+                "mai",
+                "juin",
+                "juil",
+                "août",
+                "sept",
+                "oct",
+                "nov",
+                "déc",
+              ].map((m, idx) => {
+                const isSelected =
+                  idx === selectedMonthIndex &&
+                  year === Number(value.slice(0, 4));
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`px-2 py-1 text-sm rounded border text-center
                         ${
                           isSelected
                             ? "border-primary bg-primary text-white"
                             : "border-gray-200 text-slate-700 hover:bg-gray-50"
                         }`}
-                      onClick={() => pick(idx)}
-                      aria-pressed={isSelected}
-                    >
-                      {m}
-                    </button>
-                  );
-                }
-              )}
+                    onClick={() => pick(idx)}
+                    aria-pressed={isSelected}
+                  >
+                    {m}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Footer */}
@@ -409,7 +438,6 @@ function NiceSelect<T extends StringUnion>({
   );
 }
 
-/* ===================== Page ===================== */
 export default function FacturesPage() {
   const [factures, setFactures] = useState<Facture[]>([]);
   const [filterStatus, setFilterStatus] = useState("");
@@ -418,10 +446,8 @@ export default function FacturesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // per-row invoice download state
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  // month + ZIP progress state
   const [month, setMonth] = useState<string>(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -431,7 +457,6 @@ export default function FacturesPage() {
   const [zipProgress, setZipProgress] = useState<ZipProgress | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
-  // cleanup SSE on unmount
   useEffect(() => {
     return () => {
       try {
@@ -501,7 +526,6 @@ export default function FacturesPage() {
     }
   };
 
-  // per-row invoice download (facture only)
   const downloadInvoice = async (f: Facture) => {
     if (downloadingId) return;
     if (!f.ref) {
@@ -519,6 +543,34 @@ export default function FacturesPage() {
       alert("Échec du téléchargement de la facture.");
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const deleteOne = async (id: string) => {
+    const target = factures.find((f) => f._id === id);
+    const label = target?.ref ? ` (${target.ref})` : "";
+    const ok = window.confirm(`Supprimer définitivement la facture${label} ?`);
+    if (!ok) return;
+
+    const prev = factures;
+    setFactures((f) => f.filter((x) => x._id !== id));
+    try {
+      const res = await fetchFromAPI<{ ok: boolean; deleted: number }>(
+        "/dashboardadmin/factures/delete",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: [id] }),
+        }
+      );
+      if (!res?.ok) {
+        setFactures(prev);
+        alert("La suppression n’a pas abouti.");
+      }
+    } catch (e) {
+      console.error("Delete one error:", e);
+      setFactures(prev);
+      alert("Échec de la suppression.");
     }
   };
 
@@ -608,7 +660,7 @@ export default function FacturesPage() {
         <h1 className="text-3xl font-bold uppercase">Factures</h1>
 
         <div className="flex items-end gap-2">
-          <div className="flex flex-col">          
+          <div className="flex flex-col">
             <MonthPopup value={month} onChange={setMonth} />
           </div>
 
@@ -715,6 +767,7 @@ export default function FacturesPage() {
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr className="text-sm">
+              {/* ✅ header checkbox */}
               <th className="px-4 py-2 text-center border-r-4">Date</th>
               <th className="px-4 py-2 text-center border-r-4">Référence</th>
               <th className="px-4 py-2 text-center border-r-4">Commande</th>
@@ -731,7 +784,7 @@ export default function FacturesPage() {
             {displayed.length === 0 && !loading ? (
               <tbody>
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-gray-600">
+                  <td colSpan={8} className="py-6 text-center text-gray-600">
                     Aucune facture trouvée.
                   </td>
                 </tr>
@@ -763,8 +816,7 @@ export default function FacturesPage() {
                           options={statusOptions.map((s) => s.value)}
                           onChange={(v) => updateStatus(f._id, v)}
                           display={(v) =>
-                            statusOptions.find((s) => s.value === v)?.label ??
-                            v
+                            statusOptions.find((s) => s.value === v)?.label ?? v
                           }
                           className="mx-auto"
                         />
@@ -794,6 +846,15 @@ export default function FacturesPage() {
                             ) : (
                               <FiDownload size={14} />
                             )}
+                          </button>
+
+                          <button
+                            onClick={() => deleteOne(f._id)}
+                            className="ButtonSquareDelete"
+                            title="Supprimer la facture"
+                            aria-label="Supprimer la facture"
+                          >
+                            <FaTrashAlt size={14} />
                           </button>
                         </div>
                       </td>
