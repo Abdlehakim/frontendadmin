@@ -252,7 +252,6 @@ export default function OrdersPage() {
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteOrderId, setDeleteOrderId] = useState("");
   const [deleteOrderRef, setDeleteOrderRef] = useState("");
@@ -265,6 +264,8 @@ export default function OrdersPage() {
   // Scheduled jobs (BullMQ delayed) with ETA for countdown (merge optimistic+server)
   const [pendingMap, setPendingMap] = useState<Record<string, PendingInfo>>({});
   const [canceling, setCanceling] = useState<Record<string, boolean>>({});
+const [confirming, setConfirming] = useState<Record<string, boolean>>({});
+
   const [now, setNow] = useState<number>(() => Date.now());
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -488,6 +489,33 @@ export default function OrdersPage() {
       if (!silent) alert("Échec de l'annulation de la facture planifiée.");
     } finally {
       setCanceling((m) => {
+        const c = { ...m };
+        delete c[orderId];
+        return c;
+      });
+    }
+  };
+
+  const confirmAndCreate = async (orderId: string) => {
+    setConfirming((m) => ({ ...m, [orderId]: true }));
+    try {
+      // Cancel delayed job quietly (ok if none)
+      await cancelScheduled(orderId, true, false);
+
+      // Remove pending entry in UI
+      setPendingMap((prev) => {
+        const copy = { ...prev };
+        delete copy[orderId];
+        return copy;
+      });
+
+      // Create the invoice now
+      await createInvoiceFromOrder(orderId);
+      // createInvoiceFromOrder sets Invoice=true in orders state on success
+    } catch {
+      alert("Échec de la création immédiate de la facture.");
+    } finally {
+      setConfirming((m) => {
         const c = { ...m };
         delete c[orderId];
         return c;
@@ -763,7 +791,7 @@ export default function OrdersPage() {
                   );
 
                   return (
-                    <tr key={o._id} className="even:bg-green-50 odd:bg-white">
+                    <tr key={o._id} className="even:bg-purple-50 odd:bg-white">
                       <td className="px-4 text-center">
                         {fmtDate(o.createdAt)}
                       </td>
@@ -820,36 +848,66 @@ export default function OrdersPage() {
                             }
                           />
                           {isPendingScheduled && (
-                            <button
-                              onClick={() =>
-                                cancelScheduled(o._id, false, true)
-                              }
-                              className="inline-flex items-center gap-1 rounded-md border border-amber-400 px-2 py-1 text-xs text-amber-900 hover:bg-amber-100 disabled:opacity-60"
-                              disabled={!!canceling[o._id]}
-                              title="Annuler la facture planifiée"
-                            >
-                              {canceling[o._id] ? (
-                                <>
-                                  <FaSpinner className="animate-spin" />{" "}
-                                  Annulation…
-                                </>
-                              ) : (
-                                <>
-                                  <FiXCircle /> Annuler
-                                  {countdown && (
-                                    <span className="ml-1 text-[11px] text-amber-800">
-                                      ({countdown})
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                            </button>
+                            <div className="flex items-center gap-2">
+                              {/* Confirm (create now) */}
+                              <button
+                                onClick={() => confirmAndCreate(o._id)}
+                                className="inline-flex items-center gap-1 rounded-md border border-emerald-500 px-2 py-1 text-xs text-emerald-900 hover:bg-emerald-50 disabled:opacity-60 cursor-pointer"
+                                disabled={
+                                  !!confirming[o._id] ||
+                                  !!canceling[o._id] ||
+                                  isSaving
+                                }
+                                title="Créer la facture immédiatement"
+                              >
+                                {confirming[o._id] ? (
+                                  <>
+                                    <FaSpinner className="animate-spin" />{" "}
+                                    Confirmation…
+                                  </>
+                                ) : (
+                                  <>
+                                    <FiCheck />
+                                  </>
+                                )}
+                              </button>
+
+                              {/* Cancel scheduled */}
+                              <button
+                                onClick={() =>
+                                  cancelScheduled(o._id, false, true)
+                                }
+                                className="inline-flex items-center gap-1 rounded-md border border-amber-400 px-2 py-1 text-xs text-amber-900 hover:bg-amber-100 disabled:opacity-60 cursor-pointer"
+                                disabled={
+                                  !!canceling[o._id] ||
+                                  !!confirming[o._id] ||
+                                  isSaving
+                                }
+                                title="Annuler la facture planifiée"
+                              >
+                                {canceling[o._id] ? (
+                                  <>
+                                    <FaSpinner className="animate-spin" />{" "}
+                                    Annulation…
+                                  </>
+                                ) : (
+                                  <>
+                                    <FiXCircle />
+                                    {countdown && (
+                                      <span className="ml-1 text-[11px] text-amber-800">
+                                        ({countdown})
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           )}
                         </div>
                       </td>
 
                       <td className="px-4 text-center">
-                        <div className="flex justify-center items-center gap-2">
+                        <div className="flex justify-center items-center gap-2 ">
                           <Link
                             href={`/dashboard/manage-client/orders/update/${o._id}`}
                           >
