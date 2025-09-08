@@ -372,7 +372,7 @@ export default function SidebarClient() {
           <nav
             ref={navRef}
             className={`flex-1 flex-col h-[40%] py-4
-    ${collapsed ? "overflow-visible overflow-x-hidden" : "overflow-y-auto overflow-x-hidden"}
+    ${collapsed ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"}
     [&::-webkit-scrollbar]:w-[4px]
     [&::-webkit-scrollbar-track]:bg-transparent
     [&::-webkit-scrollbar-thumb]:bg-white/10

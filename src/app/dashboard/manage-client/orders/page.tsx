@@ -685,9 +685,7 @@ export default function OrdersPage() {
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Commandes</h1>
         <Link href="/dashboard/manage-client/orders/create">
-          <button className="btn-fit-white-outline">
-            Créer une commande
-          </button>
+          <button className="btn-fit-white-outline">Créer une commande</button>
         </Link>
       </div>
 
@@ -750,12 +748,7 @@ export default function OrdersPage() {
               <th className="px-4 py-2 text-center border-r-4">Date</th>
               <th className="px-4 py-2 text-center border-r-4">Référence</th>
               <th className="px-4 py-2 text-center border-r-4">Nom client</th>
-              <th className="px-4 py-2 text-center border-r-4">
-                Adresse de livraison
-              </th>
-              <th className="px-4 py-2 text-center border-r-4">
-                Retrait magasin
-              </th>
+              <th className="px-4 py-2 text-center border-r-4">AL/RM</th>
               <th className="px-4 py-2 text-center border-r-4">Statut</th>
               <th className="px-4 py-2 text-center border-r-4">Facture</th>
               <th className="px-4 py-2 text-center">Action</th>
@@ -800,12 +793,9 @@ export default function OrdersPage() {
                       </td>
                       <td className="px-4 text-center">{o.clientName}</td>
                       <td className="px-4 text-center truncate">
-                        {o.DeliveryAddress[0]?.DeliverToAddress ?? "—"}
-                      </td>
-                      <td className="px-4 text-center truncate">
-                        {o.pickupMagasin.length > 0
-                          ? o.pickupMagasin[0].MagasinAddress
-                          : "—"}
+                        {o.DeliveryAddress?.[0]?.DeliverToAddress?.trim() ||
+                          o.pickupMagasin?.[0]?.MagasinAddress?.trim() ||
+                          "—"}
                       </td>
 
                       <td className="px-4 text-center">
