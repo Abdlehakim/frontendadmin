@@ -13,7 +13,7 @@ import React, {
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
-import { FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FaRegEye, FaTrashAlt, FaRegEdit } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import {
   FiChevronDown,
@@ -27,8 +27,6 @@ import { generatePdf } from "@/lib/generatePdf";
 import PaginationAdmin from "@/components/PaginationAdmin";
 import DateFilter, { DateRange } from "@/components/DateFilter";
 import { saveAs } from "file-saver";
-
-
 
 /* ---------- constants ---------- */
 const API_ROOT = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3000";
@@ -69,6 +67,7 @@ interface Facture {
   _id: string;
   ref: string;
   orderRef?: string;
+  order?: string;
   clientName: string;
   status: "Paid" | "Cancelled";
   issuedAt?: string;
@@ -79,7 +78,6 @@ interface Facture {
 type StatusVal = "Paid" | "Cancelled";
 type StringUnion = string;
 type CounterDTO = { year: number; seq: number };
-
 
 type ZipProgress = {
   done: number;
@@ -96,9 +94,9 @@ type DeleteResp = {
   notFoundIds?: string[];
   renumbered?: Array<{
     year: number;
-    deletedSeqs: number[];   // e.g. [3] when FC-3-YYYY was deleted
-    modified: number;        // how many docs shifted in that year
-    counterSeq: number;      // new max seq for that year
+    deletedSeqs: number[]; // e.g. [3] when FC-3-YYYY was deleted
+    modified: number; // how many docs shifted in that year
+    counterSeq: number; // new max seq for that year
   }>;
 };
 
@@ -142,7 +140,6 @@ const applyRenumberLocally = (
     setYearCounter({ year: selectedYear, seq: yr.counterSeq });
   }
 };
-
 
 const pageSize = 8;
 
@@ -516,7 +513,7 @@ export default function FacturesPage() {
   const [zipProgress, setZipProgress] = useState<ZipProgress | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
-   // counter edit state
+  // counter edit state
   const [yearCounter, setYearCounter] = useState<CounterDTO | null>(null);
   const [counterSaving, setCounterSaving] = useState(false);
 
@@ -600,9 +597,9 @@ export default function FacturesPage() {
         body: JSON.stringify({ seq: Number(yearCounter.seq) || 0 }),
       });
     } catch (err) {
-  console.error("saveCounter failed:", err);
-  alert("Échec de la mise à jour du compteur.");
-} finally {
+      console.error("saveCounter failed:", err);
+      alert("Échec de la mise à jour du compteur.");
+    } finally {
       setCounterSaving(false);
     }
   };
@@ -644,37 +641,41 @@ export default function FacturesPage() {
   };
 
   const deleteOne = async (id: string) => {
-  const target = factures.find((f) => f._id === id);
-  const label = target?.ref ? ` (${target.ref})` : "";
-  const ok = window.confirm(`Supprimer définitivement la facture${label} ?`);
-  if (!ok) return;
+    const target = factures.find((f) => f._id === id);
+    const label = target?.ref ? ` (${target.ref})` : "";
+    const ok = window.confirm(`Supprimer définitivement la facture${label} ?`);
+    if (!ok) return;
 
-  const prev = factures;
-  setFactures((f) => f.filter((x) => x._id !== id));
-  try {
-    const res = await fetchFromAPI<DeleteResp>(
-      "/dashboardadmin/factures/delete",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: [id] }),
+    const prev = factures;
+    setFactures((f) => f.filter((x) => x._id !== id));
+    try {
+      const res = await fetchFromAPI<DeleteResp>(
+        "/dashboardadmin/factures/delete",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: [id] }),
+        }
+      );
+
+      if (!res?.ok) {
+        setFactures(prev);
+        alert("La suppression n’a pas abouti.");
+      } else {
+        // 🔥 adjust refs locally based on backend renumbering info
+        applyRenumberLocally(
+          res.renumbered,
+          month,
+          setYearCounter,
+          setFactures
+        );
       }
-    );
-
-    if (!res?.ok) {
+    } catch (err) {
+      console.error("Delete one error:", err);
       setFactures(prev);
-      alert("La suppression n’a pas abouti.");
-    } else {
-      // 🔥 adjust refs locally based on backend renumbering info
-      applyRenumberLocally(res.renumbered, month, setYearCounter, setFactures);
+      alert("Échec de la suppression.");
     }
-  } catch (err) {
-    console.error("Delete one error:", err);
-    setFactures(prev);
-    alert("Échec de la suppression.");
-  }
-};
-
+  };
 
   // bulk ZIP download with SSE progress
   const downloadMonthZip = async () => {
@@ -760,39 +761,40 @@ export default function FacturesPage() {
       {/* Header with month selector + ZIP button (factures only) */}
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Factures</h1>
-<div className="flex items-end gap-2">
-  <div className="flex flex-col">
-    <MonthPopup value={month} onChange={setMonth} />
-  </div>
+        <div className="flex items-end gap-2">
+          <div className="flex flex-col">
+            <MonthPopup value={month} onChange={setMonth} />
+          </div>
 
-  {/* Yearly SEQ editor */}
-  <div className="flex items-center gap-2">
-    <label className="text-xs opacity-70">
-      SEQ {month.slice(0, 4)} :
-    </label>
-    <input
-      type="number"
-      min={0}
-      className="FilterInput w-24"
-      value={yearCounter?.seq ?? ""}
-      onChange={(e) =>
-        setYearCounter({
-          year: Number(month.slice(0, 4)),
-          seq: Number(e.target.value) || 0,
-        })
-      }
-    />
-    <button
-      onClick={saveCounter}
-      disabled={counterSaving || !yearCounter}
-      className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm hover:bg-emerald-100 disabled:opacity-60"
-    >
-      {counterSaving ? <FaSpinner className="animate-spin" /> : "Enregistrer"}
-    </button>
-  </div>
-
-
-
+          {/* Yearly SEQ editor */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs opacity-70">
+              SEQ {month.slice(0, 4)} :
+            </label>
+            <input
+              type="number"
+              min={0}
+              className="FilterInput w-24"
+              value={yearCounter?.seq ?? ""}
+              onChange={(e) =>
+                setYearCounter({
+                  year: Number(month.slice(0, 4)),
+                  seq: Number(e.target.value) || 0,
+                })
+              }
+            />
+            <button
+              onClick={saveCounter}
+              disabled={counterSaving || !yearCounter}
+              className="btn-fit-white-outline"
+            >
+              {counterSaving ? (
+                <FaSpinner className="animate-spin" />
+              ) : (
+                "Enregistrer"
+              )}
+            </button>
+          </div>
           {/* ZIP button with ghost width reservation */}
           <button
             onClick={downloadMonthZip}
@@ -952,6 +954,19 @@ export default function FacturesPage() {
                       </td>
                       <td className="px-4 text-center">
                         <div className="flex justify-center items-center gap-2">
+                          {f.order && (
+                            <Link
+                              href={`/dashboard/manage-client/orders/update/${f.order}`}
+                            >
+                              <button
+                                className="ButtonSquare"
+                                title="Modifier la commande liée"
+                                aria-label="Modifier la commande liée"
+                              >
+                                <FaRegEdit size={14} />
+                              </button>
+                            </Link>
+                          )}
                           <Link
                             href={`/dashboard/manage-client/factures/voir/${f._id}`}
                           >
