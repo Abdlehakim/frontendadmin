@@ -89,6 +89,61 @@ type ZipProgress = {
   message?: string;
 };
 
+type DeleteResp = {
+  ok: boolean;
+  deleted: number;
+  invalidIds?: string[];
+  notFoundIds?: string[];
+  renumbered?: Array<{
+    year: number;
+    deletedSeqs: number[];   // e.g. [3] when FC-3-YYYY was deleted
+    modified: number;        // how many docs shifted in that year
+    counterSeq: number;      // new max seq for that year
+  }>;
+};
+
+// Parse FC-<seq>-<year>
+const parseRef = (ref?: string): { seq: number; year: number } | null => {
+  if (!ref) return null;
+  const m = /^FC-(\d+)-(\d+)$/.exec(ref);
+  return m ? { seq: Number(m[1]), year: Number(m[2]) } : null;
+};
+
+// Apply backend renumber info locally (no refetch needed)
+const applyRenumberLocally = (
+  data: DeleteResp["renumbered"],
+  currentMonth: string,
+  setYearCounter: React.Dispatch<React.SetStateAction<CounterDTO | null>>,
+  setFactures: React.Dispatch<React.SetStateAction<Facture[]>>
+) => {
+  if (!data?.length) return;
+
+  setFactures((prev) =>
+    prev.map((f) => {
+      const info = parseRef(f.ref);
+      if (!info) return f;
+
+      // find matching year payload
+      const y = data.find((r) => r.year === info.year);
+      if (!y || !y.deletedSeqs?.length) return f;
+
+      // how many deleted seqs are < this seq?
+      const dec = y.deletedSeqs.reduce((n, s) => (s < info.seq ? n + 1 : n), 0);
+      if (dec <= 0) return f;
+
+      const newRef = `FC-${info.seq - dec}-${info.year}`;
+      return { ...f, ref: newRef };
+    })
+  );
+
+  const selectedYear = Number(currentMonth.slice(0, 4));
+  const yr = data.find((r) => r.year === selectedYear);
+  if (yr) {
+    setYearCounter({ year: selectedYear, seq: yr.counterSeq });
+  }
+};
+
+
 const pageSize = 8;
 
 const statusOptions = [
@@ -589,32 +644,37 @@ export default function FacturesPage() {
   };
 
   const deleteOne = async (id: string) => {
-    const target = factures.find((f) => f._id === id);
-    const label = target?.ref ? ` (${target.ref})` : "";
-    const ok = window.confirm(`Supprimer définitivement la facture${label} ?`);
-    if (!ok) return;
+  const target = factures.find((f) => f._id === id);
+  const label = target?.ref ? ` (${target.ref})` : "";
+  const ok = window.confirm(`Supprimer définitivement la facture${label} ?`);
+  if (!ok) return;
 
-    const prev = factures;
-    setFactures((f) => f.filter((x) => x._id !== id));
-    try {
-      const res = await fetchFromAPI<{ ok: boolean; deleted: number }>(
-        "/dashboardadmin/factures/delete",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: [id] }),
-        }
-      );
-      if (!res?.ok) {
-        setFactures(prev);
-        alert("La suppression n’a pas abouti.");
+  const prev = factures;
+  setFactures((f) => f.filter((x) => x._id !== id));
+  try {
+    const res = await fetchFromAPI<DeleteResp>(
+      "/dashboardadmin/factures/delete",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] }),
       }
-    } catch (e) {
-      console.error("Delete one error:", e);
+    );
+
+    if (!res?.ok) {
       setFactures(prev);
-      alert("Échec de la suppression.");
+      alert("La suppression n’a pas abouti.");
+    } else {
+      // 🔥 adjust refs locally based on backend renumbering info
+      applyRenumberLocally(res.renumbered, month, setYearCounter, setFactures);
     }
-  };
+  } catch (err) {
+    console.error("Delete one error:", err);
+    setFactures(prev);
+    alert("Échec de la suppression.");
+  }
+};
+
 
   // bulk ZIP download with SSE progress
   const downloadMonthZip = async () => {
