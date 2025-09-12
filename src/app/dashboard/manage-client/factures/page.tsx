@@ -28,6 +28,8 @@ import PaginationAdmin from "@/components/PaginationAdmin";
 import DateFilter, { DateRange } from "@/components/DateFilter";
 import { saveAs } from "file-saver";
 
+
+
 /* ---------- constants ---------- */
 const API_ROOT = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3000";
 const ZIP_BASE = `${API_ROOT}/api/zip`;
@@ -76,6 +78,8 @@ interface Facture {
 }
 type StatusVal = "Paid" | "Cancelled";
 type StringUnion = string;
+type CounterDTO = { year: number; seq: number };
+
 
 type ZipProgress = {
   done: number;
@@ -457,6 +461,10 @@ export default function FacturesPage() {
   const [zipProgress, setZipProgress] = useState<ZipProgress | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
+   // counter edit state
+  const [yearCounter, setYearCounter] = useState<CounterDTO | null>(null);
+  const [counterSaving, setCounterSaving] = useState(false);
+
   useEffect(() => {
     return () => {
       try {
@@ -509,6 +517,40 @@ export default function FacturesPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    const y = Number(month.slice(0, 4));
+    if (!Number.isFinite(y)) return;
+
+    (async () => {
+      try {
+        const data = await fetchFromAPI<CounterDTO>(
+          `/dashboardadmin/factures/counter/${y}`
+        );
+        setYearCounter({ year: y, seq: data?.seq ?? 0 });
+      } catch {
+        setYearCounter({ year: y, seq: 0 });
+      }
+    })();
+  }, [month]);
+
+  const saveCounter = async () => {
+    if (!yearCounter) return;
+    try {
+      setCounterSaving(true);
+      const y = yearCounter.year;
+      await fetchFromAPI(`/dashboardadmin/factures/counter/${y}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seq: Number(yearCounter.seq) || 0 }),
+      });
+    } catch (err) {
+  console.error("saveCounter failed:", err);
+  alert("Échec de la mise à jour du compteur.");
+} finally {
+      setCounterSaving(false);
+    }
+  };
 
   const updateStatus = async (id: string, status: StatusVal) => {
     try {
@@ -658,11 +700,38 @@ export default function FacturesPage() {
       {/* Header with month selector + ZIP button (factures only) */}
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Factures</h1>
+<div className="flex items-end gap-2">
+  <div className="flex flex-col">
+    <MonthPopup value={month} onChange={setMonth} />
+  </div>
 
-        <div className="flex items-end gap-2">
-          <div className="flex flex-col">
-            <MonthPopup value={month} onChange={setMonth} />
-          </div>
+  {/* Yearly SEQ editor */}
+  <div className="flex items-center gap-2">
+    <label className="text-xs opacity-70">
+      SEQ {month.slice(0, 4)} :
+    </label>
+    <input
+      type="number"
+      min={0}
+      className="FilterInput w-24"
+      value={yearCounter?.seq ?? ""}
+      onChange={(e) =>
+        setYearCounter({
+          year: Number(month.slice(0, 4)),
+          seq: Number(e.target.value) || 0,
+        })
+      }
+    />
+    <button
+      onClick={saveCounter}
+      disabled={counterSaving || !yearCounter}
+      className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm hover:bg-emerald-100 disabled:opacity-60"
+    >
+      {counterSaving ? <FaSpinner className="animate-spin" /> : "Enregistrer"}
+    </button>
+  </div>
+
+
 
           {/* ZIP button with ghost width reservation */}
           <button
