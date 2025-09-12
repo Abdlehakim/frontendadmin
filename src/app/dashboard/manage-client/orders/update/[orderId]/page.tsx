@@ -67,7 +67,7 @@ export default function UpdateOrderPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const prevClientIdRef = useRef<string | null>(null); // ← track real client changes
+  const prevClientIdRef = useRef<string | null>(null); // track real client changes
 
   const [basket, setBasket] = useState<BasketItem[]>([]);
 
@@ -92,6 +92,7 @@ export default function UpdateOrderPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loadingOrder, setLoadingOrder] = useState(true);
 
   const searchClients = useCallback(async (q: string): Promise<Client[]> => {
     if (q.trim().length < MIN_CHARS) return [];
@@ -160,11 +161,17 @@ export default function UpdateOrderPage() {
 
   // Load order
   useEffect(() => {
+    let cancelled = false;
+
     (async () => {
+      setLoadingOrder(true);
       try {
         const { order } = await fetchFromAPI<OrderResponse>(`/dashboardadmin/orders/${orderId}`);
+
+        if (cancelled) return;
+
         setSelectedClient(order.client);
-        prevClientIdRef.current = order.client?._id ?? null; // mark initial id (prevents clearing on first mount)
+        prevClientIdRef.current = order.client?._id ?? null; // mark initial id
 
         const productsDefs = await Promise.all(
           order.orderItems.map((it) =>
@@ -173,6 +180,7 @@ export default function UpdateOrderPage() {
             ).then((res) => res.products?.[0])
           )
         );
+        if (cancelled) return;
 
         setBasket(
           order.orderItems.map((it, idx) => {
@@ -237,9 +245,15 @@ export default function UpdateOrderPage() {
         }
       } catch (e) {
         console.error(e);
-        setError("Impossible de charger la commande.");
+        if (!cancelled) setError("Impossible de charger la commande.");
+      } finally {
+        if (!cancelled) setLoadingOrder(false);
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
@@ -273,7 +287,7 @@ export default function UpdateOrderPage() {
       .finally(() => setLoadingAddresses(false));
   }, [selectedClient]);
 
-  // 🔒 If the client REALLY changed (not initial mount), reset address/magasin selection
+  // If the client REALLY changed (not initial mount), reset address/magasin selection
   useEffect(() => {
     const cur = selectedClient?._id ?? null;
     if (cur === null) return;
@@ -317,7 +331,7 @@ export default function UpdateOrderPage() {
     return deliveryOptions.filter((o) => o.isPickup);
   }, [deliveryFilter, deliveryOptions]);
 
-  // ✅ Strong validation: selected id must exist in current list
+  // Strong validation: selected id must exist in current list
   const hasValidAddressSelection = useMemo(() => {
     if (!deliveryOpt || deliveryOpt.isPickup) return true;
     if (!selectedAddressId) return false;
@@ -338,6 +352,9 @@ export default function UpdateOrderPage() {
     !!deliveryOpt &&
     hasValidAddressSelection &&
     hasValidMagasinSelection;
+
+  const isBootstrapping =
+    loadingOrder || loadingPaymentMethods || loadingDelivery || loadingMagasins;
 
   const save = async () => {
     if (isSaving) return;
@@ -412,14 +429,34 @@ export default function UpdateOrderPage() {
 
   if (error) return <p className="text-red-600">{error}</p>;
 
+  // show loader before displaying the UI
+  if (isBootstrapping) {
+    return (
+      <div
+        className="relative h-full w-full flex items-center justify-center"
+        aria-live="polite"
+        role="status"
+      >
+        <LoadingDots loadingMessage="Chargement des données de la commande…" />
+      </div>
+    );
+  }
+
+  // show a full-page loader WHILE SAVING (outside buttons), same wrapper style
+  if (isSaving) {
+    return (
+      <div
+        className="relative h-full w-full flex items-center justify-center"
+        aria-live="polite"
+        role="status"
+      >
+        <LoadingDots loadingMessage="Enregistrement de la commande…" />
+      </div>
+    );
+  }
+
   return (
     <>
-      {isSaving && (
-        <div className="fixed inset-0 z-[9999]">
-          <LoadingDots loadingMessage="Enregistrement de la commande…" />
-        </div>
-      )}
-
       <div className="w-[95%] mx-auto py-4 flex flex-col gap-4 h-full">
         <h1 className="text-2xl font-bold uppercase">Modifier la commande</h1>
         <OrderStepsNav currentStep={step} />
@@ -443,10 +480,7 @@ export default function UpdateOrderPage() {
             </div>
 
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
-              <button
-                onClick={cancel}
-                className="btn-fit-white-outline"
-              >
+              <button onClick={cancel} className="btn-fit-white-outline">
                 Annuler
               </button>
               <button
@@ -524,17 +558,11 @@ export default function UpdateOrderPage() {
             </div>
 
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
-              <button
-                onClick={cancel}
-                className="btn-fit-white-outline"
-              >
+              <button onClick={cancel} className="btn-fit-white-outline">
                 Annuler
               </button>
               <div className="flex gap-4">
-                <button
-                  onClick={() => setStep(1)}
-                  className="btn-fit-white-outline"
-                >
+                <button onClick={() => setStep(1)} className="btn-fit-white-outline">
                   ← Précédent
                 </button>
                 <button
@@ -564,25 +592,19 @@ export default function UpdateOrderPage() {
             </div>
 
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
-              <button
-                onClick={cancel}
-                className="btn-fit-white-outline"
-              >
+              <button onClick={cancel} className="btn-fit-white-outline">
                 Annuler
               </button>
               <div className="flex gap-4">
-                <button
-                  onClick={() => setStep(2)}
-                  className="btn-fit-white-outline"
-                >
+                <button onClick={() => setStep(2)} className="btn-fit-white-outline">
                   ← Précédent
                 </button>
                 <button
                   onClick={save}
-                  disabled={isSaving || !canGoStep3}
+                  disabled={!canGoStep3}
                   className="btn-fit-white-outline disabled:opacity-50"
                 >
-                  {isSaving ? "Enregistrement…" : "Enregistrer"}
+                  Enregistrer
                 </button>
               </div>
             </div>

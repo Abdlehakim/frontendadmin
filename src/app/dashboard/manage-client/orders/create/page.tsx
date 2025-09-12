@@ -35,6 +35,20 @@ import {
 const MIN_CHARS = 2;
 type DeliveryFilter = "all" | "deliveryOnly" | "pickupOnly" | null;
 
+/** Stronger local types so we don't need `any` */
+type PM = PaymentMethod & {
+  _id?: string;
+  payOnline?: boolean;
+  requireAddress?: boolean;
+};
+type DO = DeliveryOption & {
+  _id?: string;
+  id?: string;
+  price?: number;
+  isPickup?: boolean;
+  name?: string;
+};
+
 export default function CreateOrderPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -52,12 +66,12 @@ export default function CreateOrderPage() {
     selectedMagasin,
   } = useAppSelector(selectOrderCreation);
 
-  const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
+  const [deliveryOptions, setDeliveryOptions] = useState<DO[]>([]);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PM[]>([]);
   const [magasinsList, setMagasinsList] = useState<Magasin[]>([]);
   const [loadingMagasins, setLoadingMagasins] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +80,7 @@ export default function CreateOrderPage() {
     setLoadingDelivery(true);
     (async () => {
       try {
-        const opts = await fetchFromAPI<DeliveryOption[]>("/dashboardadmin/delivery-options");
+        const opts = await fetchFromAPI<DO[]>("/dashboardadmin/delivery-options");
         setDeliveryOptions(opts ?? []);
       } finally {
         setLoadingDelivery(false);
@@ -79,7 +93,7 @@ export default function CreateOrderPage() {
     (async () => {
       try {
         const { magasins } = await fetchFromAPI<{ magasins: Magasin[] }>(
-          "/dashboardadmin/stock/magasins/approved"
+          "/dashboardadmin/stock/magasins/approved",
         );
         setMagasinsList(magasins ?? []);
       } finally {
@@ -92,9 +106,9 @@ export default function CreateOrderPage() {
     setLoadingPaymentMethods(true);
     (async () => {
       try {
-        const { activePaymentMethods } = await fetchFromAPI<{
-          activePaymentMethods: PaymentMethod[];
-        }>("/dashboardadmin/payment/payment-settings/active");
+        const { activePaymentMethods } = await fetchFromAPI<{ activePaymentMethods: PM[] }>(
+          "/dashboardadmin/payment/payment-settings/active",
+        );
         dispatch(cachePaymentMethods(activePaymentMethods));
         setPaymentMethods(activePaymentMethods ?? []);
       } finally {
@@ -112,7 +126,7 @@ export default function CreateOrderPage() {
     (async () => {
       try {
         const { addresses } = await fetchFromAPI<{ addresses: Address[] }>(
-          `/dashboardadmin/clientAddress/${client._id}`
+          `/dashboardadmin/clientAddress/${client._id}`,
         );
         setAddresses(addresses ?? []);
       } finally {
@@ -126,7 +140,7 @@ export default function CreateOrderPage() {
     setLoadingAddresses(true);
     try {
       const { addresses } = await fetchFromAPI<{ addresses: Address[] }>(
-        `/dashboardadmin/clientAddress/${client._id}`
+        `/dashboardadmin/clientAddress/${client._id}`,
       );
       setAddresses(addresses ?? []);
     } finally {
@@ -137,37 +151,41 @@ export default function CreateOrderPage() {
   const searchClients = useCallback(async (q: string): Promise<Client[]> => {
     if (q.trim().length < MIN_CHARS) return [];
     const { clients } = await fetchFromAPI<{ clients: Client[] }>(
-      `/dashboardadmin/client/find?q=${encodeURIComponent(q.trim())}`
+      `/dashboardadmin/client/find?q=${encodeURIComponent(q.trim())}`,
     );
     return clients ?? [];
   }, []);
 
-  const searchProducts = useCallback(async (q: string): Promise<ProductLite[]> => {
-    if (q.trim().length < MIN_CHARS) return [];
-    const { products } = await fetchFromAPI<{ products: ProductLite[] }>(
-      `/dashboardadmin/stock/products/find?q=${encodeURIComponent(q.trim())}`
-    );
-    return products ?? [];
-  }, []);
+  const searchProducts = useCallback(
+    async (q: string): Promise<ProductLite[]> => {
+      if (q.trim().length < MIN_CHARS) return [];
+      const { products } = await fetchFromAPI<{ products: ProductLite[] }>(
+        `/dashboardadmin/stock/products/find?q=${encodeURIComponent(q.trim())}`,
+      );
+      return products ?? [];
+    },
+    [],
+  );
 
   const updateBasket = useCallback(
     (action: React.SetStateAction<BasketItem[]>) => {
-      const newBasket = typeof action === "function" ? action(basket) : action;
+      const newBasket = typeof action === "function" ? (action as (b: BasketItem[]) => BasketItem[])(basket) : action;
       dispatch(setBasket(newBasket));
     },
-    [basket, dispatch]
+    [basket, dispatch],
   );
 
   const handleDeliveryChange = useCallback(
     (_: string | null, opt: DeliveryOption | null) => {
       dispatch(setDeliveryOption(opt));
-      if (!opt || (opt as unknown as { isPickup?: boolean }).isPickup) {
+      const o = opt as DO | null;
+      if (!o || o.isPickup) {
         dispatch(setAddress({ id: null, label: null }));
       } else {
         dispatch(setMagasin({ id: null, magasin: null }));
       }
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cancelAndReturn = useCallback(() => {
@@ -177,7 +195,7 @@ export default function CreateOrderPage() {
 
   const selectedPaymentMeta = useMemo(
     () => paymentMethods.find((m) => m._id === paymentMethodKey) || null,
-    [paymentMethods, paymentMethodKey]
+    [paymentMethods, paymentMethodKey],
   );
 
   const deliveryFilter: DeliveryFilter = useMemo(() => {
@@ -192,51 +210,65 @@ export default function CreateOrderPage() {
   const filteredDeliveryOptions = useMemo(() => {
     if (!deliveryFilter) return [];
     if (deliveryFilter === "all") return deliveryOptions;
-    if (deliveryFilter === "deliveryOnly") return deliveryOptions.filter((o) => !(o as unknown as { isPickup?: boolean }).isPickup);
-    return deliveryOptions.filter((o) => (o as unknown as { isPickup?: boolean }).isPickup);
+    if (deliveryFilter === "deliveryOnly") return deliveryOptions.filter((o) => !o.isPickup);
+    return deliveryOptions.filter((o) => o.isPickup);
   }, [deliveryFilter, deliveryOptions]);
 
   const canGoStep2 = Boolean(client && basket.length > 0);
   const canGoStep3 = useMemo(() => {
     if (!paymentMethodKey) return false;
     if (!deliveryOpt) return false;
-    return (deliveryOpt as unknown as { isPickup?: boolean }).isPickup ? selectedMagasinId !== null : selectedAddressId !== null;
+    const d = deliveryOpt as DO;
+    return d.isPickup ? selectedMagasinId !== null : selectedAddressId !== null;
   }, [paymentMethodKey, deliveryOpt, selectedMagasinId, selectedAddressId]);
 
   const handleSubmit = useCallback(async () => {
     try {
       setIsSubmitting(true);
 
-      const isPickup = (deliveryOpt as unknown as { isPickup?: boolean })?.isPickup ?? false;
+      const d = (deliveryOpt ?? null) as DO | null;
+      const isPickup = d?.isPickup ?? false;
 
-      const pickupArray = isPickup && selectedMagasin
-        ? [{
-            MagasinID: selectedMagasin._id,
-            MagasinName: selectedMagasin.name,
-            MagasinAddress: [selectedMagasin.address, selectedMagasin.city].filter(Boolean).join(", "),
-          }]
-        : [];
+      const pickupArray =
+        isPickup && selectedMagasin
+          ? [
+              {
+                MagasinID: selectedMagasin._id,
+                MagasinName: selectedMagasin.name,
+                MagasinAddress: [selectedMagasin.address, selectedMagasin.city].filter(Boolean).join(", "),
+              },
+            ]
+          : [];
 
-      const deliveryArray = !isPickup && selectedAddressId && selectedAddressLbl
-        ? [{
-            AddressID: selectedAddressId,
-            DeliverToAddress: selectedAddressLbl,
-          }]
-        : [];
+      const deliveryArray =
+        !isPickup && selectedAddressId && selectedAddressLbl
+          ? [
+              {
+                AddressID: selectedAddressId,
+                DeliverToAddress: selectedAddressLbl,
+              },
+            ]
+          : [];
 
       const selectedPM = paymentMethods.find((pm) => pm._id === paymentMethodKey) || null;
-      const paymentArray = selectedPM && selectedPM._id
-        ? [{ PaymentMethodID: selectedPM._id, PaymentMethodLabel: selectedPM.label }]
-        : [];
+      const paymentArray =
+        selectedPM && selectedPM._id
+          ? [
+              {
+                PaymentMethodID: selectedPM._id,
+                PaymentMethodLabel: selectedPM.label,
+              },
+            ]
+          : [];
 
-      type DOid = DeliveryOption & { _id?: string; id?: string; price?: number; name?: string };
-      const dopt = (deliveryOpt ?? {}) as DOid;
-      const deliveryMethodArray = deliveryOpt
-        ? [{
-            deliveryMethodID: dopt._id ?? dopt.id ?? "",
-            deliveryMethodName: dopt.name ?? "",
-            Cost: Number.isFinite(dopt.price ?? NaN) ? (dopt.price as number).toFixed(2) : "0.00",
-          }]
+      const deliveryMethodArray = d
+        ? [
+            {
+              deliveryMethodID: d._id ?? d.id ?? "",
+              deliveryMethodName: d.name ?? "",
+              Cost: Number.isFinite(d.price ?? NaN) ? (d.price as number).toFixed(2) : "0.00",
+            },
+          ]
         : [];
 
       const payload = {
@@ -262,14 +294,11 @@ export default function CreateOrderPage() {
         deliveryMethod: deliveryMethodArray,
       };
 
-      const { order } = await fetchFromAPI<{ order: { _id: string } }>(
-        "/dashboardadmin/orders/submit",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const { order } = await fetchFromAPI<{ order: { _id: string } }>("/dashboardadmin/orders/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       dispatch(resetOrderCreation());
       router.push(`/dashboard/manage-client/orders/voir/${order._id}`);
@@ -307,17 +336,24 @@ export default function CreateOrderPage() {
       dispatch(setAddress({ id: null, label: null }));
       dispatch(setMagasin({ id: null, magasin: null }));
     },
-    [dispatch]
+    [dispatch],
   );
+
+  /* ---------- Full-page loader while submitting (outside buttons) ---------- */
+  if (isSubmitting) {
+    return (
+      <div
+        className="relative h-full w-full flex items-center justify-center"
+        aria-live="polite"
+        role="status"
+      >
+        <LoadingDots loadingMessage="Envoi de la commande…" />
+      </div>
+    );
+  }
 
   return (
     <>
-      {isSubmitting && (
-        <div className="fixed inset-0 z-[9999]">
-          <LoadingDots loadingMessage="Envoi de la commande…" />
-        </div>
-      )}
-
       <div className="w-[95%] mx-auto py-4 flex flex-col gap-4 h-full">
         <h1 className="text-2xl font-bold uppercase">Créer une commande</h1>
         <OrderStepsNav currentStep={step} />
@@ -341,10 +377,7 @@ export default function CreateOrderPage() {
             </div>
 
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
-              <button
-                onClick={cancelAndReturn}
-                className="btn-fit-white-outline"
-              >
+              <button onClick={cancelAndReturn} className="btn-fit-white-outline">
                 Annuler
               </button>
               <button
@@ -370,14 +403,14 @@ export default function CreateOrderPage() {
 
               {deliveryFilter && (
                 <SelectDeliveryOption
-                  value={(deliveryOpt as unknown as { _id?: string; id?: string })?._id ?? (deliveryOpt as unknown as { id?: string })?.id ?? null}
+                  value={(deliveryOpt as DO | null)?._id ?? (deliveryOpt as DO | null)?.id ?? null}
                   onChange={handleDeliveryChange}
                   options={filteredDeliveryOptions}
                   loading={loadingDelivery}
                 />
               )}
 
-              {deliveryOpt && !(deliveryOpt as unknown as { isPickup?: boolean }).isPickup && (
+              {deliveryOpt && !(deliveryOpt as DO).isPickup && (
                 <SelectAddress
                   client={client}
                   addresses={addresses}
@@ -388,7 +421,7 @@ export default function CreateOrderPage() {
                 />
               )}
 
-              {deliveryOpt && (deliveryOpt as unknown as { isPickup?: boolean }).isPickup && (
+              {deliveryOpt && (deliveryOpt as DO).isPickup && (
                 <SelectMagasins
                   value={selectedMagasinId}
                   magasins={magasinsList}
@@ -399,17 +432,11 @@ export default function CreateOrderPage() {
             </div>
 
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
-              <button
-                onClick={cancelAndReturn}
-                className="btn-fit-white-outline"
-              >
+              <button onClick={cancelAndReturn} className="btn-fit-white-outline">
                 Annuler
               </button>
               <div className="flex gap-4">
-                <button
-                  onClick={() => dispatch(setStep(1))}
-                  className="btn-fit-white-outline"
-                >
+                <button onClick={() => dispatch(setStep(1))} className="btn-fit-white-outline">
                   ← Précédent
                 </button>
 
@@ -433,31 +460,22 @@ export default function CreateOrderPage() {
                 client={client}
                 addressLabel={selectedAddressLbl}
                 magasin={selectedMagasin}
-                delivery={deliveryOpt}
+                delivery={deliveryOpt as DO}
                 basket={basket}
                 paymentMethod={paymentMethodLabel}
               />
             </div>
 
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
-              <button
-                onClick={cancelAndReturn}
-                className="btn-fit-white-outline"
-              >
+              <button onClick={cancelAndReturn} className="btn-fit-white-outline">
                 Annuler
               </button>
               <div className="flex gap-4">
-                <button
-                  onClick={() => dispatch(setStep(2))}
-                  className="btn-fit-white-outline"
-                >
+                <button onClick={() => dispatch(setStep(2))} className="btn-fit-white-outline">
                   ← Précédent
                 </button>
 
-                <button
-                  onClick={handleSubmit}
-                  className="btn-fit-white-outline"
-                >
+                <button onClick={handleSubmit} className="btn-fit-white-outline">
                   Confirmer la commande
                 </button>
               </div>
