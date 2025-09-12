@@ -420,12 +420,12 @@ export default function UpdateOrderPage() {
         </div>
       )}
 
-      <div className="w-[95%] min-h-full mx-auto py-4 flex flex-col gap-4">
+      <div className="w-[95%] mx-auto py-4 flex flex-col gap-4 h-full">
         <h1 className="text-2xl font-bold uppercase">Modifier la commande</h1>
         <OrderStepsNav currentStep={step} />
 
         {step === 1 && (
-          <>
+          <div className="flex-1 flex flex-col justify-between">
             <div className="flex flex-col gap-4">
               <SelectClient
                 client={selectedClient}
@@ -445,19 +445,19 @@ export default function UpdateOrderPage() {
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
               <button
                 onClick={cancel}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
+                className="btn-fit-white-outline"
               >
                 Annuler
               </button>
               <button
                 onClick={() => setStep(2)}
                 disabled={!canGoStep2}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50"
+                className="btn-fit-white-outline disabled:opacity-50"
               >
                 Suivant →
               </button>
             </div>
-          </>
+          </div>
         )}
 
         {step === 2 && (
@@ -526,21 +526,21 @@ export default function UpdateOrderPage() {
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
               <button
                 onClick={cancel}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
+                className="btn-fit-white-outline"
               >
                 Annuler
               </button>
               <div className="flex gap-4">
                 <button
                   onClick={() => setStep(1)}
-                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
+                  className="btn-fit-white-outline"
                 >
                   ← Précédent
                 </button>
                 <button
                   onClick={() => setStep(3)}
                   disabled={!canGoStep3}
-                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50"
+                  className="btn-fit-white-outline disabled:opacity-50"
                 >
                   Suivant →
                 </button>
@@ -550,7 +550,7 @@ export default function UpdateOrderPage() {
         )}
 
         {step === 3 && (
-          <>
+          <div className="flex-1 flex flex-col justify-between">
             <div className="flex flex-col">
               <OrderPreview
                 onClose={() => setStep(2)}
@@ -566,27 +566,27 @@ export default function UpdateOrderPage() {
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
               <button
                 onClick={cancel}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
+                className="btn-fit-white-outline"
               >
                 Annuler
               </button>
               <div className="flex gap-4">
                 <button
                   onClick={() => setStep(2)}
-                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white"
+                  className="btn-fit-white-outline"
                 >
                   ← Précédent
                 </button>
                 <button
                   onClick={save}
                   disabled={isSaving || !canGoStep3}
-                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50"
+                  className="btn-fit-white-outline disabled:opacity-50"
                 >
                   {isSaving ? "Enregistrement…" : "Enregistrer"}
                 </button>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </>

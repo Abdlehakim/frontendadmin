@@ -152,7 +152,7 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
       {/* table articles + totaux séparés */}
       <div className="flex flex-col gap-4 items-end px-6">
         {/* Articles */}
-        <div className="border-2 border-primary rounded-md w-full p-1 min-h-60">
+        <div className="border-2 border-primary rounded-md w-full p-1 min-h-40">
           <table className="w-full text-sm">
             <thead className="bg-primary text-white">
               <tr>

@@ -318,12 +318,12 @@ export default function CreateOrderPage() {
         </div>
       )}
 
-      <div className="w-[95%] mx-auto py-4 flex flex-col gap-4">
+      <div className="w-[95%] mx-auto py-4 flex flex-col gap-4 h-full">
         <h1 className="text-2xl font-bold uppercase">Créer une commande</h1>
         <OrderStepsNav currentStep={step} />
 
         {step === 1 && (
-          <>
+          <div className="flex-1 flex flex-col justify-between">
             <div className="flex flex-col gap-4">
               <SelectClient
                 client={client}
@@ -343,19 +343,19 @@ export default function CreateOrderPage() {
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
               <button
                 onClick={cancelAndReturn}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                className="btn-fit-white-outline"
               >
                 Annuler
               </button>
               <button
                 onClick={() => dispatch(setStep(2))}
                 disabled={!canGoStep2}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50 cursor-pointer"
+                className="btn-fit-white-outline disabled:opacity-50"
               >
                 Suivant →
               </button>
             </div>
-          </>
+          </div>
         )}
 
         {step === 2 && (
@@ -401,14 +401,14 @@ export default function CreateOrderPage() {
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
               <button
                 onClick={cancelAndReturn}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                className="btn-fit-white-outline"
               >
                 Annuler
               </button>
               <div className="flex gap-4">
                 <button
                   onClick={() => dispatch(setStep(1))}
-                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                  className="btn-fit-white-outline"
                 >
                   ← Précédent
                 </button>
@@ -416,7 +416,7 @@ export default function CreateOrderPage() {
                 <button
                   onClick={() => dispatch(setStep(3))}
                   disabled={!canGoStep3}
-                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white disabled:opacity-50 cursor-pointer"
+                  className="btn-fit-white-outline disabled:opacity-50"
                 >
                   Suivant →
                 </button>
@@ -426,7 +426,7 @@ export default function CreateOrderPage() {
         )}
 
         {step === 3 && (
-          <>
+          <div className="flex-1 flex flex-col justify-between">
             <div className="flex flex-col">
               <OrderPreview
                 onClose={() => dispatch(setStep(2))}
@@ -442,27 +442,27 @@ export default function CreateOrderPage() {
             <div className="mx-auto w-full max-w-[80%] flex justify-between gap-4 py-4">
               <button
                 onClick={cancelAndReturn}
-                className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                className="btn-fit-white-outline"
               >
                 Annuler
               </button>
               <div className="flex gap-4">
                 <button
                   onClick={() => dispatch(setStep(2))}
-                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                  className="btn-fit-white-outline"
                 >
                   ← Précédent
                 </button>
 
                 <button
                   onClick={handleSubmit}
-                  className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+                  className="btn-fit-white-outline"
                 >
                   Confirmer la commande
                 </button>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </>
