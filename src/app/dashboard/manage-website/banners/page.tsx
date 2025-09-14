@@ -1,4 +1,6 @@
+// ------------------------------------------------------------------
 // src/app/dashboard/manage-website/banners/page.tsx
+// ------------------------------------------------------------------
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -9,13 +11,13 @@ import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
 interface BannersData {
   _id: string;
-  /* Best-Collection */
+  /* Meilleure collection */
   BCbannerImgUrl?: string;
   BCbannerTitle: string;
-  /* Promotion */
+  /* Promotions */
   PromotionBannerImgUrl?: string;
   PromotionBannerTitle: string;
-  /* New-Products */
+  /* Nouveaux produits */
   NPBannerImgUrl?: string;
   NPBannerTitle: string;
   /* Blog */
@@ -36,170 +38,185 @@ export default function BannersAdminPage() {
         );
         setItem(banners ?? null);
       } catch (err: unknown) {
-        if (err instanceof Error && /not\s+found/i.test(err.message)) {
-          setItem(null);
-        } else {
-          console.error("Fetch Banners Error:", err);
-          setError("Failed to load banners.");
-        }
+        console.error("Erreur de chargement des bannières :", err);
+        setError("Échec du chargement des bannières.");
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
+  const T = {
+    text: (v?: string) => (v && v.trim().length > 0 ? v : "—"),
+  };
+
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* Header */}
+    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 h-full bg-green-50 rounded-xl">
+      {/* En-tête (style unifié) */}
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Banners</h1>
+        <h1 className="text-3xl font-bold uppercase">Bannières</h1>
+
         {item ? (
           <Link href={`/dashboard/manage-website/banners/update/${item._id}`}>
-            <button className="px-4 py-2 bg-tertiary text-white rounded hover:opacity-90">
-              Update
-            </button>
+            <button className="btn-fit-white-outline">Modifier</button>
           </Link>
         ) : (
           <Link href="/dashboard/manage-website/banners/create">
-            <button className="px-4 py-2 bg-tertiary text-white rounded hover:opacity-90">
-              Create
-            </button>
+            <button className="btn-fit-white-outline">Créer</button>
           </Link>
         )}
       </div>
 
-      {/* Loading | Error | Content */}
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <FaSpinner className="animate-spin text-3xl text-gray-600" />
-        </div>
-      ) : error ? (
-        <div className="text-red-600 text-center">{error}</div>
-      ) : (
-        <div className="flex flex-col gap-6 py-6">
-          {/* Banner Images */}
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Best-Collection */}
-            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/4 overflow-hidden">
-              {item?.BCbannerImgUrl ? (
-                <Image
-                  src={item.BCbannerImgUrl}
-                  alt="Best Collection Banner"
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No BC banner uploaded
-                </div>
-              )}
-            </div>
-
-            {/* Promotion */}
-            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/4 overflow-hidden">
-              {item?.PromotionBannerImgUrl ? (
-                <Image
-                  src={item.PromotionBannerImgUrl}
-                  alt="Promotion Banner"
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No Promotion banner uploaded
-                </div>
-              )}
-            </div>
-
-            {/* New-Products */}
-            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/4 overflow-hidden">
-              {item?.NPBannerImgUrl ? (
-                <Image
-                  src={item.NPBannerImgUrl}
-                  alt="New Products Banner"
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No NP banner uploaded
-                </div>
-              )}
-            </div>
-
-            {/* Blog */}
-            <div className="relative border-2 border-gray-300 rounded-lg h-64 md:w-1/4 overflow-hidden">
-              {item?.BlogBannerImgUrl ? (
-                <Image
-                  src={item.BlogBannerImgUrl}
-                  alt="Blog Banner"
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No Blog banner uploaded
-                </div>
-              )}
-            </div>
+      {/* Corps avec overlay de chargement cohérent */}
+      <div className="relative flex-1 overflow-auto rounded-lg">
+        {loading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-green-50">
+            <FaSpinner className="animate-spin text-3xl" />
           </div>
+        )}
 
-          {/* Banner Titles */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pb-8">
-            <div className="flex flex-col gap-2">
-              <label htmlFor="bcTitle" className="text-sm font-medium">
-                Best-Collection Title
-              </label>
-              <input
-                id="bcTitle"
-                type="text"
-                value={item?.BCbannerTitle ?? ""}
-                disabled
-                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="promoTitle" className="text-sm font-medium">
-                Promotion Title
-              </label>
-              <input
-                id="promoTitle"
-                type="text"
-                value={item?.PromotionBannerTitle ?? ""}
-                disabled
-                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="npTitle" className="text-sm font-medium">
-                New-Products Title
-              </label>
-              <input
-                id="npTitle"
-                type="text"
-                value={item?.NPBannerTitle ?? ""}
-                disabled
-                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="blogTitle" className="text-sm font-medium">
-                Blog Title
-              </label>
-              <input
-                id="blogTitle"
-                type="text"
-                value={item?.BlogBannerTitle ?? ""}
-                disabled
-                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-            </div>
+        {!loading && error && (
+          <div className="p-4 text-center text-red-600 bg-white rounded-md border border-primary/20">
+            {error}
           </div>
-        </div>
-      )}
+        )}
+
+        {!loading && !error && (
+          <div className="space-y-6">
+            {/* Aperçus des visuels */}
+            <div className="bg-white rounded-md border border-primary/20 p-4">
+              <h2 className="text-lg font-semibold mb-3">Aperçu des bannières</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Meilleure collection */}
+                <div className="relative border border-primary/20 rounded-md h-52 overflow-hidden">
+                  {item?.BCbannerImgUrl ? (
+                    <Image
+                      src={item.BCbannerImgUrl}
+                      alt="Bannière Meilleure collection"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-center px-2">
+                      Aucune bannière “Meilleure collection”
+                    </div>
+                  )}
+                </div>
+
+                {/* Promotions */}
+                <div className="relative border border-primary/20 rounded-md h-52 overflow-hidden">
+                  {item?.PromotionBannerImgUrl ? (
+                    <Image
+                      src={item.PromotionBannerImgUrl}
+                      alt="Bannière Promotions"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-center px-2">
+                      Aucune bannière “Promotions”
+                    </div>
+                  )}
+                </div>
+
+                {/* Nouveaux produits */}
+                <div className="relative border border-primary/20 rounded-md h-52 overflow-hidden">
+                  {item?.NPBannerImgUrl ? (
+                    <Image
+                      src={item.NPBannerImgUrl}
+                      alt="Bannière Nouveaux produits"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-center px-2">
+                      Aucune bannière “Nouveaux produits”
+                    </div>
+                  )}
+                </div>
+
+                {/* Blog */}
+                <div className="relative border border-primary/20 rounded-md h-52 overflow-hidden">
+                  {item?.BlogBannerImgUrl ? (
+                    <Image
+                      src={item.BlogBannerImgUrl}
+                      alt="Bannière Blog"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-center px-2">
+                      Aucune bannière “Blog”
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Titres des bannières */}
+            <div className="bg-white rounded-md border border-primary/20 p-4">
+              <h2 className="text-lg font-semibold mb-3">Titres</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="bcTitle" className="text-sm text-gray-600">
+                    Titre – Meilleure collection
+                  </label>
+                  <input
+                    id="bcTitle"
+                    value={T.text(item?.BCbannerTitle)}
+                    disabled
+                    className="FilterInput bg-white disabled:opacity-100"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="promoTitle" className="text-sm text-gray-600">
+                    Titre – Promotions
+                  </label>
+                  <input
+                    id="promoTitle"
+                    value={T.text(item?.PromotionBannerTitle)}
+                    disabled
+                    className="FilterInput bg-white disabled:opacity-100"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="npTitle" className="text-sm text-gray-600">
+                    Titre – Nouveaux produits
+                  </label>
+                  <input
+                    id="npTitle"
+                    value={T.text(item?.NPBannerTitle)}
+                    disabled
+                    className="FilterInput bg-white disabled:opacity-100"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="blogTitle" className="text-sm text-gray-600">
+                    Titre – Blog
+                  </label>
+                  <input
+                    id="blogTitle"
+                    value={T.text(item?.BlogBannerTitle)}
+                    disabled
+                    className="FilterInput bg-white disabled:opacity-100"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {!item && (
+              <div className="p-4 text-center bg-white rounded-md border border-primary/20">
+                Aucune donnée de bannières enregistrée.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
