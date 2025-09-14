@@ -5,7 +5,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { FaRegEdit,FaTrashAlt } from "react-icons/fa";
+import { FaRegEdit, FaTrashAlt } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import PaginationAdmin from "@/components/PaginationAdmin";
@@ -37,7 +37,7 @@ export default function ProductAttributesClientPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
   const [deleteName, setDeleteName] = useState("");
-  const [deleteLoading, setDeleteLoading] = useState(false); // NEW
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   /* fetch once */
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function ProductAttributesClientPage() {
       try {
         const { productAttributes } =
           await fetchFromAPI<{ productAttributes: ProductAttribute[] }>(
-            "/dashboardadmin/stock/productattribute",
+            "/dashboardadmin/stock/productattribute"
           );
         setProductAttributes(productAttributes ?? []);
       } catch (err) {
@@ -62,23 +62,21 @@ export default function ProductAttributesClientPage() {
   const filtered = useMemo(
     () =>
       productAttributes.filter((pa) =>
-        pa.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        pa.name.toLowerCase().includes(searchTerm.toLowerCase())
       ),
-    [productAttributes, searchTerm],
+    [productAttributes, searchTerm]
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const displayed = useMemo(
-    () =>
-      filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filtered, currentPage],
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage]
   );
 
   /* server delete */
   const deleteAttribute = async (id: string) => {
-    await fetchFromAPI(
-      `/dashboardadmin/stock/productattribute/delete/${id}`,
-      { method: "DELETE" },
-    );
+    await fetchFromAPI(`/dashboardadmin/stock/productattribute/delete/${id}`, {
+      method: "DELETE",
+    });
     setProductAttributes((prev) => prev.filter((pa) => pa._id !== id));
   };
 
@@ -90,13 +88,12 @@ export default function ProductAttributesClientPage() {
   };
   const closeDelete = () => setIsDeleteOpen(false);
 
-  // NOW returns Promise<void>
   const confirmDelete = async (id: string) => {
     setDeleteLoading(true);
     try {
       await deleteAttribute(id);
     } catch {
-      alert("Deletion failed.");
+      alert("Échec de la suppression.");
     }
     setDeleteLoading(false);
     closeDelete();
@@ -104,24 +101,22 @@ export default function ProductAttributesClientPage() {
 
   /* ───────── render ───────── */
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       {/* Header */}
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Product Attributes</h1>
+        <h1 className="text-3xl font-bold uppercase">Attributs Produits</h1>
         <Link href="/dashboard/manage-stock/product-attributes/create">
-          <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
-            Create New Attribute
-          </button>
+          <button className="btn-fit-white-outline">Créer un attribut</button>
         </Link>
       </div>
 
       {/* Search */}
-      <div className="flex justify-between items-end gap-6 h-[70px]">
+      <div className="flex flex-wrap justify-between items-end gap-6">
         <div className="flex items-center gap-2">
-          <label className="font-medium">Search:</label>
+          <label className="font-medium">Recherche :</label>
           <input
-            className="border border-gray-300 rounded px-2 py-1"
-            placeholder="Name"
+            className="FilterInput"
+            placeholder="Nom de l'attribut"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -133,16 +128,17 @@ export default function ProductAttributesClientPage() {
 
       {/* Table */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Sticky header (same pattern as Orders) */}
         <table className="table-fixed w-full">
-          <thead className="bg-primary text-white">
-            <tr>
-              <th className="py-2 text-center border-x-4">Name</th>
-              <th className="py-2 text-center border-x-4">Type</th>
-              <th className="py-2 text-center border-x-4">Created At</th>
-              <th className="py-2 text-center border-x-4">Created By</th>
-              <th className="py-2 text-center border-x-4">Updated At</th>
-              <th className="py-2 text-center border-x-4">Updated By</th>
-              <th className="py-2 text-center border-x-4">Action</th>
+          <thead className="bg-primary text-white relative z-10">
+            <tr className="text-sm">
+              <th className="px-4 py-2 text-center border-r-4">Nom</th>
+              <th className="px-4 py-2 text-center border-r-4">Type</th>
+              <th className="px-4 py-2 text-center border-r-4">Créé le</th>
+              <th className="px-4 py-2 text-center border-r-4">Créé par</th>
+              <th className="px-4 py-2 text-center border-r-4">MàJ le</th>
+              <th className="px-4 py-2 text-center border-r-4">MàJ par</th>
+              <th className="px-4 py-2 text-center">Action</th>
             </tr>
           </thead>
         </table>
@@ -153,43 +149,44 @@ export default function ProductAttributesClientPage() {
               <tbody>
                 <tr>
                   <td colSpan={7} className="py-6 text-center text-gray-600">
-                    No attributes found.
+                    Aucun attribut trouvé.
                   </td>
                 </tr>
               </tbody>
             ) : (
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
                 {displayed.map((pa, i) => (
-                  <tr key={pa._id} className={i % 2 ? "bg-gray-100" : "bg-white"}>
-                    <td className="py-2 text-center font-semibold">{pa.name}</td>
-                    <td className="py-2 text-center">
+                  <tr
+                    key={pa._id}
+                    className={i % 2 ? "bg-green-50" : "bg-white"}
+                  >
+                    <td className="px-4 text-center font-semibold">{pa.name}</td>
+                    <td className="px-4 text-center">
                       {Array.isArray(pa.type) ? pa.type.join(", ") : pa.type}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="px-4 text-center">
                       {new Date(pa.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="px-4 text-center">
                       {pa.createdBy?.username ?? "—"}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="px-4 text-center">
                       {new Date(pa.updatedAt).toLocaleDateString()}
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="px-4 text-center">
                       {pa.updatedBy?.username ?? "—"}
                     </td>
-                    <td className="py-2">
+                    <td className="px-4 text-center">
                       <div className="flex justify-center items-center gap-2">
-                  
-                        <Link
-                          href={`/dashboard/manage-stock/product-attributes/update/${pa._id}`}
-                        >
-                          <button className="ButtonSquare">
+                        <Link href={`/dashboard/manage-stock/product-attributes/update/${pa._id}`}>
+                          <button className="ButtonSquare" aria-label="Modifier">
                             <FaRegEdit size={14} />
                           </button>
                         </Link>
                         <button
                           onClick={() => openDelete(pa._id, pa.name)}
-                          className="ButtonSquare"
+                          className="ButtonSquareDelete"
+                          aria-label="Supprimer"
                         >
                           <FaTrashAlt size={14} />
                         </button>
@@ -203,7 +200,7 @@ export default function ProductAttributesClientPage() {
 
           {/* Loading overlay */}
           {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-green-50">
               <FaSpinner className="animate-spin text-3xl" />
             </div>
           )}
@@ -211,13 +208,15 @@ export default function ProductAttributesClientPage() {
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-center mt-4">
-        <PaginationAdmin
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
-      </div>
+      {!loading && (
+        <div className="flex justify-center mt-4">
+          <PaginationAdmin
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
 
       {/* Delete Popup */}
       {isDeleteOpen && (

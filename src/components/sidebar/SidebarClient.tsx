@@ -530,7 +530,7 @@ export default function SidebarClient() {
                               onTouchStart={() => {}}
                               aria-current={active ? "page" : undefined}
                               className={[
-                                "flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mx-2 rounded py-1",
+                                "flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mx-2 rounded my-0.5",
                                 active
                                   ? "bg-white text-black"
                                   : "hover:bg-white hover:text-hoverText active:bg-white active:text-black focus:bg-white focus:text-hoverText",
