@@ -1,6 +1,6 @@
 // ------------------------------------------------------------------
 // src/app/dashboard/manage-client/clients-shop/create/page.tsx
-// Page ‑ Création d’un « ClientShop » (client magasin)
+// Page - Création d’un « ClientShop » (client passage)
 // ------------------------------------------------------------------
 "use client";
 
@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { MdArrowForwardIos } from "react-icons/md";
+import LoadingDots from "@/components/LoadingDots";
 
 /* ---------- types ---------- */
 interface FormData {
@@ -46,36 +47,53 @@ export default function CreateClientShopPage() {
       router.push("/dashboard/manage-client/clients-shop");
     } catch (err) {
       console.error("Creation failed:", err);
-      alert("Failed to create client.");
-    } finally {
+      alert("La création du client a échoué.");
       setSubmitting(false);
     }
   };
 
+  /* ---------- saving screen (align with client-company create) ---------- */
+  if (submitting) {
+    return (
+      <div
+        className="relative h-full w-full flex items-center justify-center"
+        aria-live="polite"
+        role="status"
+      >
+        <LoadingDots loadingMessage="Création du client passage…" />
+      </div>
+    );
+  }
+
   /* ---------- UI ---------- */
   return (
-    <div className="w-[80%] flex flex-col gap-y-4 p-4" >
-      <h1 className="text-3xl font-bold">Create Client Magasin</h1>
+    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+      <div className="flex h-16 justify-between items-start">
+        <h1 className="text-3xl font-bold uppercase">Créer un client passage</h1>
+      </div>
 
-      <nav className="text-sm underline-offset-1 underline flex items-center gap-2">
-        <Link
-          href="/dashboard/manage-client/clients-shop"
-          className="text-gray-500 hover:underline"
-        >
-          All Clients
-        </Link>
-        <span className="text-gray-400">
-          <MdArrowForwardIos />
-        </span>
-        <span className="text-gray-700 font-medium">Create Client</span>
-      </nav>
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-8 justify-center items-center w-[80%] mx-auto h-[80%]"
+      >
+        <nav className="text-sm underline-offset-1 underline flex items-center gap-2">
+          <Link
+            href="/dashboard/manage-client/clients-shop"
+            className="text-gray-500 hover:underline"
+          >
+            Tous les clients passage
+          </Link>
+          <span className="text-gray-400">
+            <MdArrowForwardIos />
+          </span>
+          <span className="text-gray-700 font-medium">Créer un client</span>
+        </nav>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-[50px]">
-        <div className="flex justify-center gap-[50px] ">
-          {/* Name */}
-          <div className="w-[30%] flex items-center gap-[16px]">
-            <label htmlFor="name" className="block text-sm font-medium mb-1">
-              Name*
+        <div className="flex flex-col justify-center gap-8 w-full">
+          {/* Nom */}
+          <div className="flex justify-center items-center gap-[16px]">
+            <label htmlFor="name" className="w-1/8 text-sm font-medium">
+              Nom*
             </label>
             <input
               id="name"
@@ -84,14 +102,14 @@ export default function CreateClientShopPage() {
               required
               value={form.name}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 bg-inputcolor"
+              className="w-1/2 border border-gray-300 rounded px-3 py-2 bg-inputcolor"
             />
           </div>
 
-          {/* Email (optional) */}
-          <div className="w-[30%] flex items-center gap-[16px]">
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
-              Email
+          {/* E-mail (optionnel) */}
+          <div className="flex justify-center items-center gap-[16px]">
+            <label htmlFor="email" className="w-1/8 text-sm font-medium">
+              E-mail
             </label>
             <input
               id="email"
@@ -99,13 +117,14 @@ export default function CreateClientShopPage() {
               type="email"
               value={form.email}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 bg-inputcolor"
+              className="w-1/2 border border-gray-300 rounded px-3 py-2 bg-inputcolor"
             />
           </div>
-                    {/* Phone */}
-          <div className="w-[20%] flex items-center gap-[16px]">
-            <label htmlFor="phone" className="block text-sm font-medium mb-1">
-              Phone*
+
+          {/* Téléphone */}
+          <div className="flex justify-center items-center gap-[16px]">
+            <label htmlFor="phone" className="w-1/8 text-sm font-medium">
+              Téléphone*
             </label>
             <input
               id="phone"
@@ -114,30 +133,27 @@ export default function CreateClientShopPage() {
               required
               value={form.phone}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 bg-inputcolor"
+              className="w-1/2 border border-gray-300 rounded px-3 py-2 bg-inputcolor"
             />
+          </div>
         </div>
-        </div>
-
-
-
 
         {/* actions */}
-        <div className="flex justify-center gap-4">
+        <div className="flex  justify-center gap-4">
           <button
             type="submit"
             disabled={submitting}
-            className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+            className="btn-fit-white-outline"
           >
-            {submitting ? "Adding..." : "Add"}
+            Ajouter
           </button>
 
           <Link href="/dashboard/manage-client/clients-shop" className="w-1/6">
             <button
               type="button"
-              className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer"
+              className="btn-fit-white-outline"
             >
-              Cancel
+              Annuler
             </button>
           </Link>
         </div>

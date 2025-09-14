@@ -215,10 +215,10 @@ export default function SidebarClient() {
                 if (child.isHeader) {
                   return (
                     <div key={child.name} className="mb-1">
-                      <div className="px-4 py-1 text-[11px] uppercase tracking-wide text-white/80">
+                      <div className="px-4 py-2 text-[11px] uppercase tracking-wide text-white/80">
                         {child.name}
                       </div>
-                      <ul className="px-1">
+                      <ul className="px-2 flex flex-col gap-1">
                         {child.children?.map((sub) => {
                           const activeSub = isHrefActive(sub.href);
                           return (
@@ -227,7 +227,7 @@ export default function SidebarClient() {
                                 href={sub.href!}
                                 onClick={closeIfMobile}
                                 aria-current={activeSub ? "page" : undefined}
-                                className={`flex items-center gap-2 px-4 py-2 text-sm rounded ${
+                                className={`flex items-center gap-2 px-4 py-1 text-sm rounded ${
                                   activeSub
                                     ? "bg-white text-black"
                                     : "hover:bg-white hover:text-hoverText"
@@ -250,7 +250,7 @@ export default function SidebarClient() {
                     href={child.href!}
                     onClick={closeIfMobile}
                     aria-current={activeChild ? "page" : undefined}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm ${
+                    className={`flex flex-col my-1 px-4 py-1 text-sm ${
                       activeChild
                         ? "bg-white text-black"
                         : "hover:bg-white hover:text-hoverText"
@@ -422,7 +422,7 @@ export default function SidebarClient() {
                             }}
                             aria-expanded={isOpen}
                             className={[
-                              "flex items-center px-8 h-12 cursor-pointer text-xs select-none my-1 mx-2 rounded",
+                              "flex items-center px-8 h-12 cursor-pointer text-xs select-none my-0.5 mx-2 rounded",
                               isSectionActive(item)
                                 ? "bg-white text-black"
                                 : "hover:bg-white hover:text-hoverText active:bg-white active:text-black focus:bg-white focus:text-hoverText",
@@ -443,9 +443,9 @@ export default function SidebarClient() {
                           </div>
 
                           <ul
-                            className={`ml-8 flex flex-col md:gap-2 text-xs overflow-hidden transition-all duration-500 ease-in-out gap-2 ${
+                            className={`ml-8 flex flex-col text-xs overflow-hidden transition-all duration-500 ease-in-out gap-1 ${
                               isOpen
-                                ? "max-h-fit opacity-100 py-2"
+                                ? "max-h-fit opacity-100 py-1"
                                 : "max-h-0 opacity-0"
                             }`}
                           >
@@ -530,7 +530,7 @@ export default function SidebarClient() {
                               onTouchStart={() => {}}
                               aria-current={active ? "page" : undefined}
                               className={[
-                                "flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mx-2 rounded",
+                                "flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mx-2 rounded py-1",
                                 active
                                   ? "bg-white text-black"
                                   : "hover:bg-white hover:text-hoverText active:bg-white active:text-black focus:bg-white focus:text-hoverText",

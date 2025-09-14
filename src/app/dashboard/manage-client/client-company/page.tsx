@@ -64,7 +64,8 @@ export default function ClientCompanyPage() {
   }, []);
 
   const deleteCompany = async (id: string) => {
-    await fetchFromAPI(`/dashboardadmin/client-company/${id}`, {
+    // match the backend route we created: /api/dashboardadmin/clientCompany/delete/:id
+    await fetchFromAPI(`/dashboardadmin/clientCompany/delete/${id}`, {
       method: "DELETE",
     });
     setCompanies((prev) => prev.filter((c) => c._id !== id));
@@ -145,9 +146,7 @@ export default function ClientCompanyPage() {
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
                 {displayed.map((c) => (
                   <tr key={c._id} className="even:bg-gray-100 odd:bg-white">
-                    <td className="px-4 text-center">
-                      {c.companyName}
-                    </td>
+                    <td className="px-4 text-center">{c.companyName}</td>
                     <td className="px-4 text-center">{c.phone}</td>
                     <td className="px-4 text-center">{c.email || "—"}</td>
                     <td className="px-4 text-center">
@@ -161,7 +160,7 @@ export default function ClientCompanyPage() {
                         </Link>
                         <button
                           onClick={() => openDelete(c._id, c.companyName)}
-                          className="ButtonSquare"
+                          className="ButtonSquareDelete"
                           aria-label="Supprimer l'entreprise"
                         >
                           <FaTrashAlt size={14} />
@@ -175,7 +174,7 @@ export default function ClientCompanyPage() {
           </table>
 
           {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-green-50">
               <FaSpinner className="animate-spin text-3xl" />
             </div>
           )}

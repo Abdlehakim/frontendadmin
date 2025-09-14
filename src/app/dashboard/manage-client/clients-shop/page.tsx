@@ -62,7 +62,8 @@ export default function ClientsShopPage() {
   }, []);
 
   const deleteClient = async (id: string) => {
-    await fetchFromAPI(`/dashboardadmin/client-shop/${id}`, {
+    // Align with company page pattern: /api/dashboardadmin/clientShop/delete/:id
+    await fetchFromAPI(`/dashboardadmin/clientShop/delete/${id}`, {
       method: "DELETE",
     });
     setClients((prev) => prev.filter((c) => c._id !== id));
@@ -87,13 +88,13 @@ export default function ClientsShopPage() {
   };
 
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
+    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">
           Tous les clients passage
         </h1>
         <Link href="/dashboard/manage-client/clients-shop/create">
-          <button className="w-fit rounded-md border border-gray-300 px-4 py-2.5 text-sm flex items-center gap-4 hover:bg-primary hover:text-white cursor-pointer">
+          <button className="btn-fit-white-outline">
             Créer un nouveau client passage
           </button>
         </Link>
@@ -106,7 +107,7 @@ export default function ClientsShopPage() {
           </label>
           <input
             id="searchClient"
-            className="border border-gray-300 rounded px-2 py-1"
+            className="FilterInput"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -121,9 +122,9 @@ export default function ClientsShopPage() {
         <table className="table-fixed w-full">
           <thead className="bg-primary text-white relative z-10">
             <tr className="text-sm">
-              <th className="px-4 py-2 text-center">Client</th>
-              <th className="px-4 py-2 text-center">Téléphone</th>
-              <th className="px-4 py-2 text-center">Courriel</th>
+              <th className="px-4 py-2 text-center border-r-4">Client</th>
+              <th className="px-4 py-2 text-center border-r-4">Téléphone</th>
+              <th className="px-4 py-2 text-center border-r-4">Courriel</th>
               <th className="px-4 py-2 text-center">Action</th>
             </tr>
           </thead>
@@ -148,16 +149,16 @@ export default function ClientsShopPage() {
                     <td className="px-4 text-center">{c.email || "—"}</td>
                     <td className="px-4 text-center">
                       <div className="flex justify-center items-center gap-2">
-                        <Link
-                          href={`/dashboard/manage-client/clients-shop/update/${c._id}`}>
+                        <Link href={`/dashboard/manage-client/clients-shop/update/${c._id}`}>
                           <button className="ButtonSquare">
                             <FaRegEdit size={14} />
                           </button>
                         </Link>
                         <button
                           onClick={() => openDelete(c._id, c.name)}
-                          className="ButtonSquare"
-                          aria-label="Supprimer le client">
+                          className="ButtonSquareDelete"
+                          aria-label="Supprimer le client"
+                        >
                           <FaTrashAlt size={14} />
                         </button>
                       </div>
@@ -169,7 +170,7 @@ export default function ClientsShopPage() {
           </table>
 
           {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-green-50">
               <FaSpinner className="animate-spin text-3xl" />
             </div>
           )}
