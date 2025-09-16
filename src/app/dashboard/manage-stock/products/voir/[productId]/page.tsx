@@ -8,7 +8,7 @@ import { FaSpinner } from "react-icons/fa6";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
 type StockStatus = "in stock" | "out of stock";
-type StatusPage = "none" | "New-Products" | "promotion" | "best-collection";
+type StatusPage = "none" | "new-products" | "promotion" | "best-collection";
 type Vadmin = "not-approve" | "approve";
 
 type AttrValueItem =

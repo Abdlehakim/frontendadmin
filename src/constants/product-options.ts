@@ -4,7 +4,7 @@
 export const STOCK_OPTIONS = ["in stock", "out of stock"] as const;
 export const PAGE_OPTIONS = [
   "none",
-  "New-Products",
+  "new-products",
   "promotion",
   "best-collection",
 ] as const;
