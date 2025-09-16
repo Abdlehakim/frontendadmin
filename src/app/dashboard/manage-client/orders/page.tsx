@@ -852,8 +852,7 @@ export default function OrdersPage() {
                               >
                                 {confirming[o._id] ? (
                                   <>
-                                    <FaSpinner className="animate-spin" />{" "}
-                                    Confirmation…
+                                    <FaSpinner className="animate-spin" />{" "}    
                                   </>
                                 ) : (
                                   <>
@@ -878,7 +877,6 @@ export default function OrdersPage() {
                                 {canceling[o._id] ? (
                                   <>
                                     <FaSpinner className="animate-spin" />{" "}
-                                    Annulation…
                                   </>
                                 ) : (
                                   <>
