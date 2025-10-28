@@ -1,4 +1,3 @@
-// src/app/dashboard/manage-website/home-page/create/page.tsx
 "use client";
 
 import React, { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
@@ -52,7 +51,6 @@ export default function CreateHomePageData() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect if data already exists
   useEffect(() => {
     (async () => {
       try {
@@ -64,7 +62,7 @@ export default function CreateHomePageData() {
           return;
         }
       } catch (e) {
-        console.error("Error checking existing data:", e);
+        console.error("Erreur lors de la vérification des données existantes :", e);
       } finally {
         setLoading(false);
       }
@@ -72,7 +70,7 @@ export default function CreateHomePageData() {
   }, [router]);
 
   if (loading) {
-    return <div className="py-6 text-center">Checking existing data…</div>;
+    return <div className="py-6 text-center">Vérification des données existantes…</div>;
   }
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +96,7 @@ export default function CreateHomePageData() {
 
     for (const [key, val] of Object.entries(form)) {
       if (!val.trim()) {
-        setError(`Field "${key}" is required.`);
+        setError(`Le champ « ${key} » est requis.`);
         setSubmitting(false);
         return;
       }
@@ -117,26 +115,24 @@ export default function CreateHomePageData() {
       setShowSuccess(true);
       setTimeout(() => router.push("/dashboard/manage-website/home-page"), 1500);
     } catch (err: unknown) {
-      console.error("Creation failed:", err);
-      setError(err instanceof Error ? err.message : "Failed to create entry.");
+      console.error("Échec de création :", err);
+      setError(err instanceof Error ? err.message : "Échec de création de l’entrée.");
       setSubmitting(false);
     }
   };
 
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* Header */}
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Create Home Page</h1>
+        <h1 className="text-3xl font-bold uppercase">Créer la page d’accueil</h1>
         <Link href="/dashboard/manage-website/home-page">
           <button className="px-4 py-2 bg-quaternary text-white rounded hover:opacity-90">
-            All Entries
+            Toutes les entrées
           </button>
         </Link>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        {/* Banner Upload */}
         <div className="relative border-2 border-gray-300 rounded-lg h-64 cursor-pointer hover:border-gray-400 transition">
           <div className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
             <PiImage size={24} />
@@ -145,7 +141,7 @@ export default function CreateHomePageData() {
             <div className="relative w-full h-full rounded overflow-hidden">
               <Image
                 src={URL.createObjectURL(HPbannerFile)}
-                alt="Banner Preview"
+                alt="Aperçu bannière"
                 fill
                 className="object-cover"
                 unoptimized
@@ -170,16 +166,15 @@ export default function CreateHomePageData() {
                 className="hidden"
                 onChange={handleFileChange}
               />
-              Click to upload
+              Cliquez pour importer
               <br />
-              Banner Image
+              Image de bannière
             </div>
           )}
         </div>
 
-        {/* Banner Title */}
         <div className="flex flex-col gap-2">
-          <label htmlFor="HPbannerTitle" className="text-sm font-medium">Banner Title*</label>
+          <label htmlFor="HPbannerTitle" className="text-sm font-medium">Titre de la bannière*</label>
           <input
             id="HPbannerTitle"
             name="HPbannerTitle"
@@ -191,10 +186,9 @@ export default function CreateHomePageData() {
           />
         </div>
 
-        {/* Category */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPcategorieTitle" className="text-sm font-medium">Category Title*</label>
+            <label htmlFor="HPcategorieTitle" className="text-sm font-medium">Titre des catégories*</label>
             <input
               id="HPcategorieTitle"
               name="HPcategorieTitle"
@@ -206,7 +200,7 @@ export default function CreateHomePageData() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPcategorieSubTitle" className="text-sm font-medium">Category Sub Title*</label>
+            <label htmlFor="HPcategorieSubTitle" className="text-sm font-medium">Sous-titre des catégories*</label>
             <input
               id="HPcategorieSubTitle"
               name="HPcategorieSubTitle"
@@ -219,10 +213,9 @@ export default function CreateHomePageData() {
           </div>
         </div>
 
-        {/* Brand */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPbrandTitle" className="text-sm font-medium">Brand Title*</label>
+            <label htmlFor="HPbrandTitle" className="text-sm font-medium">Titre des marques*</label>
             <input
               id="HPbrandTitle"
               name="HPbrandTitle"
@@ -234,7 +227,7 @@ export default function CreateHomePageData() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPbrandSubTitle" className="text-sm font-medium">Brand Sub Title*</label>
+            <label htmlFor="HPbrandSubTitle" className="text-sm font-medium">Sous-titre des marques*</label>
             <input
               id="HPbrandSubTitle"
               name="HPbrandSubTitle"
@@ -247,10 +240,9 @@ export default function CreateHomePageData() {
           </div>
         </div>
 
-        {/* Magasin */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPmagasinTitle" className="text-sm font-medium">Magasin Title*</label>
+            <label htmlFor="HPmagasinTitle" className="text-sm font-medium">Titre des magasins*</label>
             <input
               id="HPmagasinTitle"
               name="HPmagasinTitle"
@@ -262,7 +254,7 @@ export default function CreateHomePageData() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPmagasinSubTitle" className="text-sm font-medium">Magasin Sub Title*</label>
+            <label htmlFor="HPmagasinSubTitle" className="text-sm font-medium">Sous-titre des magasins*</label>
             <input
               id="HPmagasinSubTitle"
               name="HPmagasinSubTitle"
@@ -275,10 +267,9 @@ export default function CreateHomePageData() {
           </div>
         </div>
 
-        {/* New Product */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPNewProductTitle" className="text-sm font-medium">New Product Title*</label>
+            <label htmlFor="HPNewProductTitle" className="text-sm font-medium">Titre des nouveautés*</label>
             <input
               id="HPNewProductTitle"
               name="HPNewProductTitle"
@@ -290,7 +281,7 @@ export default function CreateHomePageData() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPNewProductSubTitle" className="text-sm font-medium">New Product Sub Title*</label>
+            <label htmlFor="HPNewProductSubTitle" className="text-sm font-medium">Sous-titre des nouveautés*</label>
             <input
               id="HPNewProductSubTitle"
               name="HPNewProductSubTitle"
@@ -303,10 +294,9 @@ export default function CreateHomePageData() {
           </div>
         </div>
 
-        {/* Promotion */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPPromotionTitle" className="text-sm font-medium">Promotion Title*</label>
+            <label htmlFor="HPPromotionTitle" className="text-sm font-medium">Titre des promotions*</label>
             <input
               id="HPPromotionTitle"
               name="HPPromotionTitle"
@@ -318,7 +308,7 @@ export default function CreateHomePageData() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPPromotionSubTitle" className="text-sm font-medium">Promotion Sub Title*</label>
+            <label htmlFor="HPPromotionSubTitle" className="text-sm font-medium">Sous-titre des promotions*</label>
             <input
               id="HPPromotionSubTitle"
               name="HPPromotionSubTitle"
@@ -331,10 +321,9 @@ export default function CreateHomePageData() {
           </div>
         </div>
 
-        {/* Best Collection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPBestCollectionTitle" className="text-sm font-medium">Best Collection Title*</label>
+            <label htmlFor="HPBestCollectionTitle" className="text-sm font-medium">Titre meilleure collection*</label>
             <input
               id="HPBestCollectionTitle"
               name="HPBestCollectionTitle"
@@ -346,7 +335,7 @@ export default function CreateHomePageData() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="HPBestCollectionSubTitle" className="text-sm font-medium">Best Collection Sub Title*</label>
+            <label htmlFor="HPBestCollectionSubTitle" className="text-sm font-medium">Sous-titre meilleure collection*</label>
             <input
               id="HPBestCollectionSubTitle"
               name="HPBestCollectionSubTitle"
@@ -359,7 +348,6 @@ export default function CreateHomePageData() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex justify-center gap-8">
           <Link href="/dashboard/manage-website/home-page">
             <button
@@ -367,23 +355,22 @@ export default function CreateHomePageData() {
               disabled={submitting}
               className="px-6 py-2 bg-quaternary text-white rounded"
             >
-              Cancel
+              Annuler
             </button>
           </Link>
           <button
             type="submit"
-              disabled={submitting}
-              className="px-6 py-2 bg-tertiary text-white rounded"
-            >
-            {submitting ? "Creating..." : "Create Entry"}
+            disabled={submitting}
+            className="px-6 py-2 bg-tertiary text-white rounded"
+          >
+            {submitting ? "Création en cours…" : "Créer l’entrée"}
           </button>
         </div>
       </form>
 
-      {/* Overlay & Error */}
       <Overlay
         show={submitting || showSuccess}
-        message={showSuccess ? "Created successfully!" : undefined}
+        message={showSuccess ? "Créé avec succès !" : undefined}
       />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>

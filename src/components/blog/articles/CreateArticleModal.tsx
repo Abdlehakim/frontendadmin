@@ -1,13 +1,6 @@
-// src/components/blog/articles/CreateArticleModal.tsx
 "use client";
 
-import React, {
-  ChangeEvent,
-  FormEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { MdAdd, MdClose, MdDelete } from "react-icons/md";
 import { PiImage } from "react-icons/pi";
@@ -16,9 +9,6 @@ import ErrorPopup from "@/components/Popup/ErrorPopup";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 import { RichEditor } from "./lexical/Editor";
 
-/* ----------------------------------------------------------------------- */
-/* Types & helpers                                                         */
-/* ----------------------------------------------------------------------- */
 interface IPostCategorie {
   _id: string;
   name: string;
@@ -53,10 +43,8 @@ const newSub = (): Subsection => ({
   children: [],
 });
 
-/** blob-preview loader for next/image */
 const blobLoader = ({ src }: { src: string }) => src;
 
-/* tree helpers */
 const updateAt = (
   t: Subsection[],
   path: number[],
@@ -81,7 +69,6 @@ const removeAt = (t: Subsection[], path: number[]): Subsection[] =>
           : n
       );
 
-/* numbering helpers */
 const toRoman = (n: number): string => {
   const map: [string, number][] = [
     ["M", 1000],
@@ -110,7 +97,6 @@ const toRoman = (n: number): string => {
 const prefix = (d: number, i: number) =>
   d === 0 ? toRoman(i + 1) : d === 1 ? `${i + 1}` : String.fromCharCode(97 + i);
 
-/* link formatter */
 const formatLinks = (html: string) =>
   html.replace(
     /<a\s+([^>]*?)href=(['"])(.*?)\2(.*?)>/gi,
@@ -123,9 +109,6 @@ const formatLinks = (html: string) =>
 const isEmptyDesc = (html: string) =>
   html.replace(/<[^>]+>/g, "").trim().length === 0;
 
-/* ----------------------------------------------------------------------- */
-/* Recursive subsection editor                                             */
-/* ----------------------------------------------------------------------- */
 function SectionEditor({
   node,
   path,
@@ -148,12 +131,10 @@ function SectionEditor({
     onChange((t) => updateAt(t, path, (n) => ({ ...n, image: f })));
 
   return (
-    <div
-      className={`mt-3 space-y-2 rounded border border-gray-300 p-3 ${indent} ${bordered} ${bg}`}
-    >
+    <div className={`mt-3 space-y-2 rounded border border-gray-300 p-3 ${indent} ${bordered} ${bg}`}>
       <div className="flex gap-4">
         <label className="flex w-1/2 flex-col gap-1 text-xs font-bold">
-          Title {pre}*
+          Titre {pre}*
           <input
             value={node.title}
             onChange={(e) => setField("title", e.target.value)}
@@ -161,7 +142,6 @@ function SectionEditor({
           />
         </label>
 
-        {/* Image picker */}
         <input
           ref={imgRef}
           type="file"
@@ -178,7 +158,7 @@ function SectionEditor({
               <Image
                 src={URL.createObjectURL(node.image)}
                 loader={blobLoader}
-                alt="sub img"
+                alt="image sous-section"
                 fill
                 className="object-cover"
               />
@@ -196,27 +176,23 @@ function SectionEditor({
           ) : (
             <div className="flex flex-col items-center text-gray-400">
               <PiImage size={16} />
-              <span>Add image</span>
+              <span>Ajouter une image</span>
             </div>
           )}
         </div>
       </div>
+
       Description*
       <RichEditor
         value={node.description}
         onChange={(html) => setField("description", html)}
         minHeight={120}
       />
-      {/* Children */}
+
       {node.children.map((c, i) => (
-        <SectionEditor
-          key={i}
-          node={c}
-          path={[...path, i]}
-          onChange={onChange}
-        />
+        <SectionEditor key={i} node={c} path={[...path, i]} onChange={onChange} />
       ))}
-      {/* Buttons */}
+
       <div className="flex justify-end gap-3">
         {d + 1 < MAX_DEPTH && (
           <button
@@ -231,7 +207,7 @@ function SectionEditor({
             }
             className="flex items-center gap-1 rounded border-2 bg-blue-100 px-2 text-xs text-indigo-600 hover:bg-indigo-600 hover:text-white"
           >
-            <MdAdd size={14} /> Add
+            <MdAdd size={14} /> Ajouter
           </button>
         )}
         <button
@@ -246,9 +222,6 @@ function SectionEditor({
   );
 }
 
-/* ----------------------------------------------------------------------- */
-/* Modal component                                                         */
-/* ----------------------------------------------------------------------- */
 interface Props {
   onClose: () => void;
   onSuccess?: () => void;
@@ -272,23 +245,18 @@ export default function CreateArticleModal({ onClose, onSuccess }: Props) {
     subsections: [],
   });
 
-  /* Load categories */
   useEffect(() => {
-    fetchFromAPI<{ PostCategories: IPostCategorie[] }>(
-      "/dashboardadmin/blog/postCategorie"
-    )
+    fetchFromAPI<{ PostCategories: IPostCategorie[] }>("/dashboardadmin/blog/postCategorie")
       .then(({ PostCategories }) => setCats(PostCategories))
       .catch(console.error);
   }, []);
 
-  /* Load sub-categories */
   useEffect(() => {
     if (!form.postCategorie) {
       setSubs([]);
       setForm((p) => ({ ...p, postSubCategorie: "" }));
       return;
     }
-
     fetchFromAPI<{ PostSubCategories: IPostSubCategorie[] }>(
       `/dashboardadmin/blog/postsubcategorie/byParent/${form.postCategorie}`
     )
@@ -299,7 +267,6 @@ export default function CreateArticleModal({ onClose, onSuccess }: Props) {
       .catch(console.error);
   }, [form.postCategorie]);
 
-  /* Field handlers */
   const onText = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   const onMain = (e: ChangeEvent<HTMLInputElement>) =>
@@ -313,60 +280,44 @@ export default function CreateArticleModal({ onClose, onSuccess }: Props) {
     setForm((p) => ({ ...p, subsections: u(p.subsections) }));
   const addRoot = () => updateTree((t) => [...t, newSub()]);
 
-  /* Submit */
-// …inside CreateArticleModal…
-
-const handleSubmit = async (e: FormEvent) => {
-  e.preventDefault();
-  setBusy(true);
-
-  try {
-    if (!form.image) throw new Error("Main image is required");
-
-    // strip File objects out of the JSON
-    const rawSubs = form.subsections.map(({ title, description, children }) => ({
-      title,
-      description,
-      children,
-    }));
-
-    const fd = new FormData();
-    fd.append("title", form.title.trim());
-    fd.append("description", form.description.trim());
-    fd.append("postCategorie", form.postCategorie);
-    if (form.postSubCategorie) {
-      fd.append("postSubCategorie", form.postSubCategorie);
-    }
-
-    // main post image
-    fd.append("image", form.image);
-
-    // subsections JSON
-    fd.append("subsections", JSON.stringify(rawSubs));
-
-    // append each subsection image under subImg-<idx>
-    form.subsections.forEach((sub, idx) => {
-      if (sub.image) {
-        fd.append(`subImg-${idx}`, sub.image);
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      if (!form.image) throw new Error("L’image principale est requise");
+      const rawSubs = form.subsections.map(({ title, description, children }) => ({
+        title,
+        description,
+        children,
+      }));
+      const fd = new FormData();
+      fd.append("title", form.title.trim());
+      fd.append("description", form.description.trim());
+      fd.append("postCategorie", form.postCategorie);
+      if (form.postSubCategorie) {
+        fd.append("postSubCategorie", form.postSubCategorie);
       }
-    });
+      fd.append("image", form.image);
+      fd.append("subsections", JSON.stringify(rawSubs));
+      form.subsections.forEach((sub, idx) => {
+        if (sub.image) {
+          fd.append(`subImg-${idx}`, sub.image);
+        }
+      });
+      await fetchFromAPI("/dashboardadmin/blog/post/create", {
+        method: "POST",
+        body: fd,
+      });
+      setDone(true);
+      onSuccess?.();
+      setTimeout(onClose, 1800);
+    } catch (err) {
+      setErr(err instanceof Error ? err.message : "Erreur serveur");
+    } finally {
+      setBusy(false);
+    }
+  };
 
-    await fetchFromAPI("/dashboardadmin/blog/post/create", {
-      method: "POST",
-      body: fd,
-    });
-
-    setDone(true);
-    onSuccess?.();
-    setTimeout(onClose, 1800);
-  } catch (err) {
-    setErr(err instanceof Error ? err.message : "Server error");
-  } finally {
-    setBusy(false);
-  }
-};
-
-  /* Preview renderer */
   const renderSec = (s: Subsection, d = 0, i = 0) => (
     <div key={`${d}-${i}`} className="flex flex-col gap-4">
       {s.image && (
@@ -375,18 +326,14 @@ const handleSubmit = async (e: FormEvent) => {
           loader={blobLoader}
           width={1000}
           height={600}
-          alt="sec"
+          alt="visuel section"
           className="h-[300px] w-full object-cover"
         />
       )}
-      <p
-        className={`${
-          d === 0 ? "pl-8 text-xl" : "pl-16 text-lg"
-        } font-bold flex items-baseline gap-2`}
-      >
+      <p className={`${d === 0 ? "pl-8 text-xl" : "pl-16 text-lg"} font-bold flex items-baseline gap-2`}>
         <span>{prefix(d, i)}.</span>
         <span className={s.title ? "" : "text-gray-500"}>
-          {s.title || `Title ${prefix(d, i)}`}
+          {s.title || `Titre ${prefix(d, i)}`}
         </span>
       </p>
       {!isEmptyDesc(s.description) ? (
@@ -397,7 +344,7 @@ const handleSubmit = async (e: FormEvent) => {
           }}
         />
       ) : (
-        <p className="text-gray-500">Section description</p>
+        <p className="text-gray-500">Description de la section</p>
       )}
       {s.children.map((c, idx) => renderSec(c, d + 1, idx))}
     </div>
@@ -406,32 +353,24 @@ const handleSubmit = async (e: FormEvent) => {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-6">
       <div className="relative flex h-full w-full flex-col rounded-xl bg-white shadow-xl">
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute right-3 top-3 p-1 text-gray-600 hover:text-gray-800"
-        >
+        <button onClick={onClose} className="absolute right-3 top-3 p-1 text-gray-600 hover:text-gray-800">
           <MdClose size={22} />
         </button>
 
-        {/* Header */}
         <header className="border-b border-gray-200 px-8 pt-6 pb-4">
-          <h2 className="text-2xl font-semibold">Create Blog Post</h2>
+          <h2 className="text-2xl font-semibold">Créer un article</h2>
         </header>
 
-        {/* Form + preview */}
         <form
           onSubmit={handleSubmit}
           encType="multipart/form-data"
           className="grid flex-1 gap-8 overflow-y-auto p-8 md:grid-cols-[2fr_2fr]"
         >
-          {/* LEFT column ------------------------------------------------ */}
           <div className="flex flex-col justify-between">
             <div className="flex flex-col gap-4">
               <div className="flex gap-2 justify-around pb-8 border-b border-gray-200 ">
-                {/* Category */}
                 <label className="flex gap-2 justify-center items-center w-1/2">
-                  <span className="text-sm font-medium">Category*</span>
+                  <span className="text-sm font-medium">Catégorie*</span>
                   <select
                     name="postCategorie"
                     value={form.postCategorie}
@@ -439,7 +378,7 @@ const handleSubmit = async (e: FormEvent) => {
                     className="rounded border border-gray-300 px-3 py-2"
                   >
                     <option value="" disabled>
-                      Select category
+                      Sélectionner une catégorie
                     </option>
                     {cats.map((c) => (
                       <option key={c._id} value={c._id}>
@@ -449,32 +388,27 @@ const handleSubmit = async (e: FormEvent) => {
                   </select>
                 </label>
 
-                {/* ONLY show if there *are* sub-categories for the selected parent */}
-                
-                  <label className="flex gap-2 justify-center items-center w-1/2">
-                    <span className="text-sm font-medium">Sub-Category</span>
-                    <select
-                      name="postSubCategorie"
-                      value={form.postSubCategorie}
-                      onChange={onText}
-                      className="rounded border border-gray-300 px-3 py-2"
-                    >
-                      <option value="">No sub-category</option>
-                      {subs.map((s) => (
-                        <option key={s._id} value={s._id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-              
+                <label className="flex gap-2 justify-center items-center w-1/2">
+                  <span className="text-sm font-medium">Sous-catégorie</span>
+                  <select
+                    name="postSubCategorie"
+                    value={form.postSubCategorie}
+                    onChange={onText}
+                    className="rounded border border-gray-300 px-3 py-2"
+                  >
+                    <option value="">Aucune sous-catégorie</option>
+                    {subs.map((s) => (
+                      <option key={s._id} value={s._id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
-              {/* …rest of form unchanged… */}
 
-              {/* Title + main image */}
               <div className="flex gap-4 pt-8">
                 <label className="flex w-1/2 flex-col gap-1">
-                  <span className="text-sm font-medium">Title*</span>
+                  <span className="text-sm font-medium">Titre*</span>
                   <input
                     name="title"
                     value={form.title}
@@ -483,7 +417,6 @@ const handleSubmit = async (e: FormEvent) => {
                   />
                 </label>
 
-                {/* Main image picker */}
                 <input
                   ref={mainRef}
                   type="file"
@@ -501,7 +434,7 @@ const handleSubmit = async (e: FormEvent) => {
                         src={URL.createObjectURL(form.image)}
                         loader={blobLoader}
                         fill
-                        alt="main"
+                        alt="image principale"
                         className="object-cover"
                       />
                       <button
@@ -518,69 +451,54 @@ const handleSubmit = async (e: FormEvent) => {
                   ) : (
                     <div className="flex flex-col items-center text-gray-400">
                       <PiImage size={32} />
-                      <span className="mt-1 text-sm">
-                        Click to upload main image
-                      </span>
+                      <span className="mt-1 text-sm">Cliquez pour importer l’image principale</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Description editor */}
               <span className="text-sm font-medium">Description*</span>
               <RichEditor
                 value={form.description}
-                onChange={(html) =>
-                  setForm((p) => ({ ...p, description: html }))
-                }
+                onChange={(html) => setForm((p) => ({ ...p, description: html }))}
                 minHeight={160}
               />
 
-              {/* Subsections */}
               <div className="space-y-4">
-                <h3 className="font-medium">Subsections</h3>
+                <h3 className="font-medium">Sous-sections</h3>
                 {form.subsections.map((s, idx) => (
-                  <SectionEditor
-                    key={idx}
-                    node={s}
-                    path={[idx]}
-                    onChange={updateTree}
-                  />
+                  <SectionEditor key={idx} node={s} path={[idx]} onChange={updateTree} />
                 ))}
                 <button
                   type="button"
                   onClick={addRoot}
                   className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800"
                 >
-                  <MdAdd size={16} /> Add subsection
+                  <MdAdd size={16} /> Ajouter une sous-section
                 </button>
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end gap-4 pt-6">
               <button
                 type="button"
                 onClick={onClose}
                 className="rounded bg-quaternary px-5 py-2 text-white"
               >
-                Cancel
+                Annuler
               </button>
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded bg-tertiary px-5 py-2 text-white disabled:opacity-50"
+                className="rounded bg-tertiaire px-5 py-2 text-white disabled:opacity-50"
               >
-                {busy ? "Saving…" : "Save"}
+                {busy ? "Enregistrement…" : "Enregistrer"}
               </button>
             </div>
           </div>
 
-          {/* RIGHT column ------------------------------------------------ */}
           <aside className="border-l border-gray-200 pl-2">
-            <h3 className="mb-4 border-b text-lg font-semibold">
-              Live Preview
-            </h3>
+            <h3 className="mb-4 border-b text-lg font-semibold">Aperçu en direct</h3>
             <div className="flex flex-col gap-4">
               {form.image && (
                 <Image
@@ -588,15 +506,13 @@ const handleSubmit = async (e: FormEvent) => {
                   loader={blobLoader}
                   width={1000}
                   height={600}
-                  alt="banner"
+                  alt="bannière"
                   className="h-[300px] w-full object-cover"
                 />
               )}
 
               <div className="flex flex-col gap-4">
-                <p className="text-2xl font-bold">
-                  {form.title || "Post title"}
-                </p>
+                <p className="text-2xl font-bold">{form.title || "Titre de l’article"}</p>
 
                 {!isEmptyDesc(form.description) ? (
                   <div
@@ -606,7 +522,7 @@ const handleSubmit = async (e: FormEvent) => {
                     }}
                   />
                 ) : (
-                  <p className="text-gray-500">Post description</p>
+                  <p className="text-gray-500">Description de l’article</p>
                 )}
               </div>
 
@@ -615,11 +531,7 @@ const handleSubmit = async (e: FormEvent) => {
           </aside>
         </form>
 
-        {/* Overlay + error popup */}
-        <Overlay
-          show={busy || done}
-          message={done ? "Post successfully created" : undefined}
-        />
+        <Overlay show={busy || done} message={done ? "Article créé avec succès" : undefined} />
         {err && <ErrorPopup message={err} onClose={() => setErr(null)} />}
       </div>
     </div>

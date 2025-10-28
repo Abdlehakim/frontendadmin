@@ -1,4 +1,3 @@
-// src/app/dashboard/blog/postsubcategorie/create/page.tsx
 "use client";
 
 import React, { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
@@ -39,26 +38,21 @@ export default function CreatePostSubCategoriePage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetchFromAPI<{ PostCategories: PostCategorie[] }>(
-          "/api/dashboardadmin/blog/postcategorie"
-        );
+        const res = await fetchFromAPI<{ PostCategories: PostCategorie[] }>("/api/dashboardadmin/blog/postcategorie");
         setCategories(res.PostCategories);
       } catch (err) {
-        console.error("Failed to load categories:", err);
+        console.error("Échec du chargement des catégories :", err);
       }
     })();
   }, []);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange =
-    (
-      setter: React.Dispatch<React.SetStateAction<File | null>>,
-      inputRef: React.RefObject<HTMLInputElement | null>
-    ) =>
+    (setter: React.Dispatch<React.SetStateAction<File | null>>, inputRef: React.RefObject<HTMLInputElement | null>) =>
     (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0] ?? null;
       setter(file);
@@ -66,10 +60,7 @@ export default function CreatePostSubCategoriePage() {
     };
 
   const clearFile =
-    (
-      setter: React.Dispatch<React.SetStateAction<File | null>>,
-      inputRef: React.RefObject<HTMLInputElement | null>
-    ) =>
+    (setter: React.Dispatch<React.SetStateAction<File | null>>, inputRef: React.RefObject<HTMLInputElement | null>) =>
     () => {
       setter(null);
       if (inputRef.current) inputRef.current.value = "";
@@ -96,31 +87,28 @@ export default function CreatePostSubCategoriePage() {
       setShowSuccess(true);
       setTimeout(() => router.push("/dashboard/blog/postsubcategorie"), 1500);
     } catch (err: unknown) {
-      console.error("Creation failed:", err);
-      setError(err instanceof Error ? err.message : "Failed to create sub-category.");
+      console.error("Échec de création :", err);
+      setError(err instanceof Error ? err.message : "Échec de création de la sous-catégorie.");
       setSubmitting(false);
     }
   };
 
   return (
     <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 relative h-full">
-      {/* Title & Breadcrumb */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Create Post Sub-Category</h1>
+        <h1 className="text-3xl font-bold">Créer une sous-catégorie d’articles</h1>
         <nav className="text-sm underline flex items-center gap-2">
           <Link href="/dashboard/blog/postsubcategorie" className="text-gray-500 hover:underline">
-            All Sub-Categories
+            Toutes les sous-catégories
           </Link>
           <MdArrowForwardIos className="text-gray-400" size={14} />
-          <span className="text-gray-700 font-medium">Create Sub-Category</span>
+          <span className="text-gray-700 font-medium">Créer une sous-catégorie</span>
         </nav>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-        {/* Name */}
         <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-2">
-          <label htmlFor="name" className="text-sm font-medium">Name*</label>
+          <label htmlFor="name" className="text-sm font-medium">Nom*</label>
           <input
             id="name"
             name="name"
@@ -133,9 +121,8 @@ export default function CreatePostSubCategoriePage() {
           />
         </div>
 
-        {/* Parent category */}
         <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-2">
-          <label htmlFor="postCategorie" className="text-sm font-medium">Parent Category*</label>
+          <label htmlFor="postCategorie" className="text-sm font-medium">Catégorie parente*</label>
           <select
             id="postCategorie"
             name="postCategorie"
@@ -145,19 +132,20 @@ export default function CreatePostSubCategoriePage() {
             disabled={submitting}
             className="border-2 border-gray-300 rounded px-3 py-2 disabled:opacity-50"
           >
-            <option value="">Select category...</option>
-            {categories.map(cat => (
-              <option key={cat._id} value={cat._id}>{cat.name}</option>
+            <option value="">Sélectionner une catégorie…</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
+              </option>
             ))}
           </select>
         </div>
 
-        {/* File uploads */}
         <div className="flex flex-col lg:flex-row w-full gap-4">
           {[
-            { file: iconFile, ref: iconInput, label: "Icon" },
+            { file: iconFile, ref: iconInput, label: "Icône" },
             { file: imageFile, ref: imageInput, label: "Image" },
-            { file: bannerFile, ref: bannerInput, label: "Banner" }
+            { file: bannerFile, ref: bannerInput, label: "Bannière" },
           ].map(({ file, ref, label }) => (
             <div
               key={label}
@@ -170,7 +158,7 @@ export default function CreatePostSubCategoriePage() {
                 accept="image/*"
                 className="hidden"
                 onChange={handleFileChange(
-                  label === "Icon" ? setIconFile : label === "Image" ? setImageFile : setBannerFile,
+                  label === "Icône" ? setIconFile : label === "Image" ? setImageFile : setBannerFile,
                   ref
                 )}
                 disabled={submitting}
@@ -180,17 +168,11 @@ export default function CreatePostSubCategoriePage() {
               </div>
               {file ? (
                 <div className="relative w-full h-full rounded overflow-hidden">
-                  <Image
-                    src={URL.createObjectURL(file)}
-                    alt={label}
-                    fill
-                    className="object-cover"
-            
-                  />
+                  <Image src={URL.createObjectURL(file)} alt={label} fill className="object-cover" />
                   <button
                     type="button"
                     onClick={clearFile(
-                      label === "Icon" ? setIconFile : label === "Image" ? setImageFile : setBannerFile,
+                      label === "Icône" ? setIconFile : label === "Image" ? setImageFile : setBannerFile,
                       ref
                     )}
                     className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition disabled:opacity-50"
@@ -201,14 +183,15 @@ export default function CreatePostSubCategoriePage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400 pointer-events-none">
-                  Click to upload<br />{label}
+                  Cliquez pour importer
+                  <br />
+                  {label}
                 </div>
               )}
             </div>
           ))}
         </div>
 
-        {/* Actions */}
         <div className="flex justify-center gap-8">
           <Link href="/dashboard/blog/postsubcategorie">
             <button
@@ -216,7 +199,7 @@ export default function CreatePostSubCategoriePage() {
               disabled={submitting}
               className="px-6 py-2 bg-quaternary text-white rounded disabled:opacity-50"
             >
-              Cancel
+              Annuler
             </button>
           </Link>
           <button
@@ -224,15 +207,12 @@ export default function CreatePostSubCategoriePage() {
             disabled={submitting}
             className="px-6 py-2 bg-tertiary text-white rounded disabled:opacity-50"
           >
-            {submitting ? "Creating…" : "Create Sub-Category"}
+            {submitting ? "Création…" : "Créer la sous-catégorie"}
           </button>
         </div>
       </form>
 
-      <Overlay
-        show={submitting || showSuccess}
-        message={showSuccess ? "Sub-category created successfully" : undefined}
-      />
+      <Overlay show={submitting || showSuccess} message={showSuccess ? "Sous-catégorie créée avec succès" : undefined} />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
   );

@@ -1,14 +1,7 @@
 // src/app/manage-stock/brands/update/[brandId]/page.tsx
-
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  ChangeEvent,
-  FormEvent,
-} from "react";
+import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { MdArrowForwardIos, MdDelete } from "react-icons/md";
@@ -38,11 +31,11 @@ export default function UpdateBrandPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [form, setForm] = useState<{
-    name: string;
-    place: string;
-    description: string;
-  }>({ name: "", place: "", description: "" });
+  const [form, setForm] = useState<{ name: string; place: string; description: string }>({
+    name: "",
+    place: "",
+    description: "",
+  });
 
   const [initialLogoUrl, setInitialLogoUrl] = useState<string>("");
   const [initialImageUrl, setInitialImageUrl] = useState<string>("");
@@ -53,9 +46,7 @@ export default function UpdateBrandPage() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchFromAPI<BrandData>(
-          `/dashboardadmin/stock/brands/${brandId}`
-        );
+        const data = await fetchFromAPI<BrandData>(`/dashboardadmin/stock/brands/${brandId}`);
         setForm({
           name: data.name,
           place: data.place,
@@ -64,7 +55,7 @@ export default function UpdateBrandPage() {
         if (data.logoUrl) setInitialLogoUrl(data.logoUrl);
         if (data.imageUrl) setInitialImageUrl(data.imageUrl);
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to load brand.");
+        setError(err instanceof Error ? err.message : "Échec du chargement de la marque.");
       } finally {
         setLoading(false);
       }
@@ -72,18 +63,13 @@ export default function UpdateBrandPage() {
     load();
   }, [brandId]);
 
-  const handleInputChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange =
-    (
-      setter: React.Dispatch<React.SetStateAction<File | null>>,
-      inputRef: React.RefObject<HTMLInputElement | null>
-    ) =>
+    (setter: React.Dispatch<React.SetStateAction<File | null>>, inputRef: React.RefObject<HTMLInputElement | null>) =>
     (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0] ?? null;
       setter(file);
@@ -119,42 +105,38 @@ export default function UpdateBrandPage() {
       if (logoFile) fd.append("logo", logoFile);
       if (imageFile) fd.append("image", imageFile);
 
-      await fetchFromAPI<{ message: string }>(
-        `/dashboardadmin/stock/brands/update/${brandId}`,
-        { method: "PUT", body: fd }
-      );
+      await fetchFromAPI<{ message: string }>(`/dashboardadmin/stock/brands/update/${brandId}`, {
+        method: "PUT",
+        body: fd,
+      });
 
       setShowSuccess(true);
       setTimeout(() => router.push("/dashboard/manage-stock/brands"), 1500);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to update brand.");
+      setError(err instanceof Error ? err.message : "Échec de la mise à jour de la marque.");
       setSubmitting(false);
     }
   };
 
-  if (loading) return ;
+  if (loading) return <div className="p-4">Chargement…</div>;
 
   return (
     <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 relative h-full">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Update Brand</h1>
+        <h1 className="text-3xl font-bold">Mettre à jour la marque</h1>
         <nav className="text-sm underline flex items-center gap-2">
-          <Link
-            href="/dashboard/manage-stock/brands"
-            className="text-gray-500 hover:underline"
-          >
-            All Brands
+          <Link href="/dashboard/manage-stock/brands" className="text-gray-500 hover:underline">
+            Toutes les marques
           </Link>
           <MdArrowForwardIos className="text-gray-400" size={14} />
-          <span className="text-gray-700 font-medium">Update Brand</span>
+          <span className="text-gray-700 font-medium">Mettre à jour la marque</span>
         </nav>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-        {/* Name */}
         <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
           <label htmlFor="name" className="text-sm font-medium">
-            Name*
+            Nom*
           </label>
           <input
             id="name"
@@ -167,10 +149,9 @@ export default function UpdateBrandPage() {
           />
         </div>
 
-        {/* Place */}
         <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
           <label htmlFor="place" className="text-sm font-medium">
-            Place*
+            Lieu*
           </label>
           <input
             id="place"
@@ -183,7 +164,6 @@ export default function UpdateBrandPage() {
           />
         </div>
 
-        {/* Description */}
         <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
           <label htmlFor="description" className="text-sm font-medium">
             Description
@@ -198,9 +178,7 @@ export default function UpdateBrandPage() {
           />
         </div>
 
-        {/* Logo & Image Uploads */}
         <div className="flex max-lg:flex-col w-160 gap-4">
-          {/* Logo */}
           <div
             className="relative border-2 lg:w-1/2 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"
             onClick={() => logoInput.current?.click()}
@@ -215,25 +193,17 @@ export default function UpdateBrandPage() {
               className="hidden"
               onChange={handleFileChange(setLogoFile, logoInput)}
             />
-            {(logoFile || initialLogoUrl) ? (
+            {logoFile || initialLogoUrl ? (
               <div className="relative w-full h-full rounded overflow-hidden">
                 <Image
-                  src={
-                    logoFile
-                      ? URL.createObjectURL(logoFile)
-                      : initialLogoUrl
-                  }
-                  alt="Logo Preview"
+                  src={logoFile ? URL.createObjectURL(logoFile) : initialLogoUrl}
+                  alt="Aperçu du logo"
                   fill
                   className="object-cover"
                 />
                 <button
                   type="button"
-                  onClick={clearFile(
-                    setLogoFile,
-                    logoInput,
-                    () => setInitialLogoUrl("")
-                  )}
+                  onClick={clearFile(setLogoFile, logoInput, () => setInitialLogoUrl(""))}
                   className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
                 >
                   <MdDelete size={16} className="text-red-600" />
@@ -241,14 +211,13 @@ export default function UpdateBrandPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                Click to upload
+                Cliquez pour importer
                 <br />
                 Logo
               </div>
             )}
           </div>
 
-          {/* Image */}
           <div
             className="relative border-2 lg:w-1/2 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"
             onClick={() => imageInput.current?.click()}
@@ -263,25 +232,17 @@ export default function UpdateBrandPage() {
               className="hidden"
               onChange={handleFileChange(setImageFile, imageInput)}
             />
-            {(imageFile || initialImageUrl) ? (
+            {imageFile || initialImageUrl ? (
               <div className="relative w-full h-full rounded overflow-hidden">
                 <Image
-                  src={
-                    imageFile
-                      ? URL.createObjectURL(imageFile)
-                      : initialImageUrl
-                  }
-                  alt="Image Preview"
+                  src={imageFile ? URL.createObjectURL(imageFile) : initialImageUrl}
+                  alt="Aperçu de l’image"
                   fill
                   className="object-cover"
                 />
                 <button
                   type="button"
-                  onClick={clearFile(
-                    setImageFile,
-                    imageInput,
-                    () => setInitialImageUrl("")
-                  )}
+                  onClick={clearFile(setImageFile, imageInput, () => setInitialImageUrl(""))}
                   className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
                 >
                   <MdDelete size={16} className="text-red-600" />
@@ -289,7 +250,7 @@ export default function UpdateBrandPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                Click to upload
+                Cliquez pour importer
                 <br />
                 Image
               </div>
@@ -297,32 +258,19 @@ export default function UpdateBrandPage() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex justify-center gap-8">
           <Link href="/dashboard/manage-stock/brands">
-            <button
-              type="button"
-              disabled={submitting}
-              className="px-6 py-2 bg-quaternary text-white rounded"
-            >
-              Cancel
+            <button type="button" disabled={submitting} className="px-6 py-2 bg-quaternary text-white rounded">
+              Annuler
             </button>
           </Link>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="px-6 py-2 bg-tertiary text-white rounded"
-          >
-            {submitting ? "Updating..." : "Update Brand"}
+          <button type="submit" disabled={submitting} className="px-6 py-2 bg-tertiary text-white rounded">
+            {submitting ? "Mise à jour…" : "Mettre à jour la marque"}
           </button>
         </div>
       </form>
 
-      {/* Overlay & Error */}
-      <Overlay
-        show={submitting || showSuccess}
-        message={showSuccess ? "Brand updated successfully" : undefined}
-      />
+      <Overlay show={submitting || showSuccess} message={showSuccess ? "Marque mise à jour avec succès" : undefined} />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
   );

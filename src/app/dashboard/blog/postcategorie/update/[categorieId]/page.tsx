@@ -1,13 +1,7 @@
 // src/app/dashboard/blog/postcategorie/update/[categorieId]/page.tsx
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  ChangeEvent,
-  FormEvent,
-} from "react";
+import React, { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { MdArrowForwardIos, MdDelete } from "react-icons/md";
@@ -27,11 +21,12 @@ interface PostCategorieData {
 }
 
 const statusOptions = ["approve", "not-approve"] as const;
+const statusLabels: Record<(typeof statusOptions)[number], string> = {
+  "approve": "Approuvé",
+  "not-approve": "Non approuvé",
+};
 
 export default function UpdatePostCategoriePage() {
-  /* --------------------------------------------------------------------- */
-  /* Hooks & refs                                                          */
-  /* --------------------------------------------------------------------- */
   const router = useRouter();
   const { categorieId } = useParams() as { categorieId: string };
 
@@ -39,9 +34,6 @@ export default function UpdatePostCategoriePage() {
   const imageInput = useRef<HTMLInputElement | null>(null);
   const bannerInput = useRef<HTMLInputElement | null>(null);
 
-  /* --------------------------------------------------------------------- */
-  /* Local state                                                           */
-  /* --------------------------------------------------------------------- */
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -49,8 +41,7 @@ export default function UpdatePostCategoriePage() {
 
   const [reference, setReference] = useState("");
   const [name, setName] = useState("");
-  const [status, setStatus] =
-    useState<typeof statusOptions[number]>("approve");
+  const [status, setStatus] = useState<(typeof statusOptions)[number]>("approve");
 
   const [initialIconUrl, setInitialIconUrl] = useState("");
   const [initialImageUrl, setInitialImageUrl] = useState("");
@@ -60,14 +51,11 @@ export default function UpdatePostCategoriePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
 
-  /* --------------------------------------------------------------------- */
-  /* Fetch current category                                                */
-  /* --------------------------------------------------------------------- */
   useEffect(() => {
     (async () => {
       try {
         const res = await fetchFromAPI<{ postCategorie: PostCategorieData }>(
-          `/dashboardadmin/blog/postcategorie/${categorieId}`,
+          `/dashboardadmin/blog/postcategorie/${categorieId}`
         );
         const data = res.postCategorie;
         setReference(data.reference);
@@ -77,31 +65,22 @@ export default function UpdatePostCategoriePage() {
         if (data.imageUrl) setInitialImageUrl(data.imageUrl);
         if (data.bannerUrl) setInitialBannerUrl(data.bannerUrl);
       } catch (err: unknown) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load post category.",
-        );
+        setError(err instanceof Error ? err.message : "Échec du chargement de la catégorie.");
       } finally {
         setLoading(false);
       }
     })();
   }, [categorieId]);
 
-  /* --------------------------------------------------------------------- */
-  /* Helpers                                                               */
-  /* --------------------------------------------------------------------- */
-  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) =>
-    setName(e.target.value);
-
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => setName(e.target.value);
   const handleStatusChange = (e: ChangeEvent<HTMLSelectElement>) =>
-    setStatus(e.target.value as typeof statusOptions[number]);
+    setStatus(e.target.value as (typeof statusOptions)[number]);
 
   const handleFileChange =
     (
       setter: React.Dispatch<React.SetStateAction<File | null>>,
       clearInitial: React.Dispatch<React.SetStateAction<string>>,
-      inputRef: React.RefObject<HTMLInputElement | null>,
+      inputRef: React.RefObject<HTMLInputElement | null>
     ) =>
     (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0] ?? null;
@@ -114,7 +93,7 @@ export default function UpdatePostCategoriePage() {
     (
       setterFile: React.Dispatch<React.SetStateAction<File | null>>,
       setterInitial: React.Dispatch<React.SetStateAction<string>>,
-      inputRef: React.RefObject<HTMLInputElement | null>,
+      inputRef: React.RefObject<HTMLInputElement | null>
     ) =>
     () => {
       setterFile(null);
@@ -122,9 +101,6 @@ export default function UpdatePostCategoriePage() {
       if (inputRef.current) inputRef.current.value = "";
     };
 
-  /* --------------------------------------------------------------------- */
-  /* Submit                                                                */
-  /* --------------------------------------------------------------------- */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -138,61 +114,37 @@ export default function UpdatePostCategoriePage() {
       if (imageFile) fd.append("image", imageFile);
       if (bannerFile) fd.append("banner", bannerFile);
 
-      await fetchFromAPI(
-        `/dashboardadmin/blog/postcategorie/update/${categorieId}`,
-        { method: "PUT", body: fd },
-      );
+      await fetchFromAPI(`/dashboardadmin/blog/postcategorie/update/${categorieId}`, {
+        method: "PUT",
+        body: fd,
+      });
 
       setShowSuccess(true);
-      setTimeout(
-        () => router.push("/dashboard/blog/postcategorie"),
-        1500,
-      );
+      setTimeout(() => router.push("/dashboard/blog/postcategorie"), 1500);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to update post category.",
-      );
+      setError(err instanceof Error ? err.message : "Échec de la mise à jour de la catégorie.");
       setSubmitting(false);
     }
   };
 
-  /* --------------------------------------------------------------------- */
-  /* Render                                                                */
-  /* --------------------------------------------------------------------- */
-  if (loading) return ;
+  if (loading) return <div className="p-4">Chargement…</div>;
 
   return (
     <div className="relative mx-auto flex h-full w-[80%] flex-col gap-6 p-4">
-      {/* ------------------------------------------------------------------ */}
-      {/* Title & breadcrumb                                                 */}
-      {/* ------------------------------------------------------------------ */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Update Post Category</h1>
+        <h1 className="text-3xl font-bold">Mettre à jour la catégorie d’articles</h1>
         <nav className="flex items-center gap-2 text-sm underline">
-          <Link
-            href="/dashboard/blog/postcategorie"
-            className="text-gray-500 hover:underline"
-          >
-            All Categories
+          <Link href="/dashboard/blog/postcategorie" className="text-gray-500 hover:underline">
+            Toutes les catégories
           </Link>
           <MdArrowForwardIos className="text-gray-400" size={14} />
-          <span className="font-medium text-gray-700">
-            Update Category
-          </span>
+          <span className="font-medium text-gray-700">Mettre à jour la catégorie</span>
         </nav>
       </div>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Form                                                               */}
-      {/* ------------------------------------------------------------------ */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-        {/* Reference (read-only) */}
         <div className="flex flex-col gap-2 md:w-1/2 lg:w-2/5">
-          <label htmlFor="reference" className="text-sm font-medium">
-            Reference
-          </label>
+          <label htmlFor="reference" className="text-sm font-medium">Référence</label>
           <input
             id="reference"
             type="text"
@@ -203,11 +155,8 @@ export default function UpdatePostCategoriePage() {
           />
         </div>
 
-        {/* Name */}
         <div className="flex flex-col gap-2 md:w-1/2 lg:w-2/5">
-          <label htmlFor="name" className="text-sm font-medium">
-            Name*
-          </label>
+          <label htmlFor="name" className="text-sm font-medium">Nom*</label>
           <input
             id="name"
             type="text"
@@ -219,11 +168,8 @@ export default function UpdatePostCategoriePage() {
           />
         </div>
 
-        {/* Status */}
         <div className="flex flex-col gap-2 md:w-1/2 lg:w-2/5">
-          <label htmlFor="status" className="text-sm font-medium">
-            Status*
-          </label>
+          <label htmlFor="status" className="text-sm font-medium">Statut*</label>
           <select
             id="status"
             value={status}
@@ -232,21 +178,18 @@ export default function UpdatePostCategoriePage() {
             disabled={submitting}
             className="rounded border-2 border-gray-300 px-3 py-2 disabled:opacity-50"
           >
-            {statusOptions.map(opt => (
+            {statusOptions.map((opt) => (
               <option key={opt} value={opt}>
-                {opt}
+                {statusLabels[opt]}
               </option>
             ))}
           </select>
         </div>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* File uploads (icon / image / banner)                              */}
-        {/* ---------------------------------------------------------------- */}
         <div className="flex w-full flex-col gap-4 lg:flex-row">
           {[
             {
-              label: "Icon",
+              label: "Icône",
               file: iconFile,
               initialUrl: initialIconUrl,
               setFile: setIconFile,
@@ -262,7 +205,7 @@ export default function UpdatePostCategoriePage() {
               ref: imageInput,
             },
             {
-              label: "Banner",
+              label: "Bannière",
               file: bannerFile,
               initialUrl: initialBannerUrl,
               setFile: setBannerFile,
@@ -287,15 +230,10 @@ export default function UpdatePostCategoriePage() {
                 <PiImage size={24} />
               </div>
 
-              {/* Preview */}
               {file || initialUrl ? (
                 <div className="relative h-full w-full overflow-hidden rounded">
                   <Image
-                    src={
-                      file
-                        ? URL.createObjectURL(file)
-                        : (initialUrl as string)
-                    }
+                    src={file ? URL.createObjectURL(file) : (initialUrl as string)}
                     alt={label}
                     fill
                     className="object-cover"
@@ -311,7 +249,7 @@ export default function UpdatePostCategoriePage() {
                 </div>
               ) : (
                 <div className="pointer-events-none flex h-full flex-col items-center justify-center text-gray-400">
-                  Click to upload
+                  Cliquez pour importer
                   <br />
                   {label}
                 </div>
@@ -320,9 +258,6 @@ export default function UpdatePostCategoriePage() {
           ))}
         </div>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Actions                                                           */}
-        {/* ---------------------------------------------------------------- */}
         <div className="flex justify-center gap-8">
           <Link href="/dashboard/blog/postcategorie">
             <button
@@ -330,7 +265,7 @@ export default function UpdatePostCategoriePage() {
               disabled={submitting}
               className="rounded bg-quaternary px-6 py-2 text-white disabled:opacity-50"
             >
-              Cancel
+              Annuler
             </button>
           </Link>
           <button
@@ -338,20 +273,12 @@ export default function UpdatePostCategoriePage() {
             disabled={submitting}
             className="rounded bg-tertiary px-6 py-2 text-white disabled:opacity-50"
           >
-            {submitting ? "Updating…" : "Update Category"}
+            {submitting ? "Mise à jour…" : "Mettre à jour la catégorie"}
           </button>
         </div>
       </form>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Overlay & feedback                                                 */}
-      {/* ------------------------------------------------------------------ */}
-      <Overlay
-        show={submitting || showSuccess}
-        message={
-          showSuccess ? "Category updated successfully" : undefined
-        }
-      />
+      <Overlay show={submitting || showSuccess} message={showSuccess ? "Catégorie mise à jour avec succès" : undefined} />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
   );

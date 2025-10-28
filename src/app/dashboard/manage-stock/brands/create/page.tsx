@@ -2,12 +2,7 @@
 
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  ChangeEvent,
-  FormEvent,
-} from "react";
+import React, { useState, useRef, ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MdArrowForwardIos, MdDelete } from "react-icons/md";
@@ -43,7 +38,7 @@ export default function CreateBrandPage() {
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange =
@@ -84,13 +79,10 @@ export default function CreateBrandPage() {
       if (logoFile) fd.append("logo", logoFile);
       if (imageFile) fd.append("image", imageFile);
 
-      await fetchFromAPI<{ message: string }>(
-        "/dashboardadmin/stock/brands/create",
-        {
-          method: "POST",
-          body: fd,
-        }
-      );
+      await fetchFromAPI<{ message: string }>("/dashboardadmin/stock/brands/create", {
+        method: "POST",
+        body: fd,
+      });
 
       setShowSuccess(true);
       setTimeout(() => {
@@ -101,7 +93,7 @@ export default function CreateBrandPage() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Failed to create brand.");
+        setError("Échec de la création de la marque.");
       }
       setSubmitting(false);
     }
@@ -110,24 +102,20 @@ export default function CreateBrandPage() {
   return (
     <div className="w-[80%] mx-auto flex flex-col gap-6 p-4 relative h-full">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Create Brand</h1>
+        <h1 className="text-3xl font-bold">Créer une marque</h1>
         <nav className="text-sm underline flex items-center gap-2">
-          <Link
-            href="/dashboard/manage-stock/brands"
-            className="text-gray-500 hover:underline"
-          >
-            All Brands
+          <Link href="/dashboard/manage-stock/brands" className="text-gray-500 hover:underline">
+            Toutes les marques
           </Link>
           <MdArrowForwardIos className="text-gray-400" size={14} />
-          <span className="text-gray-700 font-medium">Create Brand</span>
+          <span className="text-gray-700 font-medium">Créer une marque</span>
         </nav>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-        {/* Name */}
         <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
           <label htmlFor="name" className="text-sm font-medium">
-            Name*
+            Nom*
           </label>
           <input
             id="name"
@@ -140,10 +128,9 @@ export default function CreateBrandPage() {
           />
         </div>
 
-        {/* Place */}
         <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
           <label htmlFor="place" className="text-sm font-medium">
-            Place*
+            Lieu*
           </label>
           <input
             id="place"
@@ -156,7 +143,6 @@ export default function CreateBrandPage() {
           />
         </div>
 
-        {/* Description */}
         <div className="flex flex-col md:w-1/2 lg:w-2/5 gap-4">
           <label htmlFor="description" className="text-sm font-medium">
             Description
@@ -172,7 +158,6 @@ export default function CreateBrandPage() {
         </div>
 
         <div className="flex max-lg:flex-col w-160 gap-4 ">
-          {/* Logo Upload */}
           <div
             className="relative border-2 lg:w-1/2 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"
             onClick={() => logoInput.current?.click()}
@@ -191,7 +176,7 @@ export default function CreateBrandPage() {
               <div className="relative w-full h-full rounded overflow-hidden">
                 <Image
                   src={URL.createObjectURL(logoFile)}
-                  alt="Logo Preview"
+                  alt="Aperçu du logo"
                   fill
                   className="object-cover"
                 />
@@ -205,14 +190,13 @@ export default function CreateBrandPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                Click to upload
+                Cliquez pour importer
                 <br />
                 Logo
               </div>
             )}
           </div>
 
-          {/* Image Upload */}
           <div
             className="relative border-2 lg:w-1/2 border-gray-300 rounded-lg h-72 cursor-pointer hover:border-gray-400 transition"
             onClick={() => imageInput.current?.click()}
@@ -231,7 +215,7 @@ export default function CreateBrandPage() {
               <div className="relative w-full h-full rounded overflow-hidden">
                 <Image
                   src={URL.createObjectURL(imageFile)}
-                  alt="Image Preview"
+                  alt="Aperçu de l’image"
                   fill
                   className="object-cover"
                 />
@@ -245,7 +229,7 @@ export default function CreateBrandPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                Click to upload
+                Cliquez pour importer
                 <br />
                 Image
               </div>
@@ -253,7 +237,6 @@ export default function CreateBrandPage() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex justify-center gap-8">
           <Link href="/dashboard/manage-stock/brands">
             <button
@@ -261,24 +244,20 @@ export default function CreateBrandPage() {
               disabled={submitting}
               className="px-6 py-2 bg-quaternary text-white rounded"
             >
-              Cancel
+              Annuler
             </button>
           </Link>
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-2 bg-tertiary text-white rounded"
+            className="px-6 py-2 bg-tertiaire text-white rounded"
           >
-            {submitting ? "Adding..." : "Add Brand"}
+            {submitting ? "Ajout en cours..." : "Ajouter la marque"}
           </button>
         </div>
       </form>
 
-      {/* Overlay & Error Popup */}
-      <Overlay
-        show={submitting || showSuccess}
-        message={showSuccess ? "Brand created successfully" : undefined}
-      />
+      <Overlay show={submitting || showSuccess} message={showSuccess ? "Marque créée avec succès" : undefined} />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
   );

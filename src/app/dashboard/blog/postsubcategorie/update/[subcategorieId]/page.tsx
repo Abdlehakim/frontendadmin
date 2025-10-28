@@ -1,13 +1,7 @@
 // src/app/dashboard/blog/postsubcategorie/update/[subcategorieId]/page.tsx
 "use client";
 
-import React, {
-  ChangeEvent,
-  FormEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { MdArrowForwardIos, MdDelete } from "react-icons/md";
@@ -17,9 +11,6 @@ import Overlay from "@/components/Overlay";
 import ErrorPopup from "@/components/Popup/ErrorPopup";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
 
-/* ------------------------------------------------------------------ */
-/* Types                                                              */
-/* ------------------------------------------------------------------ */
 interface PostCategorie {
   _id: string;
   name: string;
@@ -34,38 +25,31 @@ interface PostSubCategorieData {
   bannerUrl?: string;
 }
 
-/* ------------------------------------------------------------------ */
-/* Constants & helpers                                                */
-/* ------------------------------------------------------------------ */
 const statusOptions = ["approve", "not-approve"] as const;
-/** Loader that bypasses optimisation for local blob previews */
+const statusLabels: Record<(typeof statusOptions)[number], string> = {
+  "approve": "Approuvé",
+  "not-approve": "Non approuvé",
+};
 const blobLoader = ({ src }: { src: string }) => src;
 
-/* ------------------------------------------------------------------ */
-/* Component                                                          */
-/* ------------------------------------------------------------------ */
 export default function UpdatePostSubCategoriePage() {
   const router = useRouter();
   const { subcategorieId } = useParams() as { subcategorieId: string };
 
-  /* refs for hidden inputs */
   const iconInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
   const bannerInput = useRef<HTMLInputElement>(null);
 
-  /* UI state */
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /* form state */
   const [reference, setReference] = useState("");
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"approve" | "not-approve">("approve");
   const [parent, setParent] = useState("");
 
-  /* preview / upload fields */
   const [initialIconUrl, setInitialIconUrl] = useState("");
   const [initialImageUrl, setInitialImageUrl] = useState("");
   const [initialBannerUrl, setInitialBannerUrl] = useState("");
@@ -74,26 +58,14 @@ export default function UpdatePostSubCategoriePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
 
-  /* categories for dropdown */
   const [categories, setCategories] = useState<PostCategorie[]>([]);
 
-  /* ------------------------------------------------------------------ */
-  /* Fetch categories + current sub-category                            */
-  /* ------------------------------------------------------------------ */
   useEffect(() => {
     (async () => {
       try {
-        /* parent categories */
-        const { PostCategories } = await fetchFromAPI<{
-          PostCategories: PostCategorie[];
-        }>("/dashboardadmin/blog/postCategorie");
+        const { PostCategories } = await fetchFromAPI<{ PostCategories: PostCategorie[] }>("/dashboardadmin/blog/postCategorie");
         setCategories(PostCategories);
-
-        /* sub-category to edit */
-        const { postSubCategorie } = await fetchFromAPI<{
-          postSubCategorie: PostSubCategorieData;
-        }>(`/dashboardadmin/blog/postsubcategorie/${subcategorieId}`);
-
+        const { postSubCategorie } = await fetchFromAPI<{ postSubCategorie: PostSubCategorieData }>(`/dashboardadmin/blog/postsubcategorie/${subcategorieId}`);
         setReference(postSubCategorie.reference);
         setName(postSubCategorie.name);
         setStatus(postSubCategorie.vadmin);
@@ -102,23 +74,18 @@ export default function UpdatePostSubCategoriePage() {
         setInitialImageUrl(postSubCategorie.imageUrl ?? "");
         setInitialBannerUrl(postSubCategorie.bannerUrl ?? "");
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load sub-category."
-        );
+        setError(err instanceof Error ? err.message : "Échec du chargement de la sous-catégorie.");
       } finally {
         setLoading(false);
       }
     })();
   }, [subcategorieId]);
 
-  /* ------------------------------------------------------------------ */
-  /* Handlers                                                           */
-  /* ------------------------------------------------------------------ */
   const handleFile =
     (
       setFile: React.Dispatch<React.SetStateAction<File | null>>,
       clearPreview: React.Dispatch<React.SetStateAction<string>>,
-       ref: React.RefObject<HTMLInputElement | null>, 
+      ref: React.RefObject<HTMLInputElement | null>
     ) =>
     (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0] ?? null;
@@ -131,7 +98,7 @@ export default function UpdatePostSubCategoriePage() {
     (
       setFile: React.Dispatch<React.SetStateAction<File | null>>,
       setPreview: React.Dispatch<React.SetStateAction<string>>,
-      ref: React.RefObject<HTMLInputElement | null>,
+      ref: React.RefObject<HTMLInputElement | null>
     ) =>
     () => {
       setFile(null);
@@ -139,75 +106,45 @@ export default function UpdatePostSubCategoriePage() {
       if (ref.current) ref.current.value = "";
     };
 
-  /* ------------------------------------------------------------------ */
-  /* Submit                                                             */
-  /* ------------------------------------------------------------------ */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-
     try {
       const fd = new FormData();
       fd.append("name", name.trim());
       fd.append("vadmin", status);
       fd.append("postCategorie", parent);
-
       if (iconFile) fd.append("icon", iconFile);
       if (imageFile) fd.append("image", imageFile);
       if (bannerFile) fd.append("banner", bannerFile);
-
-      await fetchFromAPI(
-        `/dashboardadmin/blog/postsubcategorie/update/${subcategorieId}`,
-        { method: "PUT", body: fd }
-      );
-
+      await fetchFromAPI(`/dashboardadmin/blog/postsubcategorie/update/${subcategorieId}`, { method: "PUT", body: fd });
       setShowSuccess(true);
-      setTimeout(
-        () => router.push("/dashboard/blog/postsubcategorie"),
-        1500
-      );
+      setTimeout(() => router.push("/dashboard/blog/postsubcategorie"), 1500);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to update sub-category."
-      );
+      setError(err instanceof Error ? err.message : "Échec de la mise à jour de la sous-catégorie.");
       setSubmitting(false);
     }
   };
 
-  /* ------------------------------------------------------------------ */
-  /* Render                                                             */
-  /* ------------------------------------------------------------------ */
-  if (loading) return ;
+  if (loading) return <div className="p-4">Chargement…</div>;
 
   return (
     <div className="relative mx-auto flex h-full w-[80%] flex-col gap-6 p-4">
-      {/* Breadcrumb */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Update Sub-Category</h1>
+        <h1 className="text-3xl font-bold">Mettre à jour la sous-catégorie</h1>
         <nav className="flex items-center gap-2 text-sm underline">
-          <Link
-            href="/dashboard/blog/postsubcategorie"
-            className="text-gray-500 hover:underline"
-          >
-            All Sub-Categories
+          <Link href="/dashboard/blog/postsubcategorie" className="text-gray-500 hover:underline">
+            Toutes les sous-catégories
           </Link>
           <MdArrowForwardIos size={14} className="text-gray-400" />
-          <span className="font-medium text-gray-700">
-            Update Sub-Category
-          </span>
+          <span className="font-medium text-gray-700">Mettre à jour la sous-catégorie</span>
         </nav>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-        {/* Reference (read-only) */}
         <div className="flex flex-col gap-2 md:w-1/2 lg:w-2/5">
-          <label className="text-sm font-medium" htmlFor="reference">
-            Reference
-          </label>
+          <label className="text-sm font-medium" htmlFor="reference">Référence</label>
           <input
             id="reference"
             value={reference}
@@ -217,11 +154,8 @@ export default function UpdatePostSubCategoriePage() {
           />
         </div>
 
-        {/* Name */}
         <div className="flex flex-col gap-2 md:w-1/2 lg:w-2/5">
-          <label className="text-sm font-medium" htmlFor="name">
-            Name*
-          </label>
+          <label className="text-sm font-medium" htmlFor="name">Nom*</label>
           <input
             id="name"
             value={name}
@@ -232,11 +166,8 @@ export default function UpdatePostSubCategoriePage() {
           />
         </div>
 
-        {/* Parent category */}
         <div className="flex flex-col gap-2 md:w-1/2 lg:w-2/5">
-          <label className="text-sm font-medium" htmlFor="postCategorie">
-            Parent Category*
-          </label>
+          <label className="text-sm font-medium" htmlFor="postCategorie">Catégorie parente*</label>
           <select
             id="postCategorie"
             value={parent}
@@ -245,7 +176,7 @@ export default function UpdatePostSubCategoriePage() {
             disabled={submitting}
             className="rounded border-2 border-gray-300 px-3 py-2 disabled:opacity-50"
           >
-            <option value="">Select category…</option>
+            <option value="">Sélectionner une catégorie…</option>
             {categories.map((c) => (
               <option key={c._id} value={c._id}>
                 {c.name}
@@ -254,56 +185,29 @@ export default function UpdatePostSubCategoriePage() {
           </select>
         </div>
 
-        {/* Status */}
         <div className="flex flex-col gap-2 md:w-1/2 lg:w-2/5">
-          <label className="text-sm font-medium" htmlFor="status">
-            Status*
-          </label>
+          <label className="text-sm font-medium" htmlFor="status">Statut*</label>
           <select
             id="status"
             value={status}
-            onChange={(e) =>
-              setStatus(e.target.value as "approve" | "not-approve")
-            }
+            onChange={(e) => setStatus(e.target.value as "approve" | "not-approve")}
             required
             disabled={submitting}
             className="rounded border-2 border-gray-300 px-3 py-2 disabled:opacity-50"
           >
             {statusOptions.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {statusLabels[s]}
               </option>
             ))}
           </select>
         </div>
 
-        {/* File uploads */}
         <div className="flex w-full flex-col gap-4 lg:flex-row">
           {[
-            {
-              label: "Icon",
-              file: iconFile,
-              initialUrl: initialIconUrl,
-              setFile: setIconFile,
-              setPreview: setInitialIconUrl,
-              ref: iconInput,
-            },
-            {
-              label: "Image",
-              file: imageFile,
-              initialUrl: initialImageUrl,
-              setFile: setImageFile,
-              setPreview: setInitialImageUrl,
-              ref: imageInput,
-            },
-            {
-              label: "Banner",
-              file: bannerFile,
-              initialUrl: initialBannerUrl,
-              setFile: setBannerFile,
-              setPreview: setInitialBannerUrl,
-              ref: bannerInput,
-            },
+            { label: "Icône", file: iconFile, initialUrl: initialIconUrl, setFile: setIconFile, setPreview: setInitialIconUrl, ref: iconInput },
+            { label: "Image", file: imageFile, initialUrl: initialImageUrl, setFile: setImageFile, setPreview: setInitialImageUrl, ref: imageInput },
+            { label: "Bannière", file: bannerFile, initialUrl: initialBannerUrl, setFile: setBannerFile, setPreview: setInitialBannerUrl, ref: bannerInput },
           ].map(({ label, file, initialUrl, setFile, setPreview, ref }) => (
             <div
               key={label}
@@ -318,12 +222,9 @@ export default function UpdatePostSubCategoriePage() {
                 onChange={handleFile(setFile, setPreview, ref)}
                 disabled={submitting}
               />
-
               <div className="absolute right-2 top-2 text-gray-500">
                 <PiImage size={24} />
               </div>
-
-              {/* Preview */}
               {file || initialUrl ? (
                 <div className="relative h-full w-full overflow-hidden rounded">
                   <Image
@@ -344,7 +245,7 @@ export default function UpdatePostSubCategoriePage() {
                 </div>
               ) : (
                 <div className="pointer-events-none flex h-full flex-col items-center justify-center text-gray-400">
-                  Click to upload
+                  Cliquez pour importer
                   <br />
                   {label}
                 </div>
@@ -353,7 +254,6 @@ export default function UpdatePostSubCategoriePage() {
           ))}
         </div>
 
-        {/* Actions */}
         <div className="flex justify-center gap-8">
           <Link href="/dashboard/blog/postsubcategorie">
             <button
@@ -361,7 +261,7 @@ export default function UpdatePostSubCategoriePage() {
               disabled={submitting}
               className="rounded bg-quaternary px-6 py-2 text-white disabled:opacity-50"
             >
-              Cancel
+              Annuler
             </button>
           </Link>
           <button
@@ -369,16 +269,12 @@ export default function UpdatePostSubCategoriePage() {
             disabled={submitting}
             className="rounded bg-tertiary px-6 py-2 text-white disabled:opacity-50"
           >
-            {submitting ? "Updating…" : "Update Sub-Category"}
+            {submitting ? "Mise à jour…" : "Mettre à jour la sous-catégorie"}
           </button>
         </div>
       </form>
 
-      {/* Overlay + errors */}
-      <Overlay
-        show={submitting || showSuccess}
-        message={showSuccess ? "Sub-category updated" : undefined}
-      />
+      <Overlay show={submitting || showSuccess} message={showSuccess ? "Sous-catégorie mise à jour avec succès" : undefined} />
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
     </div>
   );
