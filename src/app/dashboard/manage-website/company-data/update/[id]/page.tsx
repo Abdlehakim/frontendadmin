@@ -12,7 +12,8 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { FaSpinner } from "react-icons/fa6";
-import { MdArrowForwardIos } from "react-icons/md";
+import { MdArrowForwardIos, MdDelete } from "react-icons/md";
+import { PiImage } from "react-icons/pi";
 import Overlay from "@/components/Overlay";
 import ErrorPopup from "@/components/Popup/ErrorPopup";
 import { fetchFromAPI } from "@/lib/fetchFromAPI";
@@ -22,7 +23,7 @@ interface FormFields {
   description: string;
   email: string;
   phone: string;
-  vat: string;            // ← NEW: Matricule fiscale
+  vat: string;
   address: string;
   city: string;
   zipcode: string;
@@ -33,23 +34,20 @@ interface FormFields {
 }
 
 export default function UpdateCompanyDataPage() {
-  /* ------------------ hooks ------------------ */
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const companyId = params.id;
 
-  /* ------------------ refs ------------------ */
-  const bannerInput = useRef<HTMLInputElement | null>(null);
   const logoInput = useRef<HTMLInputElement | null>(null);
+  const bannerInput = useRef<HTMLInputElement | null>(null);
   const contactBannerInput = useRef<HTMLInputElement | null>(null);
 
-  /* ------------------ state ------------------ */
   const [form, setForm] = useState<FormFields>({
     name: "",
     description: "",
     email: "",
     phone: "",
-    vat: "",             // ← NEW
+    vat: "",
     address: "",
     city: "",
     zipcode: "",
@@ -59,31 +57,14 @@ export default function UpdateCompanyDataPage() {
     instagram: "",
   });
 
-  const [bannerPreview, setBannerPreview] = useState<string | undefined>();
   const [logoPreview, setLogoPreview] = useState<string | undefined>();
+  const [bannerPreview, setBannerPreview] = useState<string | undefined>();
   const [contactBannerPreview, setContactBannerPreview] = useState<string | undefined>();
 
-  const [loading, setLoading] = useState<boolean>(true);
-  const [submitLoading, setSubmitLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
 
-  /* ------------------ constants ------------------ */
-  const basicFields: Array<keyof Pick<FormFields, "name" | "email" | "phone" | "vat">> = [
-    "name",
-    "email",
-    "phone",
-    "vat",               // ← NEW: include in basic section
-  ];
-  const addressFields: Array<
-    keyof Pick<FormFields, "address" | "city" | "zipcode" | "governorate">
-  > = ["address", "city", "zipcode", "governorate"];
-  const socialFields: Array<keyof Pick<FormFields, "facebook" | "linkedin" | "instagram">> = [
-    "facebook",
-    "linkedin",
-    "instagram",
-  ];
-
-  /* ------------------ fetch existing ------------------ */
   useEffect(() => {
     (async () => {
       try {
@@ -93,7 +74,7 @@ export default function UpdateCompanyDataPage() {
             description: string;
             email: string;
             phone: string | number;
-            vat?: string;              // ← NEW
+            vat?: string;
             address: string;
             city: string;
             zipcode: string;
@@ -105,7 +86,7 @@ export default function UpdateCompanyDataPage() {
             logoImageUrl?: string;
             contactBannerUrl?: string;
           };
-        }>(`/dashboardadmin/website/company-info/getCompanyInfo`);
+        }>("/dashboardadmin/website/company-info/getCompanyInfo");
 
         if (companyInfo) {
           setForm({
@@ -113,7 +94,7 @@ export default function UpdateCompanyDataPage() {
             description: companyInfo.description,
             email: companyInfo.email,
             phone: companyInfo.phone?.toString?.() ?? String(companyInfo.phone ?? ""),
-            vat: companyInfo.vat ?? "",                         // ← NEW
+            vat: companyInfo.vat ?? "",
             address: companyInfo.address,
             city: companyInfo.city,
             zipcode: companyInfo.zipcode,
@@ -122,33 +103,38 @@ export default function UpdateCompanyDataPage() {
             linkedin: companyInfo.linkedin ?? "",
             instagram: companyInfo.instagram ?? "",
           });
-          setBannerPreview(companyInfo.bannerImageUrl);
           setLogoPreview(companyInfo.logoImageUrl);
+          setBannerPreview(companyInfo.bannerImageUrl);
           setContactBannerPreview(companyInfo.contactBannerUrl);
         }
       } catch (err) {
         console.error("Load company data failed", err);
-        setErrorMsg("Failed to load existing company data.");
+        setErrorMsg("Échec du chargement des données de l’entreprise.");
       } finally {
         setLoading(false);
       }
     })();
   }, [companyId]);
 
-  /* ------------------ handlers ------------------ */
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setForm((prev) => ({ ...prev, [id]: value }));
+    setForm(prev => ({ ...prev, [id]: value }));
   };
 
   const handleFileChange = (
     e: ChangeEvent<HTMLInputElement>,
     setPreview: React.Dispatch<React.SetStateAction<string | undefined>>
   ) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0] ?? null;
     if (file) setPreview(URL.createObjectURL(file));
+  };
+
+  const clearFile = (
+    inputRef: React.RefObject<HTMLInputElement | null>,
+    setPreview: React.Dispatch<React.SetStateAction<string | undefined>>
+  ) => {
+    setPreview(undefined);
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -158,11 +144,10 @@ export default function UpdateCompanyDataPage() {
 
     try {
       const data = new FormData();
-      Object.entries(form).forEach(([key, val]) => data.append(key, val));
-      if (bannerInput.current?.files?.[0]) data.append("banner", bannerInput.current.files[0]);
+      Object.entries(form).forEach(([k, v]) => data.append(k, v));
       if (logoInput.current?.files?.[0]) data.append("logo", logoInput.current.files[0]);
-      if (contactBannerInput.current?.files?.[0])
-        data.append("contactBanner", contactBannerInput.current.files[0]);
+      if (bannerInput.current?.files?.[0]) data.append("banner", bannerInput.current.files[0]);
+      if (contactBannerInput.current?.files?.[0]) data.append("contactBanner", contactBannerInput.current.files[0]);
 
       await fetchFromAPI<{ success: boolean }>(
         `/dashboardadmin/website/company-info/updateCompanyInfo/${companyId}`,
@@ -173,16 +158,13 @@ export default function UpdateCompanyDataPage() {
     } catch (err) {
       console.error("Update error", err);
       setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : "An unexpected error occurred while updating."
+        err instanceof Error ? err.message : "Une erreur inattendue s’est produite lors de la mise à jour."
       );
     } finally {
       setSubmitLoading(false);
     }
   };
 
-  /* ------------------ render ------------------ */
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center h-full">
@@ -193,63 +175,182 @@ export default function UpdateCompanyDataPage() {
 
   return (
     <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* Header + Breadcrumb */}
-      <div className="flex justify-start gap-2 flex-col h-16">
-        <h1 className="text-3xl font-bold">Update Company Data</h1>
-        <nav className="text-sm underline flex items-center gap-2">
-          <Link
-            href="/dashboard/manage-website/company-data"
-            className="text-gray-500 hover:underline"
-          >
-            Company Data
+      {/* En-tête + actions */}
+      <div className="flex h-16 items-start justify-between">
+        <div className="flex flex-col">
+          <h1 className="text-3xl font-bold">Mettre à jour les données</h1>
+          <nav className="text-sm underline flex items-center gap-2">
+            <Link href="/dashboard/manage-website/company-data" className="text-gray-500 hover:underline">
+              Données de l’entreprise
+            </Link>
+            <MdArrowForwardIos className="text-gray-400" size={14} />
+            <span className="text-gray-700 font-medium">Mise à jour</span>
+          </nav>
+        </div>
+
+        <div className="flex items-start gap-2">
+          <Link href="/dashboard/manage-website/company-data">
+            <button type="button" className="btn-fit-white-outline disabled:opacity-50" disabled={submitLoading}>
+              Annuler
+            </button>
           </Link>
-          <MdArrowForwardIos className="text-gray-400" size={14} />
-          <span className="text-gray-700 font-medium">Update Entry</span>
-        </nav>
+          <button
+            type="submit"
+            form="company-update-form"
+            className="btn-fit-white-outline disabled:opacity-50 flex items-center gap-2"
+            disabled={submitLoading}
+          >
+            {submitLoading && <FaSpinner className="animate-spin" />}
+            Mettre à jour les informations
+          </button>
+        </div>
       </div>
 
       {errorMsg && <ErrorPopup message={errorMsg} onClose={() => setErrorMsg(undefined)} />}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6 py-4">
-        {/* Logos & Banners */}
-        <div className="flex flex-col md:flex-row gap-4">
-          {[
-            { label: "Logo", preview: logoPreview, ref: logoInput, set: setLogoPreview },
-            { label: "Banner", preview: bannerPreview, ref: bannerInput, set: setBannerPreview },
-            {
-              label: "Contact Banner",
-              preview: contactBannerPreview,
-              ref: contactBannerInput,
-              set: setContactBannerPreview,
-            },
-          ].map(({ label, preview, ref, set }) => (
-            <div key={label} className="relative flex-1 border-2 border-gray-300 rounded-lg h-64 overflow-hidden">
-              {preview ? (
-                <Image src={preview} alt={label} fill className="object-cover" />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No {label.toLowerCase()} uploaded
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                ref={ref}
-                onChange={(e) => handleFileChange(e, set)}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              />
+      {/* FORM relié au bouton d’en-tête via l’attribut form */}
+      <form id="company-update-form" onSubmit={handleSubmit} className="flex flex-col gap-6 py-4">
+        {/* VISUELS — mêmes dimensions que la page d’aperçu */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {/* Logo (md: 1 col, h-64, object-contain p-4) */}
+          <div
+            className="relative h-64 md:col-span-1 rounded-md border border-primary/20 bg-white overflow-hidden cursor-pointer"
+            onClick={() => logoInput.current?.click()}
+          >
+            {/* Icône */}
+            <div className="absolute top-2 left-2 z-10 text-gray-500 hover:text-gray-700">
+              <PiImage size={22} />
             </div>
-          ))}
+            {/* Input */}
+            <input
+              ref={logoInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleFileChange(e, setLogoPreview)}
+            />
+            {/* Preview */}
+            {logoPreview ? (
+              <div className="relative w-full h-full">
+                <Image
+                  src={logoPreview}
+                  alt="Logo de l’entreprise"
+                  fill
+                  unoptimized
+                  className="object-contain p-4"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearFile(logoInput, setLogoPreview);
+                  }}
+                  className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
+                >
+                  <MdDelete size={16} className="text-red-600" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                Cliquez pour importer<br />Logo
+              </div>
+            )}
+          </div>
+
+          {/* Bannière principale (md: 2 cols, h-64, object-cover) */}
+          <div
+            className="relative h-64 md:col-span-2 rounded-md border border-primary/20 bg-white overflow-hidden cursor-pointer"
+            onClick={() => bannerInput.current?.click()}
+          >
+            <div className="absolute top-2 left-2 z-10 text-gray-500 hover:text-gray-700">
+              <PiImage size={22} />
+            </div>
+            <input
+              ref={bannerInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleFileChange(e, setBannerPreview)}
+            />
+            {bannerPreview ? (
+              <div className="relative w-full h-full">
+                <Image
+                  src={bannerPreview}
+                  alt="Bannière de l’entreprise"
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearFile(bannerInput, setBannerPreview);
+                  }}
+                  className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
+                >
+                  <MdDelete size={16} className="text-red-600" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                Cliquez pour importer<br />Bannière
+              </div>
+            )}
+          </div>
+
+          {/* Bannière de contact (md: 2 cols, h-64, object-cover) */}
+          <div
+            className="relative h-64 md:col-span-2 rounded-md border border-primary/20 bg-white overflow-hidden cursor-pointer"
+            onClick={() => contactBannerInput.current?.click()}
+          >
+            <div className="absolute top-2 left-2 z-10 text-gray-500 hover:text-gray-700">
+              <PiImage size={22} />
+            </div>
+            <input
+              ref={contactBannerInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleFileChange(e, setContactBannerPreview)}
+            />
+            {contactBannerPreview ? (
+              <div className="relative w-full h-full">
+                <Image
+                  src={contactBannerPreview}
+                  alt="Bannière de contact"
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearFile(contactBannerInput, setContactBannerPreview);
+                  }}
+                  className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
+                >
+                  <MdDelete size={16} className="text-red-600" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                Cliquez pour importer<br />Bannière de contact
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Basic Info (now includes VAT) */}
+        {/* Infos de base */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {basicFields.map((field) => (
+          {(["name", "email", "phone", "vat"] as const).map((field) => (
             <div key={field} className="flex flex-col gap-2">
               <label htmlFor={field} className="text-sm font-medium">
-                {field === "vat"
-                  ? "VAT / Matricule fiscale"
-                  : field.charAt(0).toUpperCase() + field.slice(1)}
+                {field === "name" && "Nom"}
+                {field === "email" && "E-mail"}
+                {field === "phone" && "Téléphone"}
+                {field === "vat" && "Matricule fiscale / TVA"}
               </label>
               <input
                 id={field}
@@ -265,9 +366,7 @@ export default function UpdateCompanyDataPage() {
 
         {/* Description */}
         <div className="flex flex-col gap-2">
-          <label htmlFor="description" className="text-sm font-medium">
-            Description
-          </label>
+          <label htmlFor="description" className="text-sm font-medium">Description</label>
           <textarea
             id="description"
             rows={4}
@@ -278,16 +377,18 @@ export default function UpdateCompanyDataPage() {
           />
         </div>
 
+        <hr className="border-t border-gray-300 mb-2" />
+        <h2 className="text-xl font-semibold uppercase">Adresse</h2>
         <hr className="border-t border-gray-300 mb-4" />
 
-        {/* Address Info */}
-        <h2 className="text-xl font-semibold uppercase">Address Info</h2>
-        <hr className="border-t border-gray-300 mb-4" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {addressFields.map((field) => (
+          {(["address", "city", "zipcode", "governorate"] as const).map((field) => (
             <div key={field} className="flex flex-col gap-2">
               <label htmlFor={field} className="text-sm font-medium">
-                {field.charAt(0).toUpperCase() + field.slice(1)}
+                {field === "address" && "Adresse"}
+                {field === "city" && "Ville"}
+                {field === "zipcode" && "Code postal"}
+                {field === "governorate" && "Gouvernorat"}
               </label>
               <input
                 id={field}
@@ -301,16 +402,17 @@ export default function UpdateCompanyDataPage() {
           ))}
         </div>
 
+        <hr className="border-t border-gray-300 mb-2" />
+        <h2 className="text-xl font-semibold uppercase">Réseaux sociaux</h2>
         <hr className="border-t border-gray-300 mb-4" />
 
-        {/* Social Media */}
-        <h2 className="text-xl font-semibold uppercase">Social Media</h2>
-        <hr className="border-t border-gray-300 mb-4" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {socialFields.map((field) => (
+          {(["facebook", "linkedin", "instagram"] as const).map((field) => (
             <div key={field} className="flex flex-col gap-2">
               <label htmlFor={field} className="text-sm font-medium">
-                {field.charAt(0).toUpperCase() + field.slice(1)}
+                {field === "facebook" && "Facebook"}
+                {field === "linkedin" && "LinkedIn"}
+                {field === "instagram" && "Instagram"}
               </label>
               <input
                 id={field}
@@ -322,30 +424,8 @@ export default function UpdateCompanyDataPage() {
             </div>
           ))}
         </div>
-
-        {/* Submit + Cancel */}
-        <div className="flex justify-center gap-8">
-          <Link href="/dashboard/manage-website/company-data">
-            <button
-              type="button"
-              disabled={submitLoading}
-              className="px-6 py-2 bg-quaternary text-white rounded disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          </Link>
-          <button
-            type="submit"
-            disabled={submitLoading}
-            className="px-6 py-2 bg-tertiary text-white rounded disabled:opacity-50 flex items-center gap-2"
-          >
-            {submitLoading && <FaSpinner className="animate-spin" />}
-            {submitLoading ? "Updating…" : "Update Company Data"}
-          </button>
-        </div>
       </form>
 
-      {/* overlay */}
       <Overlay show={submitLoading} />
     </div>
   );
