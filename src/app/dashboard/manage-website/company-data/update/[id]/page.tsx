@@ -301,7 +301,8 @@ export default function UpdateCompanyDataPage() {
         </div>
       </form>
 
-      <Overlay show={submitLoading} />
+      <Overlay show={submitLoading} message="Mise à jour des données de l’entreprise en cours…" />
+
     </div>
   );
 }
