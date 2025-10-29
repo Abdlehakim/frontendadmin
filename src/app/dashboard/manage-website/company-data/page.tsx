@@ -1,6 +1,4 @@
-// ------------------------------------------------------------------
 // src/app/dashboard/manage-website/company-data/page.tsx
-// ------------------------------------------------------------------
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -17,8 +15,8 @@ interface CompanyData {
   logoImageUrl?: string;
   contactBannerUrl?: string;
   email: string;
-  phone?: string;    // téléphone affiché en texte
-  vat?: string;      // Matricule fiscale
+  phone?: string;
+  vat?: string;
   address: string;
   city: string;
   zipcode: string;
@@ -50,15 +48,13 @@ export default function CompanyDataAdminPage() {
   }, []);
 
   const F = {
-    text: (v?: string) => v && v.trim().length > 0 ? v : "—",
+    text: (v?: string) => (v && v.trim().length > 0 ? v : "—"),
   };
 
   return (
-    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 h-fit bg-green-50 rounded-xl mb-6">
-      {/* En-tête (style unifié) */}
+    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 min-h-screen bg-green-50 rounded-xl mb-6">
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Données de l’entreprise</h1>
-
         {item ? (
           <Link href={`/dashboard/manage-website/company-data/update/${item._id}`}>
             <button className="btn-fit-white-outline">Modifier</button>
@@ -70,15 +66,13 @@ export default function CompanyDataAdminPage() {
         )}
       </div>
 
-      {/* Corps */}
-      <div className="relative flex-1 rounded-lg">
-        {/* Overlay de chargement (même rendu que les autres pages) */}
-        {loading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-green-50">
-            <FaSpinner className="animate-spin text-3xl" />
-          </div>
-        )}
+      {loading && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-green-50">
+          <FaSpinner className="animate-spin text-3xl" />
+        </div>
+      )}
 
+      <div className="relative flex-1 rounded-lg">
         {!loading && error && (
           <div className="p-4 text-center text-red-600 bg-white rounded-md border border-primary/20">
             {error}
@@ -93,10 +87,8 @@ export default function CompanyDataAdminPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Visuels */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                  {/* Logo */}
-                  <div className="relative h-64 md:col-span-1 rounded-md border border-primary/20 bg-white overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="relative h-64 rounded-md border border-primary/20 bg-white overflow-hidden">
                     {item.logoImageUrl ? (
                       <Image
                         src={item.logoImageUrl}
@@ -110,75 +102,26 @@ export default function CompanyDataAdminPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* Bannière principale */}
-                  <div className="relative h-64 md:col-span-2 rounded-md border border-primary/20 bg-white overflow-hidden">
-                    {item.bannerImageUrl ? (
-                      <Image
-                        src={item.bannerImageUrl}
-                        alt="Bannière de l’entreprise"
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400">
-                        Aucune bannière
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bannière de contact */}
-                  <div className="relative h-64 md:col-span-2 rounded-md border border-primary/20 bg-white overflow-hidden">
-                    {item.contactBannerUrl ? (
-                      <Image
-                        src={item.contactBannerUrl}
-                        alt="Bannière de contact"
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400">
-                        Aucune bannière contact
-                      </div>
-                    )}
-                  </div>
                 </div>
 
-                {/* Informations de base */}
                 <div className="bg-white rounded-md border border-primary/20 p-4">
                   <h2 className="text-lg font-semibold mb-3">Informations générales</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">Nom</label>
-                      <input
-                        value={F.text(item.name)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.name)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">E-mail</label>
-                      <input
-                        value={F.text(item.email)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.email)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">Téléphone</label>
-                      <input
-                        value={F.text(item.phone)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.phone)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">Matricule fiscale</label>
-                      <input
-                        value={F.text(item.vat)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.vat)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                   </div>
 
@@ -193,72 +136,42 @@ export default function CompanyDataAdminPage() {
                   </div>
                 </div>
 
-                {/* Adresse */}
                 <div className="bg-white rounded-md border border-primary/20 p-4">
                   <h2 className="text-lg font-semibold mb-3">Adresse</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">Adresse</label>
-                      <input
-                        value={F.text(item.address)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.address)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">Ville</label>
-                      <input
-                        value={F.text(item.city)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.city)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">Code postal</label>
-                      <input
-                        value={F.text(item.zipcode)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.zipcode)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">Gouvernorat</label>
-                      <input
-                        value={F.text(item.governorate)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.governorate)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                   </div>
                 </div>
 
-                {/* Réseaux sociaux */}
                 <div className="bg-white rounded-md border border-primary/20 p-4 mb-6">
                   <h2 className="text-lg font-semibold mb-3">Réseaux sociaux</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">Facebook</label>
-                      <input
-                        value={F.text(item.facebook)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.facebook)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">LinkedIn</label>
-                      <input
-                        value={F.text(item.linkedin)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.linkedin)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-sm text-gray-600">Instagram</label>
-                      <input
-                        value={F.text(item.instagram)}
-                        disabled
-                        className="FilterInput bg-white disabled:opacity-100"
-                      />
+                      <input value={F.text(item.instagram)} disabled className="FilterInput bg-white disabled:opacity-100" />
                     </div>
                   </div>
                 </div>

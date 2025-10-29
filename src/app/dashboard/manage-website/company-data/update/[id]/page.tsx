@@ -1,13 +1,7 @@
 // src/app/dashboard/manage-website/company-data/update/[id]/page.tsx
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  ChangeEvent,
-  FormEvent,
-} from "react";
+import React, { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -39,8 +33,6 @@ export default function UpdateCompanyDataPage() {
   const companyId = params.id;
 
   const logoInput = useRef<HTMLInputElement | null>(null);
-  const bannerInput = useRef<HTMLInputElement | null>(null);
-  const contactBannerInput = useRef<HTMLInputElement | null>(null);
 
   const [form, setForm] = useState<FormFields>({
     name: "",
@@ -58,8 +50,6 @@ export default function UpdateCompanyDataPage() {
   });
 
   const [logoPreview, setLogoPreview] = useState<string | undefined>();
-  const [bannerPreview, setBannerPreview] = useState<string | undefined>();
-  const [contactBannerPreview, setContactBannerPreview] = useState<string | undefined>();
 
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -104,8 +94,6 @@ export default function UpdateCompanyDataPage() {
             instagram: companyInfo.instagram ?? "",
           });
           setLogoPreview(companyInfo.logoImageUrl);
-          setBannerPreview(companyInfo.bannerImageUrl);
-          setContactBannerPreview(companyInfo.contactBannerUrl);
         }
       } catch (err) {
         console.error("Load company data failed", err);
@@ -118,7 +106,7 @@ export default function UpdateCompanyDataPage() {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setForm(prev => ({ ...prev, [id]: value }));
+    setForm((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleFileChange = (
@@ -146,8 +134,6 @@ export default function UpdateCompanyDataPage() {
       const data = new FormData();
       Object.entries(form).forEach(([k, v]) => data.append(k, v));
       if (logoInput.current?.files?.[0]) data.append("logo", logoInput.current.files[0]);
-      if (bannerInput.current?.files?.[0]) data.append("banner", bannerInput.current.files[0]);
-      if (contactBannerInput.current?.files?.[0]) data.append("contactBanner", contactBannerInput.current.files[0]);
 
       await fetchFromAPI<{ success: boolean }>(
         `/dashboardadmin/website/company-info/updateCompanyInfo/${companyId}`,
@@ -157,9 +143,7 @@ export default function UpdateCompanyDataPage() {
       router.push("/dashboard/manage-website/company-data");
     } catch (err) {
       console.error("Update error", err);
-      setErrorMsg(
-        err instanceof Error ? err.message : "Une erreur inattendue s’est produite lors de la mise à jour."
-      );
+      setErrorMsg(err instanceof Error ? err.message : "Une erreur inattendue s’est produite lors de la mise à jour.");
     } finally {
       setSubmitLoading(false);
     }
@@ -174,8 +158,7 @@ export default function UpdateCompanyDataPage() {
   }
 
   return (
-    <div className="mx-auto py-4 w-[95%] flex flex-col gap-4 h-full">
-      {/* En-tête + actions */}
+    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 h-fit bg-green-50 rounded-xl mb-6">
       <div className="flex h-16 items-start justify-between">
         <div className="flex flex-col">
           <h1 className="text-3xl font-bold">Mettre à jour les données</h1>
@@ -208,20 +191,15 @@ export default function UpdateCompanyDataPage() {
 
       {errorMsg && <ErrorPopup message={errorMsg} onClose={() => setErrorMsg(undefined)} />}
 
-      {/* FORM relié au bouton d’en-tête via l’attribut form */}
       <form id="company-update-form" onSubmit={handleSubmit} className="flex flex-col gap-6 py-4">
-        {/* VISUELS — mêmes dimensions que la page d’aperçu */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {/* Logo (md: 1 col, h-64, object-contain p-4) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div
             className="relative h-64 md:col-span-1 rounded-md border border-primary/20 bg-white overflow-hidden cursor-pointer"
             onClick={() => logoInput.current?.click()}
           >
-            {/* Icône */}
             <div className="absolute top-2 left-2 z-10 text-gray-500 hover:text-gray-700">
               <PiImage size={22} />
             </div>
-            {/* Input */}
             <input
               ref={logoInput}
               type="file"
@@ -229,16 +207,9 @@ export default function UpdateCompanyDataPage() {
               className="hidden"
               onChange={(e) => handleFileChange(e, setLogoPreview)}
             />
-            {/* Preview */}
             {logoPreview ? (
               <div className="relative w-full h-full">
-                <Image
-                  src={logoPreview}
-                  alt="Logo de l’entreprise"
-                  fill
-                  unoptimized
-                  className="object-contain p-4"
-                />
+                <Image src={logoPreview} alt="Logo de l’entreprise" fill unoptimized className="object-contain p-4" />
                 <button
                   type="button"
                   onClick={(e) => {
@@ -256,93 +227,8 @@ export default function UpdateCompanyDataPage() {
               </div>
             )}
           </div>
-
-          {/* Bannière principale (md: 2 cols, h-64, object-cover) */}
-          <div
-            className="relative h-64 md:col-span-2 rounded-md border border-primary/20 bg-white overflow-hidden cursor-pointer"
-            onClick={() => bannerInput.current?.click()}
-          >
-            <div className="absolute top-2 left-2 z-10 text-gray-500 hover:text-gray-700">
-              <PiImage size={22} />
-            </div>
-            <input
-              ref={bannerInput}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFileChange(e, setBannerPreview)}
-            />
-            {bannerPreview ? (
-              <div className="relative w-full h-full">
-                <Image
-                  src={bannerPreview}
-                  alt="Bannière de l’entreprise"
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    clearFile(bannerInput, setBannerPreview);
-                  }}
-                  className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
-                >
-                  <MdDelete size={16} className="text-red-600" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                Cliquez pour importer<br />Bannière
-              </div>
-            )}
-          </div>
-
-          {/* Bannière de contact (md: 2 cols, h-64, object-cover) */}
-          <div
-            className="relative h-64 md:col-span-2 rounded-md border border-primary/20 bg-white overflow-hidden cursor-pointer"
-            onClick={() => contactBannerInput.current?.click()}
-          >
-            <div className="absolute top-2 left-2 z-10 text-gray-500 hover:text-gray-700">
-              <PiImage size={22} />
-            </div>
-            <input
-              ref={contactBannerInput}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFileChange(e, setContactBannerPreview)}
-            />
-            {contactBannerPreview ? (
-              <div className="relative w-full h-full">
-                <Image
-                  src={contactBannerPreview}
-                  alt="Bannière de contact"
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    clearFile(contactBannerInput, setContactBannerPreview);
-                  }}
-                  className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-100 transition"
-                >
-                  <MdDelete size={16} className="text-red-600" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                Cliquez pour importer<br />Bannière de contact
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Infos de base */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {(["name", "email", "phone", "vat"] as const).map((field) => (
             <div key={field} className="flex flex-col gap-2">
@@ -364,7 +250,6 @@ export default function UpdateCompanyDataPage() {
           ))}
         </div>
 
-        {/* Description */}
         <div className="flex flex-col gap-2">
           <label htmlFor="description" className="text-sm font-medium">Description</label>
           <textarea
