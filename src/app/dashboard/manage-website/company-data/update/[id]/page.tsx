@@ -50,7 +50,6 @@ export default function UpdateCompanyDataPage() {
   });
 
   const [logoPreview, setLogoPreview] = useState<string | undefined>();
-
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
@@ -72,9 +71,7 @@ export default function UpdateCompanyDataPage() {
             facebook?: string;
             linkedin?: string;
             instagram?: string;
-            bannerImageUrl?: string;
             logoImageUrl?: string;
-            contactBannerUrl?: string;
           };
         }>("/dashboardadmin/website/company-info/getCompanyInfo");
 
@@ -95,8 +92,7 @@ export default function UpdateCompanyDataPage() {
           });
           setLogoPreview(companyInfo.logoImageUrl);
         }
-      } catch (err) {
-        console.error("Load company data failed", err);
+      } catch {
         setErrorMsg("Échec du chargement des données de l’entreprise.");
       } finally {
         setLoading(false);
@@ -129,39 +125,27 @@ export default function UpdateCompanyDataPage() {
     e.preventDefault();
     setSubmitLoading(true);
     setErrorMsg(undefined);
-
     try {
       const data = new FormData();
       Object.entries(form).forEach(([k, v]) => data.append(k, v));
       if (logoInput.current?.files?.[0]) data.append("logo", logoInput.current.files[0]);
-
       await fetchFromAPI<{ success: boolean }>(
         `/dashboardadmin/website/company-info/updateCompanyInfo/${companyId}`,
         { method: "PUT", body: data }
       );
-
       router.push("/dashboard/manage-website/company-data");
     } catch (err) {
-      console.error("Update error", err);
       setErrorMsg(err instanceof Error ? err.message : "Une erreur inattendue s’est produite lors de la mise à jour.");
     } finally {
       setSubmitLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center h-full">
-        <FaSpinner className="animate-spin text-3xl text-gray-600" />
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 h-fit bg-green-50 rounded-xl mb-6">
+    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 min-h-screen bg-green-50 rounded-xl mb-6">
       <div className="flex h-16 items-start justify-between">
         <div className="flex flex-col">
-          <h1 className="text-3xl font-bold">Mettre à jour les données</h1>
+          <h1 className="text-3xl font-bold uppercase">Mettre à jour les données</h1>
           <nav className="text-sm underline flex items-center gap-2">
             <Link href="/dashboard/manage-website/company-data" className="text-gray-500 hover:underline">
               Données de l’entreprise
@@ -170,7 +154,6 @@ export default function UpdateCompanyDataPage() {
             <span className="text-gray-700 font-medium">Mise à jour</span>
           </nav>
         </div>
-
         <div className="flex items-start gap-2">
           <Link href="/dashboard/manage-website/company-data">
             <button type="button" className="btn-fit-white-outline disabled:opacity-50" disabled={submitLoading}>
@@ -189,12 +172,18 @@ export default function UpdateCompanyDataPage() {
         </div>
       </div>
 
+      {loading && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-green-50">
+          <FaSpinner className="animate-spin text-3xl" />
+        </div>
+      )}
+
       {errorMsg && <ErrorPopup message={errorMsg} onClose={() => setErrorMsg(undefined)} />}
 
       <form id="company-update-form" onSubmit={handleSubmit} className="flex flex-col gap-6 py-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div
-            className="relative h-64 md:col-span-1 rounded-md border border-primary/20 bg-white overflow-hidden cursor-pointer"
+            className="relative h-64 rounded-md border border-primary/20 bg-white overflow-hidden cursor-pointer"
             onClick={() => logoInput.current?.click()}
           >
             <div className="absolute top-2 left-2 z-10 text-gray-500 hover:text-gray-700">
@@ -229,85 +218,85 @@ export default function UpdateCompanyDataPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {(["name", "email", "phone", "vat"] as const).map((field) => (
-            <div key={field} className="flex flex-col gap-2">
-              <label htmlFor={field} className="text-sm font-medium">
-                {field === "name" && "Nom"}
-                {field === "email" && "E-mail"}
-                {field === "phone" && "Téléphone"}
-                {field === "vat" && "Matricule fiscale / TVA"}
-              </label>
-              <input
-                id={field}
-                type={field === "email" ? "email" : "text"}
-                value={form[field]}
-                onChange={handleChange}
-                required
-                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-            </div>
-          ))}
+        <div className="bg-white rounded-md border border-primary/20 p-4">
+          <h2 className="text-lg font-semibold mb-3">Informations générales</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(["name", "email", "phone", "vat"] as const).map((field) => (
+              <div key={field} className="flex flex-col gap-2">
+                <label htmlFor={field} className="text-sm font-medium">
+                  {field === "name" && "Nom"}
+                  {field === "email" && "E-mail"}
+                  {field === "phone" && "Téléphone"}
+                  {field === "vat" && "Matricule fiscale / TVA"}
+                </label>
+                <input
+                  id={field}
+                  type={field === "email" ? "email" : "text"}
+                  value={form[field]}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded px-3 py-2 bg-white border-primary/20"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-col gap-2">
+            <label htmlFor="description" className="text-sm font-medium">Description</label>
+            <textarea
+              id="description"
+              rows={4}
+              value={form.description}
+              onChange={handleChange}
+              required
+              className="w-full border rounded px-3 py-2 bg-white border-primary/20"
+            />
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="description" className="text-sm font-medium">Description</label>
-          <textarea
-            id="description"
-            rows={4}
-            value={form.description}
-            onChange={handleChange}
-            required
-            className="border-2 border-gray-300 rounded p-2 bg-gray-100 w-full"
-          />
+        <div className="bg-white rounded-md border border-primary/20 p-4">
+          <h2 className="text-lg font-semibold mb-3">Adresse</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(["address", "city", "zipcode", "governorate"] as const).map((field) => (
+              <div key={field} className="flex flex-col gap-2">
+                <label htmlFor={field} className="text-sm font-medium">
+                  {field === "address" && "Adresse"}
+                  {field === "city" && "Ville"}
+                  {field === "zipcode" && "Code postal"}
+                  {field === "governorate" && "Gouvernorat"}
+                </label>
+                <input
+                  id={field}
+                  type="text"
+                  value={form[field]}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded px-3 py-2 bg-white border-primary/20"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
-        <hr className="border-t border-gray-300 mb-2" />
-        <h2 className="text-xl font-semibold uppercase">Adresse</h2>
-        <hr className="border-t border-gray-300 mb-4" />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {(["address", "city", "zipcode", "governorate"] as const).map((field) => (
-            <div key={field} className="flex flex-col gap-2">
-              <label htmlFor={field} className="text-sm font-medium">
-                {field === "address" && "Adresse"}
-                {field === "city" && "Ville"}
-                {field === "zipcode" && "Code postal"}
-                {field === "governorate" && "Gouvernorat"}
-              </label>
-              <input
-                id={field}
-                type="text"
-                value={form[field]}
-                onChange={handleChange}
-                required
-                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-            </div>
-          ))}
-        </div>
-
-        <hr className="border-t border-gray-300 mb-2" />
-        <h2 className="text-xl font-semibold uppercase">Réseaux sociaux</h2>
-        <hr className="border-t border-gray-300 mb-4" />
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {(["facebook", "linkedin", "instagram"] as const).map((field) => (
-            <div key={field} className="flex flex-col gap-2">
-              <label htmlFor={field} className="text-sm font-medium">
-                {field === "facebook" && "Facebook"}
-                {field === "linkedin" && "LinkedIn"}
-                {field === "instagram" && "Instagram"}
-              </label>
-              <input
-                id={field}
-                type="text"
-                value={form[field]}
-                onChange={handleChange}
-                className="border-2 border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-            </div>
-          ))}
+        <div className="bg-white rounded-md border border-primary/20 p-4 mb-2">
+          <h2 className="text-lg font-semibold mb-3">Réseaux sociaux</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(["facebook", "linkedin", "instagram"] as const).map((field) => (
+              <div key={field} className="flex flex-col gap-2">
+                <label htmlFor={field} className="text-sm font-medium">
+                  {field === "facebook" && "Facebook"}
+                  {field === "linkedin" && "LinkedIn"}
+                  {field === "instagram" && "Instagram"}
+                </label>
+                <input
+                  id={field}
+                  type="text"
+                  value={form[field]}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2 bg-white border-primary/20"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </form>
 
