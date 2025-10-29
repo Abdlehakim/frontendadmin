@@ -1,6 +1,4 @@
-// ------------------------------------------------------------------
 // src/app/dashboard/manage-website/home-page/page.tsx
-// ------------------------------------------------------------------
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -35,10 +33,9 @@ export default function HomePageAdminPage() {
   useEffect(() => {
     (async () => {
       try {
-        const { homePageData } =
-          await fetchFromAPI<{ homePageData: HomePageData[] }>(
-            "/dashboardadmin/website/homepage/gethomePageData"
-          );
+        const { homePageData } = await fetchFromAPI<{ homePageData: HomePageData[] }>(
+          "/dashboardadmin/website/homepage/gethomePageData"
+        );
         setItem(homePageData?.[0] ?? null);
       } catch (err) {
         console.error("Erreur de chargement de la page d’accueil :", err);
@@ -53,12 +50,15 @@ export default function HomePageAdminPage() {
     text: (v?: string) => (v && v.trim().length > 0 ? v : "—"),
   };
 
+  const containerMinH = loading ? "min-h-[100svh]" : "";
+
   return (
-    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 h-fit bg-green-50 rounded-xl mb-6">
-      {/* En-tête (style unifié) */}
+    <div
+      className={`mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 bg-green-50 rounded-xl mb-6 ${containerMinH}`}
+      aria-busy={loading}
+    >
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Page d’accueil</h1>
-
         {item ? (
           <Link href={`/dashboard/manage-website/home-page/update/${item._id}`}>
             <button className="btn-fit-white-outline">Modifier</button>
@@ -70,15 +70,13 @@ export default function HomePageAdminPage() {
         )}
       </div>
 
-      {/* Corps */}
-      <div className="relative flex-1 rounded-lg">
-        {/* Overlay de chargement (même rendu que les autres pages) */}
-        {loading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-green-50">
-            <FaSpinner className="animate-spin text-3xl" />
-          </div>
-        )}
+      {loading && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-green-50">
+          <FaSpinner className="animate-spin text-3xl" />
+        </div>
+      )}
 
+      <div className="relative rounded-lg">
         {!loading && error && (
           <div className="p-4 text-center text-red-600 bg-white rounded-md border border-primary/20">
             {error}
@@ -93,7 +91,6 @@ export default function HomePageAdminPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Bannière */}
                 <div className="bg-white rounded-md border border-primary/20 p-4">
                   <h2 className="text-lg font-semibold mb-3">Bannière</h2>
                   <div className="relative h-64 rounded-md overflow-hidden border border-primary/20">
@@ -123,11 +120,7 @@ export default function HomePageAdminPage() {
                   </div>
                 </div>
 
-                {/* Sections de la page */}
-                <div className="bg-white rounded-md border border-primary/20 p-4 mb-4">
-                  <h2 className="text-lg font-semibold mb-3">Sections</h2>
-
-                  {/* Catégories */}
+                <div className="bg-white rounded-md border border-primary/20 p-4 mb-6">
                   <div className="mb-4">
                     <h3 className="font-medium mb-2">Catégories</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -150,7 +143,6 @@ export default function HomePageAdminPage() {
                     </div>
                   </div>
 
-                  {/* Marques */}
                   <div className="mb-4">
                     <h3 className="font-medium mb-2">Marques</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,7 +165,6 @@ export default function HomePageAdminPage() {
                     </div>
                   </div>
 
-                  {/* Magasins */}
                   <div className="mb-4">
                     <h3 className="font-medium mb-2">Magasins</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -196,7 +187,6 @@ export default function HomePageAdminPage() {
                     </div>
                   </div>
 
-                  {/* Nouveaux produits */}
                   <div className="mb-4">
                     <h3 className="font-medium mb-2">Nouveaux produits</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -219,7 +209,6 @@ export default function HomePageAdminPage() {
                     </div>
                   </div>
 
-                  {/* Promotions */}
                   <div className="mb-4">
                     <h3 className="font-medium mb-2">Promotions</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -242,7 +231,6 @@ export default function HomePageAdminPage() {
                     </div>
                   </div>
 
-                  {/* Meilleure collection */}
                   <div className="mb-2">
                     <h3 className="font-medium mb-2">Meilleure collection</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
