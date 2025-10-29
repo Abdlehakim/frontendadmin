@@ -51,8 +51,14 @@ export default function CompanyDataAdminPage() {
     text: (v?: string) => (v && v.trim().length > 0 ? v : "—"),
   };
 
+  // Only enforce viewport-height while loading; afterwards, let content define height.
+  const containerMinH = loading ? "min-h-[100svh]" : ""; // use svh to handle mobile URL bar
+
   return (
-    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 min-h-screen bg-green-50 rounded-xl mb-6">
+    <div
+      className={`mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 bg-green-50 rounded-xl mb-6 ${containerMinH}`}
+      aria-busy={loading}
+    >
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Données de l’entreprise</h1>
         {item ? (
@@ -72,7 +78,7 @@ export default function CompanyDataAdminPage() {
         </div>
       )}
 
-      <div className="relative flex-1 rounded-lg">
+      <div className="relative rounded-lg">
         {!loading && error && (
           <div className="p-4 text-center text-red-600 bg-white rounded-md border border-primary/20">
             {error}

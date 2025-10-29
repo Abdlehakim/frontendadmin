@@ -1,4 +1,3 @@
-// src/app/dashboard/manage-website/company-data/update/[id]/page.tsx
 "use client";
 
 import React, { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
@@ -141,8 +140,10 @@ export default function UpdateCompanyDataPage() {
     }
   };
 
+  const containerMinH = loading ? "min-h-[100svh]" : "";
+
   return (
-    <div className="mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 min-h-screen bg-green-50 rounded-xl mb-6">
+    <div className={`mx-auto px-2 py-4 w-[95%] flex flex-col gap-4 bg-green-50 rounded-xl mb-6 ${containerMinH}`} aria-busy={loading}>
       <div className="flex h-16 items-start justify-between">
         <div className="flex flex-col">
           <h1 className="text-3xl font-bold uppercase">Mettre à jour les données</h1>
